@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { workoutsApi } from "@/lib/api"
 import { useLanguage } from "@/lib/contexts/language-context"
+import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
+import { getMuscleGroupLabel, type AppLanguage } from "@/lib/workout-domain-labels"
 import { useWorkouts } from "@/hooks/use-workouts"
 
 function WorkoutDetailContent() {
@@ -18,6 +20,7 @@ function WorkoutDetailContent() {
   const router = useRouter()
   const { language, t } = useLanguage()
   const isSpanish = language === "es"
+  const labelLanguage: AppLanguage = isSpanish ? "es" : "en"
 
   const workoutId = typeof params?.id === "string" ? params.id : ""
 
@@ -177,7 +180,10 @@ function WorkoutDetailContent() {
               ) : null}
             </div>
           ) : null}
-          {workout.exercises.map((workoutExercise, index) => (
+          {workout.exercises.map((workoutExercise, index) => {
+            const localizedExercise = getLocalizedExerciseCopy(workoutExercise.exercise, labelLanguage)
+
+            return (
             <div
               key={workoutExercise.id}
               className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-slate-700/60 dark:bg-slate-900/40"
@@ -189,10 +195,10 @@ function WorkoutDetailContent() {
 
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-                    {workoutExercise.exercise.name}
+                    {localizedExercise.name}
                   </h3>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                    {workoutExercise.exercise.description}
+                    {localizedExercise.description}
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -204,13 +210,14 @@ function WorkoutDetailContent() {
                       {workoutExercise.rest}s {isSpanish ? "descanso" : "rest"}
                     </Badge>
                     <Badge variant="outline" className="rounded-xl px-3 py-1 capitalize">
-                      {workoutExercise.exercise.muscleGroup}
+                      {getMuscleGroupLabel(labelLanguage, workoutExercise.exercise.muscleGroup)}
                     </Badge>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </CardContent>
       </Card>
     </div>

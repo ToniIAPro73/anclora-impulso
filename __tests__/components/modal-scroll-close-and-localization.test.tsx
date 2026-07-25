@@ -133,9 +133,9 @@ describe("modal scrolling, close behavior, and workout localization", () => {
     const user = userEvent.setup()
     render(<ExerciseLibrary />)
 
-    await user.click(screen.getByText("Long Push-up"))
+    await user.click(screen.getByText("Flexión larga"))
 
-    const dialog = screen.getByRole("dialog", { name: /long push-up/i })
+    const dialog = screen.getByRole("dialog", { name: /flexión larga/i })
     expect(within(dialog).getByTestId("exercise-detail-scroll-body")).toHaveTextContent(
       "Controlled instruction 18",
     )
@@ -146,7 +146,7 @@ describe("modal scrolling, close behavior, and workout localization", () => {
     const user = userEvent.setup()
     render(<ExerciseLibrary />)
 
-    await user.click(screen.getByText("Long Push-up"))
+    await user.click(screen.getByText("Flexión larga"))
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /cerrar/i }))
 
     await waitFor(() => {
