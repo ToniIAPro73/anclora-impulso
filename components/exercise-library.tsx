@@ -19,6 +19,7 @@ import {
 import { Search, Filter, Play, Target, Zap, Loader2, ChevronUp, ChevronDown } from "lucide-react"
 import { useExercises } from "@/hooks/use-exercises"
 import { useLanguage } from "@/lib/contexts/language-context"
+import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
 import {
   getCategoryLabel,
   getDifficultyLabel,
@@ -319,7 +320,10 @@ export function ExerciseLibrary() {
 
       {/* Exercise Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-        {exercises.map((exercise, index) => (
+        {exercises.map((exercise, index) => {
+          const localizedExercise = getLocalizedExerciseCopy(exercise, labelLanguage)
+
+          return (
           <Dialog key={exercise.id}>
             <DialogTrigger asChild>
               <div
@@ -329,13 +333,13 @@ export function ExerciseLibrary() {
               >
                 <Card className="group cursor-pointer border-0 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl dark:bg-gray-800/80">
                 <CardHeader className="pb-3">
-                  {renderExerciseMedia(exercise, true)}
+                  {renderExerciseMedia({ ...exercise, name: localizedExercise.name }, true)}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-2xl">{getCategoryIcon(exercise.category)}</span>
                       <div>
                         <CardTitle className="text-lg group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                          {exercise.name}
+                          {localizedExercise.name}
                         </CardTitle>
                         <CardDescription className="text-sm">
                           {getCategoryLabel(labelLanguage, exercise.category)}
@@ -348,7 +352,7 @@ export function ExerciseLibrary() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{exercise.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{localizedExercise.description}</p>
                   <div className="flex flex-wrap gap-1">
                     <Badge variant="secondary" className="text-xs">
                       {getMuscleGroupLabel(labelLanguage, exercise.muscleGroup)}
@@ -377,7 +381,7 @@ export function ExerciseLibrary() {
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{getCategoryIcon(exercise.category)}</span>
                   <div>
-                    <DialogTitle className="text-2xl">{exercise.name}</DialogTitle>
+                    <DialogTitle className="text-2xl">{localizedExercise.name}</DialogTitle>
                     <DialogDescription className="text-base">
                       {getCategoryLabel(labelLanguage, exercise.category)}{" "}
                       {isSpanish ? "Ejercicio" : "Exercise"}
@@ -389,7 +393,7 @@ export function ExerciseLibrary() {
                 data-testid="exercise-detail-scroll-body"
                 className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 [scrollbar-gutter:stable] sm:px-5 lg:px-6"
               >
-                {renderExerciseMedia(exercise)}
+                {renderExerciseMedia({ ...exercise, name: localizedExercise.name })}
                 <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
                   <Badge className={getDifficultyColor(exercise.difficulty)}>
@@ -407,10 +411,10 @@ export function ExerciseLibrary() {
                   ))}
                 </div>
 
-                {exercise.description && (
+                {localizedExercise.description && (
                   <div>
                     <h4 className="font-semibold mb-2">{isSpanish ? "Descripción" : "Description"}</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{exercise.description}</p>
+                    <p className="text-gray-600 dark:text-gray-400">{localizedExercise.description}</p>
                   </div>
                 )}
 
@@ -423,11 +427,11 @@ export function ExerciseLibrary() {
                   </div>
                 </div>
 
-                {exercise.instructions && exercise.instructions.length > 0 && (
+                {localizedExercise.instructions.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-2">{isSpanish ? "Instrucciones" : "Instructions"}</h4>
                     <ol className="list-decimal list-inside space-y-2">
-                      {exercise.instructions.map((instruction, index) => (
+                      {localizedExercise.instructions.map((instruction, index) => (
                         <li key={index} className="text-gray-600 dark:text-gray-400">
                           {instruction}
                         </li>
@@ -451,7 +455,8 @@ export function ExerciseLibrary() {
               </div>
             </DialogContent>
           </Dialog>
-        ))}
+          )
+        })}
       </div>
 
       {exercises.length === 0 && (
