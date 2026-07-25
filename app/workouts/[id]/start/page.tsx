@@ -16,6 +16,8 @@ import { Progress } from "@/components/ui/progress"
 import { sessionsApi, workoutsApi } from "@/lib/api"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { useAuth } from "@/lib/contexts/auth-context"
+import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
+import type { AppLanguage } from "@/lib/workout-domain-labels"
 import { trackProductEvent } from "@/lib/product-events"
 
 type ExerciseSetState = {
@@ -39,6 +41,7 @@ function ActiveWorkoutPageContent() {
   const { language } = useLanguage()
   const { user } = useAuth()
   const isSpanish = language === "es"
+  const labelLanguage: AppLanguage = isSpanish ? "es" : "en"
   const workoutId = typeof params?.id === "string" ? params.id : ""
   const [notes, setNotes] = useState("")
   const [setState, setSetState] = useState<Record<string, ExerciseSetState[]>>({})
@@ -270,7 +273,10 @@ function ActiveWorkoutPageContent() {
       </Card>
 
       <div className="space-y-4">
-        {workout.exercises.map((workoutExercise, exerciseIndex) => (
+        {workout.exercises.map((workoutExercise, exerciseIndex) => {
+          const localizedExercise = getLocalizedExerciseCopy(workoutExercise.exercise, labelLanguage)
+
+          return (
           <Card key={workoutExercise.id} className="border-0 bg-white/80 shadow-lg backdrop-blur-sm dark:bg-gray-800/80">
             <CardHeader className="pb-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -279,10 +285,10 @@ function ActiveWorkoutPageContent() {
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-sm font-semibold text-white">
                       {exerciseIndex + 1}
                     </span>
-                    <span>{workoutExercise.exercise.name}</span>
+                    <span>{localizedExercise.name}</span>
                   </CardTitle>
                   <CardDescription className="mt-2">
-                    {workoutExercise.exercise.description}
+                    {localizedExercise.description}
                   </CardDescription>
                 </div>
                 <Badge variant="outline" className="rounded-xl px-3 py-1">
@@ -322,14 +328,15 @@ function ActiveWorkoutPageContent() {
                   <Button variant={set.completed ? "default" : "outline"} className="rounded-2xl" onClick={() => updateSet(workoutExercise.exerciseId, setIndex, { completed: !set.completed })}>
                     {set.completed ? (isSpanish ? "Hecha" : "Done") : (isSpanish ? "Marcar" : "Mark")}
                   </Button>
-                  <Button variant="ghost" className="rounded-2xl" onClick={() => startRest(Number(set.restSeconds) || workoutExercise.rest, `${workoutExercise.exercise.name} · ${isSpanish ? "serie" : "set"} ${setIndex + 1}`)}>
+                  <Button variant="ghost" className="rounded-2xl" onClick={() => startRest(Number(set.restSeconds) || workoutExercise.rest, `${localizedExercise.name} · ${isSpanish ? "serie" : "set"} ${setIndex + 1}`)}>
                     {isSpanish ? "Descanso" : "Rest"}
                   </Button>
                 </div>
               ))}
             </CardContent>
           </Card>
-        ))}
+          )
+        })}
       </div>
 
       <Card className="border-0 bg-white/80 shadow-lg backdrop-blur-sm dark:bg-gray-800/80">
