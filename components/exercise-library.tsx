@@ -228,7 +228,7 @@ export function ExerciseLibrary() {
                   <SelectItem value="all">{isSpanish ? "Todas las categorías" : "All categories"}</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category.charAt(0).toUpperCase() + category.slice(1).replace("_", " ")}
+                      {getCategoryLabel(labelLanguage, category)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -244,7 +244,7 @@ export function ExerciseLibrary() {
                   <SelectItem value="all">{isSpanish ? "Todo el equipo" : "All equipment"}</SelectItem>
                   {equipmentTypes.map((equipment) => (
                     <SelectItem key={equipment} value={equipment}>
-                      {equipment.charAt(0).toUpperCase() + equipment.slice(1).replace("_", " ")}
+                      {getEquipmentLabel(labelLanguage, equipment)}
                     </SelectItem>
                   ))}
                 </SelectContent>
