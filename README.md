@@ -1,108 +1,86 @@
+<!-- markdownlint-disable MD001 MD013 MD033 MD041 MD060 -->
+
+<div align="center">
+
+<img src="./public/placeholder-logo.svg" alt="Anclora Impulso" width="120" />
+
 # Anclora Impulso
 
-Aplicacion web de fitness con generacion de rutinas con IA, seguimiento de progreso y backend propio para autenticacion, ejercicios, entrenamientos y metricas.
+### Repositorio interno del ecosistema Anclora para operaciones de familia premium
 
-## Stack
+**Español** · [English](./README.en.md)
 
-- Frontend: Next.js 14, React 18, TypeScript, Tailwind CSS 4
-- Backend: Express, TypeScript, Prisma, PostgreSQL
-- UI: Radix UI, shadcn/ui
-- Datos y estado: TanStack React Query, Zod
+<br />
 
-## Inicio rapido
+![Anclora](https://img.shields.io/badge/Anclora-ecosystem-111827)
+![Documentation](https://img.shields.io/badge/documentation-premium-BFA46A)
+![Languages](https://img.shields.io/badge/languages-ES%20%7C%20EN-047857)
 
-### Requisitos
+</div>
 
-- Node.js 22 recomendado
-- `pnpm`
-- Base de datos PostgreSQL para el backend
+---
 
-### Backend
+> [!IMPORTANT]
+> Repositorio interno del ecosistema Anclora. No publicar detalles operativos, credenciales,
+> datos reales ni logica sensible fuera de los canales autorizados.
 
-```bash
-cd backend
-pnpm install
-cp .env.example .env
-pnpm prisma:generate
-pnpm prisma migrate dev
-pnpm prisma:seed
-pnpm dev
-```
+## Vista rapida
 
-### Frontend
+| Area | Definicion |
+| --- | --- |
+| Proposito | Repositorio interno del ecosistema Anclora para operaciones de familia premium |
+| Familia | `premium` |
+| Visibilidad | `private` |
+| Rol | Repositorio de trabajo interno |
 
-```bash
-pnpm install
-cp .env.local.example .env.local
-pnpm dev
-```
-
-Frontend: `http://localhost:3000`
-
-Backend: `http://localhost:3001`
-
-## Scripts principales
-
-```bash
-pnpm dev
-pnpm build
-pnpm start
-pnpm test
-pnpm test:ci
-pnpm test:coverage
-```
-
-## Estructura del repo
+## Flujo conceptual
 
 ```text
-.
-├── app/
-├── backend/
-├── components/
-├── docs/
-├── hooks/
-├── lib/
-├── public/
-├── scripts/
-├── .github/
-├── README.md
-├── package.json
-└── tsconfig.json
+Contexto interno
+      ↓
+Configuracion y datos controlados
+      ↓
+Logica de producto
+      ↓
+Revision tecnica
+      ↓
+Entrega o soporte operativo
 ```
+
+## Arranque local
+
+```bash
+npm install
+npm run dev
+```
+
+## Tecnologia
+
+| Area | Detalle |
+| --- | --- |
+| Next.js | Detectado en el repositorio |
+| React | Detectado en el repositorio |
+| TypeScript | Detectado en el repositorio |
+| Tailwind CSS | Detectado en el repositorio |
+| Zod | Detectado en el repositorio |
+| Jest | Detectado en el repositorio |
 
 ## Documentacion
 
-- Indice general: `docs/README.md`
-- Documentacion interna y guia para Claude Code: `CLAUDE.md`
-- Operacion y despliegue: `docs/operations/DEPLOY.md`
-- Desarrollo e integracion: `docs/development/`
-- Estandares internos: `docs/standards/`
-- Material de negocio e inversores: `docs/business/` y `docs/investors/`
-- Historial y entregables: `docs/archive/`
+- [Documentacion](./docs/README.md)
+- [Documentacion](./docs)
 
-## Contratos UX/UI
+## Gobernanza
 
-Lectura minima antes de tocar interfaz:
+- Producto canonico: `anclora-impulso`
+- Boveda: `/mnt/c/Users/antonio.ballesterosa/Desktop/Proyectos/Boveda-Anclora`
+- Contratos: `contracts/` y `docs/governance/`
+- Asset de marca: `presente`
 
-1. `docs/standards/ANCLORA_ECOSYSTEM_CONTRACT_GROUPS.md`
-2. `docs/standards/ANCLORA_PREMIUM_APP_CONTRACT.md`
-3. `docs/standards/UI_MOTION_CONTRACT.md`
-4. `docs/standards/MODAL_CONTRACT.md`
-5. `docs/standards/LOCALIZATION_CONTRACT.md`
+---
 
-## Branding canónico
+<div align="center">
 
-La identidad de la marca está centralizada en `lib/impulso-brand.ts`. Cualquier cambio en el nombre, descripción o activos visuales debe realizarse en este módulo para asegurar la consistencia en toda la aplicación.
+### Anclora Group · Uso interno
 
-- Familia visual: `Premium`
-- Accent objetivo: `#FF6A00` naranja
-- Tipografía objetivo: `DM Sans`
-- Borde de icono: cobre `#C07860`
-- Interior de icono: navy `#1A1C2B`
-- Favicon package esperado: prefijo `impulso_`
-
-## Notas
-
-- `middleware.ts` debe permanecer en raiz porque Next.js lo resuelve desde ahi.
-- `next-env.d.ts` es un archivo gestionado por Next.js.
-- `.env.local` es local al entorno de desarrollo y no debe versionarse.
+</div>
