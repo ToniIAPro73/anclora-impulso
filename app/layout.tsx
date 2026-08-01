@@ -20,7 +20,6 @@ export const metadata: Metadata = {
       { url: IMPULSO_BRAND.faviconPath, sizes: "any" },
       { url: "/impulso_favicon_32.png", type: "image/png", sizes: "32x32" },
     ],
-    apple: [{ url: "/impulso_apple_touch_icon.png", type: "image/png", sizes: "180x180" }],
     shortcut: [IMPULSO_BRAND.faviconPath],
   },
   manifest: "/site.webmanifest",
