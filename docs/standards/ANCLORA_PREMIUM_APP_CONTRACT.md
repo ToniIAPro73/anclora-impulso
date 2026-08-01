@@ -8,11 +8,12 @@ Fijar una gramática premium compartida para productos públicos o semi-público
 - `anclora-command-center`
 - `anclora-synergi`
 - `anclora-data-lab`
+- `anclora-energyscan`
 - `anclora-talent`
 
 ## Autoridad
 
-- Registro operativo: `docs/governance/contracts-registry.json`
+- Registro operativo: `contracts/governance/contracts-registry.json`
 - Inventario aplicable: `docs/governance/ecosystem-repos.json`
 - Fuente ejecutable relacionada: `anclora-design-system`
 
@@ -22,13 +23,14 @@ Fijar una gramática premium compartida para productos públicos o semi-público
 - `anclora-command-center`
 - `anclora-synergi`
 - `anclora-data-lab`
+- `anclora-energyscan`
 - `anclora-talent`
 
 ## Sincronización con repos consumidores
 
-- Contrato fuente en la bóveda: `docs/standards/ANCLORA_PREMIUM_APP_CONTRACT.md`
+- Contrato fuente en la bóveda: `contracts/core/ANCLORA_PREMIUM_APP_CONTRACT.md`
 - Target normal de propagación: `docs/standards/`
-- Dependencia de auditoría y propagación desde `docs/governance/contracts-registry.json`
+- Dependencia de auditoría y propagación desde `contracts/governance/contracts-registry.json`
 
 ## Piezas canónicas del design system
 
@@ -157,6 +159,14 @@ Regla:
 - Mantener `dark/light/system`.
 - Debe sentirse más analítica y precisa que Synergi, pero compartir la misma disciplina premium en botones, cards y modales.
 
+### `anclora-energyscan`
+- Mantener `es/en/de`.
+- Mantener coherencia de preferencias por idioma: `es/de` con EUR + m² y `en` con GBP + sq ft.
+- Su superficie pública, wizard, resultados, pricing, PDF Premium y sección de proveedores pertenecen a la familia `premium analytical / premium utility`.
+- Debe presentar siempre el carácter de prediagnóstico energético orientativo.
+- No puede sugerir emisión de Certificados de Eficiencia Energética oficiales ni documentación con validez administrativa.
+- El acceso Premium debe distinguir resultado básico, desbloqueo de informe y estado real de pago mediante `paidAt`.
+
 ### `anclora-talent`
 - Mantener `es/en` con `es` como idioma por defecto.
 - Mantener `dark/light` con `dark` como tema inicial.
@@ -175,3 +185,4 @@ Una feature premium no está lista si:
 - el selector de idioma o tema rompe el acabado de marca
 - una misma familia de botón cambia el foreground o la legibilidad entre temas sin motivo contractual explícito
 - resuelve sus componentes críticos fuera de `anclora-design-system` sin haber promovido antes la pieza común
+

@@ -6,10 +6,11 @@ import { ThemeProvider } from "@/lib/contexts/theme-context"
 import { CookieConsent } from "@/components/cookie-consent"
 import { IMPULSO_BRAND } from "@/lib/impulso-brand"
 import "./globals.css"
-import { DM_Sans } from 'next/font/google'
+import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 
 // Initialize fonts
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono' })
 
 export const metadata: Metadata = {
   title: IMPULSO_BRAND.name,
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
       { url: IMPULSO_BRAND.faviconPath, sizes: "any" },
       { url: "/impulso_favicon_32.png", type: "image/png", sizes: "32x32" },
     ],
-    apple: [{ url: "/impulso_favicon_512.png", type: "image/png", sizes: "512x512" }],
+    apple: [{ url: "/impulso_apple_touch_icon.png", type: "image/png", sizes: "180x180" }],
     shortcut: [IMPULSO_BRAND.faviconPath],
   },
   manifest: "/site.webmanifest",
@@ -32,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
-      <body className={`font-sans ${dmSans.variable}`}>
+      <body className={`font-sans ${dmSans.variable} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
           <LanguageProvider>
             {children}
