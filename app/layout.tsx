@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: IMPULSO_BRAND.faviconPath, sizes: "any" },
-      { url: "/impulso_favicon_32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
     ],
     shortcut: [IMPULSO_BRAND.faviconPath],
   },

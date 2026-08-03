@@ -2,50 +2,60 @@
 
 <div align="center">
 
-<img src="./public/placeholder-logo.svg" alt="Anclora Impulso" width="120" />
+<img src="./public/anclora-impulso.png" alt="Anclora Impulso" width="132" />
 
 # Anclora Impulso
 
-### Repositorio interno del ecosistema Anclora para operaciones de familia premium
+### Entrenamientos personalizados con IA y seguimiento inteligente de progreso
+
+Aplicación premium de fitness que combina planes de entrenamiento personalizados por IA con seguimiento de progreso y una interfaz de componentes accesibles.
 
 **Español** · [English](./README.en.md)
 
 <br />
 
 ![Anclora](https://img.shields.io/badge/Anclora-ecosystem-111827)
-![Documentation](https://img.shields.io/badge/documentation-premium-BFA46A)
-![Languages](https://img.shields.io/badge/languages-ES%20%7C%20EN-047857)
+![Categoría](https://img.shields.io/badge/categoría-Premium-C07860)
+![Idiomas](https://img.shields.io/badge/idiomas-ES%20%7C%20EN-047857)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> Repositorio interno del ecosistema Anclora. No publicar detalles operativos, credenciales,
-> datos reales ni logica sensible fuera de los canales autorizados.
+> Repositorio interno del ecosistema Anclora. No publicar detalles operativos, credenciales ni lógica sensible fuera de canales autorizados.
 
-## Vista rapida
+## Qué es
 
-| Area | Definicion |
-| --- | --- |
-| Proposito | Repositorio interno del ecosistema Anclora para operaciones de familia premium |
-| Familia | `premium` |
-| Visibilidad | `private` |
-| Rol | Repositorio de trabajo interno |
+Anclora Impulso es un producto premium de entrenamiento físico que genera planes personalizados asistidos por IA y hace seguimiento inteligente del progreso del usuario. Forma parte de la categoría Premium del ecosistema, con identidad de marca propia (naranja/cobre).
 
-## Flujo conceptual
+## Categoría en el ecosistema
 
-```text
-Contexto interno
-      ↓
-Configuracion y datos controlados
-      ↓
-Logica de producto
-      ↓
-Revision tecnica
-      ↓
-Entrega o soporte operativo
-```
+| Campo | Valor |
+|---|---|
+| Categoría | Premium |
+| Acento de marca | `#FF6A00` |
+| Tipografía | DM Sans |
+| Repositorio canónico | `anclora-impulso` |
+
+## Funcionalidades principales
+
+- Planes de entrenamiento personalizados generados con IA
+- Seguimiento de progreso del usuario
+- Formularios validados (React Hook Form + Zod)
+- Sistema de componentes accesible (Radix UI)
+- Consentimiento de cookies y PWA (manifest, iconos)
+- Analítica de producto (Vercel Analytics)
+
+## Stack tecnológico
+
+| Área | Tecnología |
+|---|---|
+| Framework | Next.js, React |
+| UI | Radix UI, Tailwind CSS |
+| Formularios | React Hook Form, Zod |
+| Tipografía | DM Sans, JetBrains Mono |
+| Analítica | Vercel Analytics |
 
 ## Arranque local
 
@@ -54,33 +64,22 @@ npm install
 npm run dev
 ```
 
-## Tecnologia
+## Idiomas soportados
 
-| Area | Detalle |
-| --- | --- |
-| Next.js | Detectado en el repositorio |
-| React | Detectado en el repositorio |
-| TypeScript | Detectado en el repositorio |
-| Tailwind CSS | Detectado en el repositorio |
-| Zod | Detectado en el repositorio |
-| Jest | Detectado en el repositorio |
+- Español (predeterminado)
+- English
 
-## Documentacion
+## Documentación y gobernanza
 
-- [Documentacion](./docs/README.md)
-- [Documentacion](./docs)
-
-## Gobernanza
-
-- Producto canonico: `anclora-impulso`
-- Boveda: `/mnt/c/Users/antonio.ballesterosa/Desktop/Proyectos/Boveda-Anclora`
-- Contratos: `contracts/` y `docs/governance/`
-- Asset de marca: `presente`
+- Contratos de marca y gobernanza: [`docs/standards/`](./docs/standards/)
+- Bóveda Anclora (fuente de verdad): `contracts/` y `docs/governance/`
 
 ---
 
 <div align="center">
 
-### Anclora Group · Uso interno
+### Anclora Group
+
+Uso interno.
 
 </div>

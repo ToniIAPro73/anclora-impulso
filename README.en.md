@@ -2,18 +2,20 @@
 
 <div align="center">
 
-<img src="./public/placeholder-logo.svg" alt="Anclora Impulso" width="120" />
+<img src="./public/anclora-impulso.png" alt="Anclora Impulso" width="132" />
 
 # Anclora Impulso
 
-### Repositorio interno del ecosistema Anclora para operaciones de familia premium
+### AI-personalized training with intelligent progress tracking
+
+Premium fitness application combining AI-personalized training plans with progress tracking and an accessible component interface.
 
 [Español](./README.md) · **English**
 
 <br />
 
 ![Anclora](https://img.shields.io/badge/Anclora-ecosystem-111827)
-![Documentation](https://img.shields.io/badge/documentation-premium-BFA46A)
+![Category](https://img.shields.io/badge/category-Premium-C07860)
 ![Languages](https://img.shields.io/badge/languages-ES%20%7C%20EN-047857)
 
 </div>
@@ -21,66 +23,63 @@
 ---
 
 > [!IMPORTANT]
-> Internal Anclora ecosystem repository. Do not publish operational details, credentials,
-> real data or sensitive logic outside approved channels.
+> Internal Anclora ecosystem repository. Do not publish operational details, credentials, or sensitive logic outside authorized channels.
 
-## At a glance
+## What it is
 
-| Area | Definition |
-| --- | --- |
-| Purpose | Repositorio interno del ecosistema Anclora para operaciones de familia premium |
-| Family | `premium` |
-| Visibility | `private` |
-| Role | Internal working repository |
+Anclora Impulso is a premium fitness product that generates AI-assisted personalized training plans and intelligently tracks user progress. It belongs to the Premium category of the ecosystem, with its own brand identity (orange/copper).
 
-## Conceptual workflow
+## Category in the ecosystem
 
-```text
-Internal context
-      ↓
-Controlled configuration and data
-      ↓
-Product logic
-      ↓
-Technical review
-      ↓
-Delivery or operational support
-```
+| Field | Value |
+|---|---|
+| Category | Premium |
+| Brand accent | `#FF6A00` |
+| Typography | DM Sans |
+| Canonical repository | `anclora-impulso` |
 
-## Local start
+## Key features
+
+- AI-generated personalized training plans
+- User progress tracking
+- Validated forms (React Hook Form + Zod)
+- Accessible component system (Radix UI)
+- Cookie consent and PWA support (manifest, icons)
+- Product analytics (Vercel Analytics)
+
+## Technology stack
+
+| Area | Technology |
+|---|---|
+| Framework | Next.js, React |
+| UI | Radix UI, Tailwind CSS |
+| Forms | React Hook Form, Zod |
+| Typography | DM Sans, JetBrains Mono |
+| Analytics | Vercel Analytics |
+
+## Local setup
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Technology
+## Supported languages
 
-| Area | Detail |
-| --- | --- |
-| Next.js | Detected in repository |
-| React | Detected in repository |
-| TypeScript | Detected in repository |
-| Tailwind CSS | Detected in repository |
-| Zod | Detected in repository |
-| Jest | Detected in repository |
+- Español (default)
+- English
 
-## Documentation
+## Documentation and governance
 
-- [Documentacion](./docs/README.md)
-- [Documentacion](./docs)
-
-## Governance
-
-- Canonical product: `anclora-impulso`
-- Vault: `/mnt/c/Users/antonio.ballesterosa/Desktop/Proyectos/Boveda-Anclora`
-- Contracts: `contracts/` and `docs/governance/`
-- Brand asset: `present`
+- Brand and governance contracts: [`docs/standards/`](./docs/standards/)
+- Anclora Vault (source of truth): `contracts/` and `docs/governance/`
 
 ---
 
 <div align="center">
 
-### Anclora Group · Internal use
+### Anclora Group
+
+Internal use.
 
 </div>

@@ -9,17 +9,17 @@
   "theme_color": "#020b2d",
   "icons": [
     {
-      "src": "/impulso_favicon_32.png",
+      "src": "/favicon-32.png",
       "sizes": "32x32",
       "type": "image/png"
     },
     {
-      "src": "/impulso_favicon_512.png",
+      "src": "/favicon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/impulso_favicon.ico",
+      "src": "/favicon.ico",
       "sizes": "48x48",
       "type": "image/x-icon"
     }
