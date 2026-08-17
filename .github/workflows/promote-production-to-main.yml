@@ -1,4 +1,4 @@
-name: Promote production → master
+name: Promote production → main
 
 on:
   workflow_dispatch: {}
@@ -65,12 +65,12 @@ jobs:
           cache: pnpm
           cache-dependency-path: backend/pnpm-lock.yaml
 
-      - name: Checkout master
-        run: git checkout master
+      - name: Checkout main
+        run: git checkout main
 
       - name: Merge production
         run: |
-          git merge --no-ff origin/production -m "chore: merge production to master [skip ci]"
+          git merge --no-ff origin/production -m "chore: merge production to main [skip ci]"
 
       - name: Install backend deps
         working-directory: ./backend
@@ -102,17 +102,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Push master
+      - name: Push main
         if: success()
-        run: git push origin master
+        run: git push origin main
 
       - name: Notify
         if: success()
-        run: echo "✓ Successfully synchronized production to master"
+        run: echo "✓ Successfully synchronized production to main"
 
       - name: Notify failure
         if: failure()
         run: |
-          echo "✗ Production to master synchronization failed"
+          echo "✗ Production to main synchronization failed"
           echo "Merge may have conflicts. Resolve manually."
         continue-on-error: true
