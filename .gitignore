@@ -86,3 +86,4 @@ __pycache__/
 
 # Auto-synced by memanto agent memory system
 MEMORY.md
+.env*
