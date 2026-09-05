@@ -25,6 +25,10 @@ jest.mock('@/lib/contexts/language-context', () => ({
         legalMiddle: 'and the',
         privacy: 'Privacy policy',
         legalSuffix: '.',
+        socialAccess: 'Social access',
+        google: 'Google/Gmail',
+        github: 'GitHub',
+        socialComingSoon: 'Coming soon',
       },
     },
   })),
@@ -44,13 +48,27 @@ jest.mock('@/lib/api/auth', () => ({
   },
 }))
 
+jest.mock('@/lib/auth/oauth', () => ({
+  isGoogleAuthEnabled: jest.fn(() => false),
+  isGithubAuthEnabled: jest.fn(() => false),
+  signInWithGoogle: jest.fn(),
+  signInWithGithub: jest.fn(),
+}))
+
 import { authApi } from '@/lib/api/auth'
+import { isGoogleAuthEnabled, isGithubAuthEnabled, signInWithGoogle, signInWithGithub } from '@/lib/auth/oauth'
 
 const mockLogin = authApi.login as jest.MockedFunction<typeof authApi.login>
+const mockIsGoogleAuthEnabled = isGoogleAuthEnabled as jest.MockedFunction<typeof isGoogleAuthEnabled>
+const mockIsGithubAuthEnabled = isGithubAuthEnabled as jest.MockedFunction<typeof isGithubAuthEnabled>
+const mockSignInWithGoogle = signInWithGoogle as jest.MockedFunction<typeof signInWithGoogle>
+const mockSignInWithGithub = signInWithGithub as jest.MockedFunction<typeof signInWithGithub>
 
 describe('LoginPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockIsGoogleAuthEnabled.mockReturnValue(false)
+    mockIsGithubAuthEnabled.mockReturnValue(false)
   })
 
   it('should render login form', () => {
@@ -198,5 +216,64 @@ describe('LoginPage', () => {
     render(<LoginPage />)
     expect(screen.getByRole('link', { name: /terms of service/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /privacy policy/i })).toBeInTheDocument()
+  })
+
+  describe('social login', () => {
+    it('should always render Google and GitHub buttons, disabled when providers are not configured', () => {
+      render(<LoginPage />)
+
+      const googleButton = screen.getByRole('button', { name: /google\/gmail/i })
+      const githubButton = screen.getByRole('button', { name: /github/i })
+
+      expect(googleButton).toBeInTheDocument()
+      expect(githubButton).toBeInTheDocument()
+      expect(googleButton).toBeDisabled()
+      expect(githubButton).toBeDisabled()
+      expect(googleButton).toHaveAttribute('title', 'Coming soon')
+      expect(githubButton).toHaveAttribute('title', 'Coming soon')
+    })
+
+    it('should enable Google button and start Google flow on click when Google is configured', async () => {
+      mockIsGoogleAuthEnabled.mockReturnValue(true)
+      const user = userEvent.setup()
+      render(<LoginPage />)
+
+      const googleButton = screen.getByRole('button', { name: /google\/gmail/i })
+      expect(googleButton).not.toBeDisabled()
+      expect(googleButton).not.toHaveAttribute('title')
+
+      await user.click(googleButton)
+      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1)
+    })
+
+    it('should enable GitHub button and start GitHub flow on click when GitHub is configured', async () => {
+      mockIsGithubAuthEnabled.mockReturnValue(true)
+      const user = userEvent.setup()
+      render(<LoginPage />)
+
+      const githubButton = screen.getByRole('button', { name: /github/i })
+      expect(githubButton).not.toBeDisabled()
+
+      await user.click(githubButton)
+      expect(mockSignInWithGithub).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not affect email/password login when social providers are disabled', async () => {
+      mockLogin.mockResolvedValue({} as never)
+      const user = userEvent.setup()
+      render(<LoginPage />)
+
+      const emailInput = screen.getByLabelText(/email/i)
+      const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' })
+      const submitButton = screen.getByRole('button', { name: /sign in/i })
+
+      await user.type(emailInput, 'test@example.com')
+      await user.type(passwordInput, 'password123')
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(mockLogin).toHaveBeenCalledWith({ email: 'test@example.com', password: 'password123' })
+      })
+    })
   })
 })
