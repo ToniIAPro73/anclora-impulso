@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authApi } from "@/lib/api/auth"
+import { isGoogleAuthEnabled, isGithubAuthEnabled, signInWithGoogle, signInWithGithub } from "@/lib/auth/oauth"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { uiMotion } from "@/lib/ui-motion"
 import { cn } from "@/lib/utils"
@@ -144,7 +145,7 @@ export function LoginPageContent({ defaultEmail = "", defaultPassword = "" }: Lo
                 </Link>
               </p>
             </div>
-            {/* Social login — disabled (OAuth not configured) */}
+            {/* Social login — contrato: SIEMPRE visible, disabled si OAuth no está configurado */}
             <div className="mt-2.5">
               <div className="flex items-center gap-3 mb-1.5">
                 <div className="h-px flex-1 bg-orange-200/40 dark:bg-orange-400/10" />
@@ -156,17 +157,19 @@ export function LoginPageContent({ defaultEmail = "", defaultPassword = "" }: Lo
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  disabled
-                  title={t.auth.socialComingSoon}
-                  className="flex h-9 items-center justify-center gap-2 rounded-2xl border border-orange-200/50 text-xs font-medium text-gray-400 opacity-50 cursor-not-allowed dark:border-orange-400/10 dark:text-gray-600"
+                  disabled={!isGoogleAuthEnabled()}
+                  title={isGoogleAuthEnabled() ? undefined : t.auth.socialComingSoon}
+                  onClick={signInWithGoogle}
+                  className="flex h-9 items-center justify-center gap-2 rounded-2xl border border-orange-200/50 text-xs font-medium text-gray-600 hover:bg-orange-50/60 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed dark:border-orange-400/10 dark:text-gray-300 dark:hover:bg-orange-400/5 dark:disabled:text-gray-600"
                 >
                   <Mail size={14} aria-hidden="true" /> {t.auth.google}
                 </button>
                 <button
                   type="button"
-                  disabled
-                  title={t.auth.socialComingSoon}
-                  className="flex h-9 items-center justify-center gap-2 rounded-2xl border border-orange-200/50 text-xs font-medium text-gray-400 opacity-50 cursor-not-allowed dark:border-orange-400/10 dark:text-gray-600"
+                  disabled={!isGithubAuthEnabled()}
+                  title={isGithubAuthEnabled() ? undefined : t.auth.socialComingSoon}
+                  onClick={signInWithGithub}
+                  className="flex h-9 items-center justify-center gap-2 rounded-2xl border border-orange-200/50 text-xs font-medium text-gray-600 hover:bg-orange-50/60 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed dark:border-orange-400/10 dark:text-gray-300 dark:hover:bg-orange-400/5 dark:disabled:text-gray-600"
                 >
                   <Github size={14} aria-hidden="true" /> {t.auth.github}
                 </button>

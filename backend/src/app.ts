@@ -12,6 +12,7 @@ import logger from './config/logger';
 
 // Importar rutas
 import authRoutes from './routes/auth.routes';
+import oauthRoutes from './routes/oauth.routes';
 import exercisesRoutes from './routes/exercises.routes';
 import workoutsRoutes from './routes/workouts.routes';
 import sessionsRoutes from './routes/sessions.routes';
@@ -143,6 +144,7 @@ logger.info('Application initialized', {
 
 // Rutas de la API
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', oauthRoutes);
 app.use('/api/exercises', exercisesRoutes);
 app.use('/api/workouts', workoutsRoutes);
 app.use('/api/sessions', sessionsRoutes);
