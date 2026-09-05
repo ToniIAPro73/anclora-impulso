@@ -73,7 +73,7 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
     where: { email: data.email },
   });
 
-  if (!user) {
+  if (!user || !user.passwordHash) {
     throw new AppError(401, 'Email o contraseña incorrectos');
   }
 

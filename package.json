@@ -14,6 +14,7 @@
     "test:ci": "jest --ci --coverage",
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
     "comfy:prepare": "node scripts/comfy/prepare-comfy-batch.mjs",
     "comfy:manifest": "node scripts/comfy/build-exercise-image-manifest.mjs",
     "comfy:prepare:missing": "node scripts/comfy/prepare-comfy-batch.mjs --missing-only",
@@ -86,6 +87,7 @@
     "zod": "3.25.67"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.9",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
