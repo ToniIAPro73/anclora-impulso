@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 10
 
@@ -47,15 +47,22 @@ jobs:
 
       - name: Install dependencies (backend)
         working-directory: ./backend
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prod=false
+
+      - name: Verify Prisma CLI
+        working-directory: ./backend
+        run: |
+          test -d node_modules
+          test -x node_modules/.bin/prisma
+          pnpm exec prisma --version
 
       - name: Generate Prisma client
         working-directory: ./backend
-        run: pnpm prisma:generate
+        run: pnpm exec prisma generate
 
       - name: Apply database migrations
         working-directory: ./backend
-        run: pnpm prisma:deploy
+        run: pnpm exec prisma migrate deploy
 
       - name: Run backend tests
         working-directory: ./backend
