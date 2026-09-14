@@ -3,6 +3,7 @@
 import { ProgressTracker } from "@/components/progress-tracker"
 import { ProtectedDashboardPage } from "@/components/protected-dashboard-page"
 import { useLanguage } from "@/lib/contexts/language-context"
+import { HealthPlanCrossLink } from "@/components/health-plan-cross-link"
 
 export default function ProgressPage() {
   const { language } = useLanguage()
@@ -22,6 +23,7 @@ export default function ProgressPage() {
           </p>
         </div>
         <ProgressTracker />
+        <div className="mt-6"><HealthPlanCrossLink context="progress" /></div>
       </div>
     </ProtectedDashboardPage>
   )

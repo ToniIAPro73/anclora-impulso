@@ -7,6 +7,7 @@ import { ProtectedDashboardPage } from "@/components/protected-dashboard-page"
 import { useGamificationStatus, useAchievements, useXPHistory } from "@/hooks/use-gamification"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { Trophy, Star, Flame, Zap, Lock, Award, TrendingUp } from "lucide-react"
+import { HealthPlanCrossLink } from "@/components/health-plan-cross-link"
 import * as LucideIcons from "lucide-react"
 
 function DynamicIcon({ name, className }: { name: string; className?: string }) {
@@ -45,6 +46,7 @@ function AchievementsPageContent() {
           {t ? 'Niveles, XP, rachas y logros desbloqueados' : 'Levels, XP, streaks, and unlocked achievements'}
         </p>
       </div>
+      <HealthPlanCrossLink context="gamification" />
 
       {/* Status Cards */}
       {status && (

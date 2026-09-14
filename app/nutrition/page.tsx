@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/contexts/auth-context"
 import { Apple, ChefHat, Flame, Beef, Wheat, Droplets, Plus, Sparkles, Calendar, UtensilsCrossed, Clock3, TimerReset } from "lucide-react"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { isProfileReadyForPlanGeneration } from "@/lib/user-profile"
+import { HealthPlanCrossLink } from "@/components/health-plan-cross-link"
 import { trackProductEvent } from "@/lib/product-events"
 import {
   ANCLORA_MODAL_ACTIONS_CLASS,
@@ -661,6 +662,8 @@ function NutritionPageContent() {
           </CardContent>
         </Card>
       )}
+
+      <HealthPlanCrossLink context="nutrition" />
     </div>
   )
 }
