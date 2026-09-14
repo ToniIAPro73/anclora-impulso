@@ -1,0 +1,27 @@
+{
+  "audit_revision": "FINAL_BLOCKER_CLOSURE",
+  "environment": "PRODUCTION",
+  "canonical_url": "https://impulso.anclora.com",
+  "fixture_id": "d050f812-ce9d-4224-8393-918e62747e42",
+  "browser": "Chromium/CDP agent-browser",
+  "records": [
+    {"id":"E-C01","type":"browser/API","journey":"safe fixture create","viewport":"n/a","theme":"dark","locale":"es","observation":"POST /api/workouts 201; synthetic 4x3 fixture"},
+    {"id":"E-C02","type":"screenshot","file":"workout-review-es-1440.png","journey":"workout review","viewport":"1440x900","theme":"dark","locale":"es","observation":"fixture review renders 4 exercises"},
+    {"id":"E-C03","type":"screenshot","file":"workout-start-es-1440.png","journey":"workout start","viewport":"1440x900","theme":"dark","locale":"es","observation":"active first exercise and set ledger"},
+    {"id":"E-C04","type":"screenshot","file":"workout-execution-en-dark-1440.png","journey":"workout execution","viewport":"1440x900","theme":"dark","locale":"en","observation":"desktop controls and contextual names"},
+    {"id":"E-C05","type":"network","journey":"production authenticated smoke","viewport":"390x844","theme":"dark","locale":"es","observation":"auth/profile/workout/session calls 200/201; OPTIONS 204"},
+    {"id":"E-C06","type":"browser","journey":"rest timer","viewport":"390x844","theme":"dark","locale":"es","observation":"start changes to pause; reset remains available"},
+    {"id":"E-C07","type":"browser","journey":"exercise navigation","viewport":"390x844","theme":"dark","locale":"es","observation":"next and previous semantics verified"},
+    {"id":"E-C08","type":"browser","journey":"set completion","viewport":"390x844","theme":"dark","locale":"es","observation":"sets change to hecha with exercise/set context"},
+    {"id":"E-C09","type":"browser","journey":"multi-exercise completion","viewport":"390x844","theme":"dark","locale":"es","observation":"12 synthetic sets completed"},
+    {"id":"E-C10","type":"browser","journey":"safe exit","viewport":"390x844","theme":"dark","locale":"es","observation":"exit returns to review and keeps draft"},
+    {"id":"E-C11","type":"browser","journey":"resume","viewport":"390x844","theme":"dark","locale":"es","observation":"reopen restores completed-set state"},
+    {"id":"E-C12","type":"screenshot","file":"workout-completion-es-390.png","journey":"completion","viewport":"390x844","theme":"dark","locale":"es","observation":"POST /api/sessions 201 and redirect to progress"},
+    {"id":"E-C13","type":"accessibility-tree","journey":"workout accessibility","viewport":"390x844","theme":"dark","locale":"es","observation":"inputs expose exercise, set and field type"},
+    {"id":"E-C14","type":"axe","journey":"workout accessibility","viewport":"1440x900","theme":"dark","locale":"en","observation":"zero critical/serious violations; gradient/landmark gaps documented"},
+    {"id":"E-C15","type":"measurement","journey":"responsive matrix","viewport":"1920x1080..390x844","theme":"light/dark","locale":"es/en","observation":"seven viewports; no horizontal overflow"},
+    {"id":"E-C16","type":"browser/screenshot","file":"health-plan-light-en-1440.png","journey":"Ruta Vital enrollment/home","viewport":"1440x900","theme":"light","locale":"en","observation":"Full/Minimum Version and next action visible"},
+    {"id":"E-C17","type":"browser/screenshot","file":"health-plan-dark-en-1440.png","journey":"theme/locale","viewport":"1440x900","theme":"dark","locale":"en","observation":"private health-plan surface renders in dark EN"}
+  ],
+  "prior_evidence_reused": "anclora-impulso-final-release-ux-reaudit-2026-09-14 evidence index"
+}

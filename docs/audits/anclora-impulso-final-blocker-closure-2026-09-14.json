@@ -1,0 +1,84 @@
+{
+  "audit_revision": "FINAL_BLOCKER_CLOSURE",
+  "date": "2026-09-15",
+  "status": "PASS_WITH_JUSTIFIED_EXTERNAL_GAPS",
+  "repository": "ToniIAPro73/anclora-impulso",
+  "audited_implementation_head": "e398bffa1e4dddfd3ec6149c35a7d9f7109182c7",
+  "canonical_url": "https://impulso.anclora.com",
+  "backend_url": "https://anclora-impulso.onrender.com/api",
+  "skill": {
+    "contract_version": "1.5.0",
+    "manifest_version": "1.4.0",
+    "runtime_version": "1.5.0 candidate",
+    "registry_version": "1.3.0",
+    "path": "/Users/toni/Developer/anclora/anclora-infrastructure/skills/ux-product-experience-review",
+    "hashes": {
+      "SKILL.md": "d53718eac916e117d72ec1196a1d6ffc648fe3f842c7db9752fe9903fb7bf12c",
+      "skill.yaml": "c91229de6681de319bc6474908b0b42015272c77dafde74effc7b2dae4755850",
+      "release_notes": "b258d1ddc21b994ef9afd2ae2bf56fe902608f62b7c6d50ffd3c03b3f313e969"
+    },
+    "version_drift": true
+  },
+  "fixture": {
+    "id": "d050f812-ce9d-4224-8393-918e62747e42",
+    "name": "CERT-FIXTURE-20260914-4EX-3SET",
+    "create": "PASS",
+    "shape": "4 exercises x 3 sets",
+    "use": "PASS",
+    "reset": "PASS",
+    "cleanup": "DEFERRED_AUTH_RATE_LIMIT",
+    "account_scoped": true,
+    "synthetic": true,
+    "public_endpoint": false
+  },
+  "release_gates": {
+    "production_auth": "PASS",
+    "session": "PASS_DURING_SMOKE",
+    "api": "PASS",
+    "cors": "PASS",
+    "workout_review": "PASS",
+    "workout_execution": "PASS",
+    "exit_resume": "PASS",
+    "completion": "PASS",
+    "workout_accessibility": "PASS_WITH_TOOL_GAPS",
+    "dialog_accessibility": "PASS_READONLY_NO_MODAL_REACHED",
+    "responsive": "PASS",
+    "light_dark": "PASS_READONLY",
+    "es_en": "PASS_READONLY",
+    "network": "PASS",
+    "console": "PASS",
+    "critical_findings": 0,
+    "high_findings": 0
+  },
+  "responsive": {
+    "viewports": ["1920x1080", "1440x900", "1366x768", "1024x768", "768x1024", "430x932", "390x844"],
+    "horizontal_overflow_observed": false,
+    "workout_all_viewports": true
+  },
+  "findings": {
+    "UX-01": {"previous": "PARTIALLY_RESOLVED", "current": "PARTIALLY_RESOLVED", "severity": "MEDIUM", "blocking": false},
+    "UX-02": {"previous": "STILL_PRESENT", "current": "STILL_PRESENT", "severity": "MEDIUM", "blocking": false},
+    "UX-03": {"previous": "PARTIALLY_RESOLVED", "current": "RESOLVED", "severity": "LOW", "blocking": false},
+    "UX-04": {"previous": "STILL_PRESENT", "current": "STILL_PRESENT", "severity": "MEDIUM", "blocking": false},
+    "UX-05": {"previous": "PARTIAL", "current": "PARTIAL", "severity": "MEDIUM", "blocking": false},
+    "UX-06": {"previous": "STILL_PRESENT", "current": "STILL_PRESENT", "severity": "MEDIUM", "blocking": false},
+    "UX-07": {"previous": "REFINED_PARTIAL", "current": "REFINED_PARTIAL", "severity": "MEDIUM", "blocking": false},
+    "UX-08": {"previous": "REFINED_STILL_PRESENT", "current": "REFINED_STILL_PRESENT", "severity": "MEDIUM", "blocking": false},
+    "UX-09": {"previous": "RESOLVED_READONLY", "current": "RESOLVED_READONLY", "severity": "LOW", "blocking": false},
+    "UX-10": {"previous": "STILL_PRESENT", "current": "STILL_PRESENT", "severity": "LOW", "blocking": false},
+    "UX-11": {"previous": "STILL_PRESENT", "current": "STILL_PRESENT", "severity": "LOW", "blocking": false}
+  },
+  "counts": {
+    "new_screenshots": 8,
+    "new_evidence_records": 17,
+    "critical_findings": 0,
+    "high_findings": 0,
+    "medium_findings": 7,
+    "low_findings": 4
+  },
+  "render_health_endpoints": {"classification": "LEGACY_DEAD_ENDPOINT", "release_impact": "NON_BLOCKING"},
+  "product_code_changed": true,
+  "functional_commits": ["4c82e9d", "4b98fe3", "e398bff"],
+  "documentation_commit": "PENDING",
+  "known_gaps": ["fixture cleanup pending authenticated maintenance session", "Render login 429 after repeated smoke authentication", "axe contrast heuristic on gradients", "no modal reached in exact smoke", "offline installability not claimed"]
+}
