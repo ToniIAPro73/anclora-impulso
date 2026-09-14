@@ -32,6 +32,8 @@ export function DashboardUserMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
+          aria-label={`${t.navigation.profile}: ${displayName}`}
+          title={`${t.navigation.profile}: ${displayName}`}
           className="h-12 rounded-full border-orange-200/80 bg-white/80 pl-1 pr-3 dark:border-orange-400/10 dark:bg-slate-950/70"
         >
           <UserAvatar className="size-9" />

@@ -245,13 +245,13 @@ function ActiveWorkoutPageContent() {
       <Card className="relative z-30 border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
         <CardContent className="grid gap-4 px-4 py-4 md:grid-cols-[1.2fr_0.8fr] md:items-center">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <p id="session-progress-label" className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               {isSpanish ? "Progreso de la sesión" : "Session progress"}
             </p>
             <p className="mt-2 text-3xl font-semibold">{completionRate}%</p>
             <Progress
               value={completionRate}
-              aria-label={isSpanish ? "Progreso de la sesión" : "Session progress"}
+              aria-labelledby="session-progress-label"
               className="mt-3 h-2.5 bg-white/10"
             />
           </div>
