@@ -9,6 +9,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Home,
+  HeartPulse,
   Menu,
   Trophy,
   TrendingUp,
@@ -39,6 +40,7 @@ export function Navigation({ isCollapsed, setIsCollapsed }: NavigationProps) {
     { name: t.navigation.exercises, href: "/exercises", icon: BookOpen },
     { name: t.navigation.progress, href: "/progress", icon: TrendingUp },
     { name: t.navigation.achievements, href: "/achievements", icon: Trophy },
+    { name: t.navigation.healthPlans, href: "/health-plans", icon: HeartPulse },
   ]
 
   const toggleSidebar = () => {

@@ -43,6 +43,39 @@ export interface ExercisesResponse {
   };
 }
 
+export interface HealthPlanDefinition {
+  id: string;
+  key: string;
+  name: string;
+  nameEs: string;
+  nameEn: string;
+  descriptionEs: string;
+  descriptionEn: string;
+  minAge: number;
+  maxAge: number;
+  status: string;
+  pillars: Array<{ key: string; name: string; nameEs: string; nameEn: string }>;
+}
+
+export interface HealthPlanHome {
+  enrollment: { id: string; status: string; currentWeek: number; safetyCategory: string; adaptation: string; onboardingComplete: boolean };
+  phase: { key: string; name: string; durationLabel: string };
+  week: { number: number; objective: string; fullVersion: Record<string, number | boolean>; minimumVersion: Record<string, number | boolean>; progress: number };
+  actions: Array<{ id: string; key: string; pillar: string; title: string; description: string; route: string | null; status: string; completedAt: string | null }>;
+  nextBestAction: { id: string; label: string; href: string | null } | null;
+  pillars: Array<{ key: string; name: string; state: string }>;
+}
+
+export interface HealthPlanOnboardingInput {
+  goal: 'strength' | 'energy' | 'body_composition' | 'mobility' | 'endurance' | 'general_health';
+  baselineActivity: 'low' | 'some' | 'irregular' | 'active';
+  availableTime: '15' | '30' | '45_60';
+  preferences: string[];
+  equipment: string[];
+  knownLimitations: string[];
+  safetySignals: string[];
+}
+
 export interface EditorialSummary {
   total: number;
   averageQualityScore: number;
@@ -1265,6 +1298,38 @@ export const gamificationApi = {
 
   async getXPHistory(limit = 20): Promise<XPEvent[]> {
     return apiClient.get<XPEvent[]>(`/gamification/xp-history?limit=${limit}`);
+  },
+};
+
+// ========== HEALTH PLANS API ==========
+
+export const healthPlansApi = {
+  async listDefinitions(locale: 'es' | 'en' = 'es'): Promise<HealthPlanDefinition[]> {
+    return apiClient.get<HealthPlanDefinition[]>(`/health-plans/definitions?locale=${locale}`);
+  },
+
+  async getEnrollment(): Promise<unknown | null> {
+    return apiClient.get<unknown | null>('/health-plans/enrollment');
+  },
+
+  async enroll(): Promise<{ id: string; status: string }> {
+    return apiClient.post<{ id: string; status: string }>('/health-plans/enrollment');
+  },
+
+  async saveOnboarding(input: HealthPlanOnboardingInput): Promise<{ safetyCategory: string; safetyReasonCodes: string[]; safetyMessage: string }> {
+    return apiClient.post('/health-plans/onboarding', input);
+  },
+
+  async getHome(locale: 'es' | 'en' = 'es'): Promise<HealthPlanHome | null> {
+    return apiClient.get<HealthPlanHome | null>(`/health-plans/home?locale=${locale}`);
+  },
+
+  async completeAction(actionId: string): Promise<{ status: string }> {
+    return apiClient.post(`/health-plans/actions/${actionId}/complete`);
+  },
+
+  async updateStatus(status: 'active' | 'paused' | 'left'): Promise<{ status: string }> {
+    return apiClient.put('/health-plans/enrollment/status', { status });
   },
 };
 

@@ -78,6 +78,10 @@ model User {
   kudos Kudos[]
   challengeParticipants ChallengeParticipant[]
 
+  // Health Plans — opt-in, additive and independent from existing fitness data
+  healthPlanEnrollments HealthPlanEnrollment[]
+  healthPlanProfiles HealthPlanProfile[]
+
   @@map("users")
 }
 
@@ -898,4 +902,189 @@ model XPEvent {
   @@index([userId])
   @@index([createdAt])
   @@map("xp_events")
+}
+
+// ==========================================
+// HEALTH PLANS — RUTA VITAL 50–60
+// ==========================================
+
+model HealthPlanDefinition {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  nameEs      String
+  nameEn      String
+  descriptionEs String
+  descriptionEn String
+  minAge      Int
+  maxAge      Int
+  status      String   @default("draft")
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  phases      HealthPlanPhase[]
+  pillars     HealthPlanPillar[]
+  content     HealthPlanContentReference[]
+  enrollments HealthPlanEnrollment[]
+  @@index([status])
+  @@map("health_plan_definitions")
+}
+
+model HealthPlanPhase {
+  id String @id @default(uuid())
+  planId String
+  key String
+  nameEs String
+  nameEn String
+  descriptionEs String
+  descriptionEn String
+  order Int
+  durationLabel String
+  plan HealthPlanDefinition @relation(fields: [planId], references: [id], onDelete: Cascade)
+  weeks HealthPlanWeek[]
+  @@unique([planId, key])
+  @@index([planId, order])
+  @@map("health_plan_phases")
+}
+
+model HealthPlanWeek {
+  id String @id @default(uuid())
+  phaseId String
+  weekNumber Int
+  objectiveEs String
+  objectiveEn String
+  fullVersion Json
+  minimumVersion Json
+  safetyConstraints String[] @default([])
+  progressSignals String[] @default([])
+  phase HealthPlanPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  actions HealthPlanAction[]
+  weekStatus HealthPlanWeekStatus[]
+  @@unique([phaseId, weekNumber])
+  @@index([phaseId, weekNumber])
+  @@map("health_plan_weeks")
+}
+
+model HealthPlanAction {
+  id String @id @default(uuid())
+  weekId String
+  key String
+  pillar String
+  titleEs String
+  titleEn String
+  descriptionEs String
+  descriptionEn String
+  actionType String
+  route String?
+  minimumEligible Boolean @default(false)
+  order Int
+  week HealthPlanWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  statuses HealthPlanActionStatus[]
+  @@unique([weekId, key])
+  @@index([weekId, order])
+  @@map("health_plan_actions")
+}
+
+model HealthPlanPillar {
+  id String @id @default(uuid())
+  planId String
+  key String
+  nameEs String
+  nameEn String
+  order Int
+  plan HealthPlanDefinition @relation(fields: [planId], references: [id], onDelete: Cascade)
+  @@unique([planId, key])
+  @@map("health_plan_pillars")
+}
+
+model HealthPlanContentReference {
+  id String @id @default(uuid())
+  planId String
+  key String
+  locale String
+  title String
+  body String
+  source String
+  evidenceLevel String
+  claimType String
+  safetyLevel String
+  contentOwner String
+  lastReviewedAt DateTime
+  plan HealthPlanDefinition @relation(fields: [planId], references: [id], onDelete: Cascade)
+  @@unique([planId, key, locale])
+  @@index([planId, locale])
+  @@map("health_plan_content_references")
+}
+
+model HealthPlanEnrollment {
+  id String @id @default(uuid())
+  userId String
+  planId String
+  status String @default("active")
+  safetyCategory String @default("SELF_MANAGED")
+  safetyReasonCodes String[] @default([])
+  currentWeek Int @default(1)
+  joinedAt DateTime @default(now())
+  pausedAt DateTime?
+  leftAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan HealthPlanDefinition @relation(fields: [planId], references: [id], onDelete: Restrict)
+  profile HealthPlanProfile?
+  weekStatus HealthPlanWeekStatus[]
+  actionStatus HealthPlanActionStatus[]
+  @@unique([userId, planId])
+  @@index([userId, status])
+  @@map("health_plan_enrollments")
+}
+
+model HealthPlanProfile {
+  id String @id @default(uuid())
+  userId String
+  enrollmentId String @unique
+  goal String
+  baselineActivity String
+  availableTime String
+  preferences String[] @default([])
+  equipment String[] @default([])
+  knownLimitations String[] @default([])
+  adaptation String @default("MAINTAIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment HealthPlanEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  @@unique([userId, enrollmentId])
+  @@index([userId])
+  @@map("health_plan_profiles")
+}
+
+model HealthPlanWeekStatus {
+  id String @id @default(uuid())
+  enrollmentId String
+  weekId String
+  status String @default("current")
+  startedAt DateTime?
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  enrollment HealthPlanEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  week HealthPlanWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  @@unique([enrollmentId, weekId])
+  @@index([enrollmentId, status])
+  @@map("health_plan_week_status")
+}
+
+model HealthPlanActionStatus {
+  id String @id @default(uuid())
+  enrollmentId String
+  actionId String
+  status String @default("pending")
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  enrollment HealthPlanEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  action HealthPlanAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  @@unique([enrollmentId, actionId])
+  @@index([enrollmentId, status])
+  @@map("health_plan_action_status")
 }
