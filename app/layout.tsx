@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { LanguageProvider } from "@/lib/contexts/language-context"
 import { ThemeProvider } from "@/lib/contexts/theme-context"
 import { CookieConsent } from "@/components/cookie-consent"
+import { DocumentLanguageSync } from "@/components/document-language-sync"
 import { IMPULSO_BRAND } from "@/lib/impulso-brand"
 import "./globals.css"
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className={`font-sans ${dmSans.variable} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
           <LanguageProvider>
+            <DocumentLanguageSync />
             {children}
             <CookieConsent />
           </LanguageProvider>
