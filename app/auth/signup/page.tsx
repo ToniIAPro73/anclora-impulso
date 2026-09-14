@@ -11,6 +11,7 @@ import { useState } from "react"
 import { authApi } from "@/lib/api/auth"
 import { BrandLogo } from "@/components/brand-logo"
 import { useLanguage } from "@/lib/contexts/language-context"
+import { SocialAuthButtons } from "@/components/social-auth-buttons"
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
@@ -154,6 +155,7 @@ export default function SignupPage() {
                 {isLoading ? t.auth.creatingAccount || "Creando cuenta..." : t.auth.createAccount || "Crear Cuenta"}
               </Button>
             </form>
+            <div className="mt-4 space-y-2"><div className="flex items-center gap-3"><div className="h-px flex-1 bg-orange-200/40 dark:bg-orange-400/10" /><span className="text-[10px] uppercase tracking-wider text-gray-400">{t.auth.socialAccess}</span><div className="h-px flex-1 bg-orange-200/40 dark:bg-orange-400/10" /></div><SocialAuthButtons /></div>
             <div className="mt-3 text-center">
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 {t.auth.alreadyHaveAccount || "¿Ya tienes cuenta?"}{" "}

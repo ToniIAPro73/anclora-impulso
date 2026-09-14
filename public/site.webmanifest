@@ -3,7 +3,7 @@
   "short_name": "Impulso",
   "description": "Entrenamientos personalizados con IA y seguimiento inteligente de progreso",
   "lang": "es",
-  "start_url": "/auth/login",
+  "start_url": "/landing",
   "display": "standalone",
   "background_color": "#020b2d",
   "theme_color": "#020b2d",
