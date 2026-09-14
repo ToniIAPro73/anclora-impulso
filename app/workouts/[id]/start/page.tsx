@@ -49,6 +49,7 @@ function ActiveWorkoutPageContent() {
   const [isSaving, setIsSaving] = useState(false)
   const [restSeconds, setRestSeconds] = useState(0)
   const [currentRestLabel, setCurrentRestLabel] = useState("")
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
 
   const { data: workout, isLoading, error } = useQuery({
     queryKey: ["workout", workoutId],
@@ -241,7 +242,7 @@ function ActiveWorkoutPageContent() {
         </div>
       </div>
 
-      <Card className="border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
+      <Card className="sticky top-0 z-30 border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
         <CardContent className="grid gap-4 px-4 py-4 md:grid-cols-[1.2fr_0.8fr] md:items-center">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -272,8 +273,21 @@ function ActiveWorkoutPageContent() {
         </CardContent>
       </Card>
 
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-orange-200/70 bg-white/80 p-3 shadow-sm dark:border-orange-400/10 dark:bg-slate-900/75">
+        <Button variant="outline" className="min-h-11 rounded-2xl" disabled={currentExerciseIndex === 0} onClick={() => setCurrentExerciseIndex((current) => Math.max(0, current - 1))}>
+          {isSpanish ? "Ejercicio anterior" : "Previous exercise"}
+        </Button>
+        <p className="text-center text-sm font-semibold text-slate-700 dark:text-slate-200">
+          {isSpanish ? "Ejercicio" : "Exercise"} {currentExerciseIndex + 1}/{workout.exercises.length}
+        </p>
+        <Button variant="outline" className="min-h-11 rounded-2xl" disabled={currentExerciseIndex === workout.exercises.length - 1} onClick={() => setCurrentExerciseIndex((current) => Math.min(workout.exercises.length - 1, current + 1))}>
+          {isSpanish ? "Siguiente ejercicio" : "Next exercise"}
+        </Button>
+      </div>
+
       <div className="space-y-4">
-        {workout.exercises.map((workoutExercise, exerciseIndex) => {
+        {workout.exercises.filter((_, index) => index === currentExerciseIndex).map((workoutExercise) => {
+          const exerciseIndex = currentExerciseIndex
           const localizedExercise = getLocalizedExerciseCopy(workoutExercise.exercise, labelLanguage)
 
           return (
@@ -298,7 +312,8 @@ function ActiveWorkoutPageContent() {
             </CardHeader>
             <CardContent className="space-y-3">
               {(setState[workoutExercise.exerciseId] ?? []).map((set, setIndex) => (
-                <div key={`${workoutExercise.exerciseId}-${setIndex}`} className="grid gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/80 p-3 dark:border-slate-700/60 dark:bg-slate-900/30 xl:grid-cols-[auto_minmax(0,1fr)_100px_120px_90px_90px_110px_auto_auto] xl:items-center">
+                <fieldset key={`${workoutExercise.exerciseId}-${setIndex}`} className="grid gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/80 p-3 dark:border-slate-700/60 dark:bg-slate-900/30 xl:grid-cols-[auto_minmax(0,1fr)_100px_120px_90px_90px_110px_auto_auto] xl:items-center">
+                  <legend className="sr-only">{localizedExercise.name} · {isSpanish ? `Serie ${setIndex + 1}` : `Set ${setIndex + 1}`}</legend>
                   <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                     {isSpanish ? `Serie ${setIndex + 1}` : `Set ${setIndex + 1}`}
                   </div>
@@ -307,23 +322,23 @@ function ActiveWorkoutPageContent() {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Reps" : "Reps"}</Label>
-                    <Input value={set.reps} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { reps: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "repeticiones" : "repetitions"}`} value={set.reps} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { reps: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Peso (kg)" : "Weight (kg)"}</Label>
-                    <Input value={set.weight} inputMode="decimal" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { weight: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "peso en kilogramos" : "weight in kilograms"}`} value={set.weight} inputMode="decimal" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { weight: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">RIR</Label>
-                    <Input value={set.rir ?? ""} inputMode="numeric" placeholder="0-5" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rir: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RIR`} value={set.rir ?? ""} inputMode="numeric" placeholder="0-5" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rir: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">RPE</Label>
-                    <Input value={set.rpe ?? ""} inputMode="decimal" placeholder="0-10" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rpe: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RPE`} value={set.rpe ?? ""} inputMode="decimal" placeholder="0-10" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rpe: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Desc. (s)" : "Rest (s)"}</Label>
-                    <Input value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "descanso en segundos" : "rest in seconds"}`} value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
                   </div>
                   <Button variant={set.completed ? "default" : "outline"} className="rounded-2xl" onClick={() => updateSet(workoutExercise.exerciseId, setIndex, { completed: !set.completed })}>
                     {set.completed ? (isSpanish ? "Hecha" : "Done") : (isSpanish ? "Marcar" : "Mark")}
@@ -331,7 +346,7 @@ function ActiveWorkoutPageContent() {
                   <Button variant="ghost" className="rounded-2xl" onClick={() => startRest(Number(set.restSeconds) || workoutExercise.rest, `${localizedExercise.name} · ${isSpanish ? "serie" : "set"} ${setIndex + 1}`)}>
                     {isSpanish ? "Descanso" : "Rest"}
                   </Button>
-                </div>
+                </fieldset>
               ))}
             </CardContent>
           </Card>
