@@ -14,13 +14,14 @@ export function HealthPlanHome() {
   const { t, language } = useLanguage()
   const { home, definition, isLoading, error, enroll, saveOnboarding, completeAction, isEnrolling, isCompleting, isSavingOnboarding } = useHealthPlan()
   const [form, setForm] = useState({ goal: "general_health" as const, baselineActivity: "irregular" as const, availableTime: "30" as const, limitations: "", safetyReview: false })
+  const contentShellClass = "relative mx-auto w-full max-w-6xl overflow-visible px-6 py-6 sm:px-8 lg:px-10"
 
-  if (isLoading) return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-orange-500" aria-label={t.healthPlans.loading} /></div>
-  if (error) return <Card><CardContent className="p-6 text-sm text-red-600 dark:text-red-300">{t.healthPlans.error}</CardContent></Card>
+  if (isLoading) return <div className={`${contentShellClass} flex min-h-64 items-center justify-center`}><Loader2 className="h-6 w-6 animate-spin text-orange-500" aria-label={t.healthPlans.loading} /></div>
+  if (error) return <div className={contentShellClass}><Card className="overflow-visible"><CardContent className="p-6 text-sm text-red-600 dark:text-red-300">{t.healthPlans.error}</CardContent></Card></div>
 
   if (!home) {
     return (
-      <Card className="overflow-hidden border-orange-200/70 bg-white/85 dark:border-orange-400/15 dark:bg-slate-900/75">
+      <div className={contentShellClass}><Card className="overflow-visible border-orange-200/70 bg-white/85 dark:border-orange-400/15 dark:bg-slate-900/75">
         <CardHeader>
           <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-300"><HeartPulse className="h-6 w-6" /></div>
           <CardTitle>{t.healthPlans.discoverTitle}</CardTitle>
@@ -30,13 +31,13 @@ export function HealthPlanHome() {
           <p className="text-sm text-slate-600 dark:text-slate-300">{t.healthPlans.safetyNote}</p>
           <Button onClick={() => void enroll()} disabled={isEnrolling}>{isEnrolling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t.healthPlans.join}</Button>
         </CardContent>
-      </Card>
+      </Card></div>
     )
   }
 
   if (!home.enrollment.onboardingComplete) {
     return (
-      <Card className="border-orange-200/70 bg-white/85 dark:border-orange-400/15 dark:bg-slate-900/75">
+      <div className={contentShellClass}><Card className="overflow-visible border-orange-200/70 bg-white/85 dark:border-orange-400/15 dark:bg-slate-900/75">
         <CardHeader><CardTitle>{t.healthPlans.setupTitle}</CardTitle><CardDescription>{t.healthPlans.setupNote}</CardDescription></CardHeader>
         <CardContent><form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); void saveOnboarding({ goal: form.goal, baselineActivity: form.baselineActivity, availableTime: form.availableTime, preferences: [], equipment: [], knownLimitations: form.limitations.split(",").map((value) => value.trim()).filter(Boolean), safetySignals: form.safetyReview ? ["recent_injury"] : [] }) }}>
           <label className="grid gap-2 text-sm font-medium">{t.healthPlans.goal}<select className="h-10 rounded-md border bg-transparent px-3" value={form.goal} onChange={(event) => setForm((current) => ({ ...current, goal: event.target.value as typeof current.goal }))}><option value="general_health">{language === "es" ? "Salud general" : "General health"}</option><option value="strength">{language === "es" ? "Fuerza" : "Strength"}</option><option value="mobility">{language === "es" ? "Movilidad" : "Mobility"}</option><option value="energy">{language === "es" ? "Energía" : "Energy"}</option></select></label>
@@ -46,13 +47,13 @@ export function HealthPlanHome() {
           <label className="flex items-start gap-2 text-sm sm:col-span-2"><input type="checkbox" className="mt-1 h-4 w-4" checked={form.safetyReview} onChange={(event) => setForm((current) => ({ ...current, safetyReview: event.target.checked }))} />{t.healthPlans.safetyQuestion}</label>
           <Button type="submit" disabled={isSavingOnboarding} className="sm:col-span-2 sm:w-fit">{isSavingOnboarding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t.healthPlans.saveSetup}</Button>
         </form></CardContent>
-      </Card>
+      </Card></div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-orange-200/70 bg-white/85 dark:border-orange-400/15 dark:bg-slate-900/75">
+    <div className={`${contentShellClass} space-y-6`}>
+      <Card className="overflow-visible border-orange-200/70 bg-white/85 dark:border-orange-400/15 dark:bg-slate-900/75">
         <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div><Badge className="mb-3 bg-orange-500 text-white">{home.phase.name}</Badge><CardTitle className="text-2xl">{t.healthPlans.home}</CardTitle><CardDescription>{t.healthPlans.subtitle}</CardDescription></div>
           <div className="rounded-2xl bg-orange-500/10 p-3 text-orange-600 dark:text-orange-300"><HeartPulse className="h-7 w-7" /></div>
@@ -65,7 +66,7 @@ export function HealthPlanHome() {
           {home.enrollment.safetyCategory !== "SELF_MANAGED" && <div className="flex gap-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"><ShieldCheck className="h-5 w-5 shrink-0" />{t.healthPlans.safetyReview}</div>}
         </CardContent>
       </Card>
-      <div><h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">{t.healthPlans.week}</h2><div className="grid gap-3 md:grid-cols-2">{home.actions.map((action) => <Card key={action.id} className="border-slate-200/80 dark:border-slate-700"><CardContent className="flex items-start justify-between gap-4 p-4"><div><div className="flex items-center gap-2"><p className="font-semibold text-slate-900 dark:text-white">{action.title}</p>{action.status === "completed" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</div><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{action.description}</p></div>{action.status !== "completed" && <Button variant="outline" size="sm" disabled={isCompleting} onClick={() => void completeAction(action.id)}>{t.healthPlans.complete}</Button>}</CardContent></Card>)}</div></div>
+      <section className="overflow-visible px-2 py-2 sm:px-3"><h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">{t.healthPlans.week}</h2><div className="grid gap-4 overflow-visible pb-2 sm:gap-5 md:grid-cols-2">{home.actions.map((action) => <Card key={action.id} className="ui-motion-card-subtle relative z-0 overflow-visible border-slate-200/80 shadow-sm hover:z-10 focus-within:z-10 focus-within:shadow-[var(--motion-card-shadow)] dark:border-slate-700"><CardContent className="flex items-start justify-between gap-4 p-4"><div className="min-w-0"><div className="flex items-center gap-2"><p className="font-semibold text-slate-900 dark:text-white">{action.title}</p>{action.status === "completed" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}</div><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{action.description}</p></div>{action.status !== "completed" && <Button variant="outline" size="sm" disabled={isCompleting} onClick={() => void completeAction(action.id)}>{t.healthPlans.complete}</Button>}</CardContent></Card>)}</div></section>
       <p className="text-xs text-slate-500 dark:text-slate-400">{t.healthPlans.safetyNote}</p>
     </div>
   )
