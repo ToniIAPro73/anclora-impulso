@@ -242,7 +242,7 @@ function ActiveWorkoutPageContent() {
         </div>
       </div>
 
-      <Card className="sticky top-0 z-30 border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
+      <Card className="relative z-30 border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
         <CardContent className="grid gap-4 px-4 py-4 md:grid-cols-[1.2fr_0.8fr] md:items-center">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -261,10 +261,24 @@ function ActiveWorkoutPageContent() {
                 <p className="mt-1 text-xs text-slate-300">{currentRestLabel || (isSpanish ? "Listo para el siguiente bloque." : "Ready for the next block.")}</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="secondary" size="icon" className="rounded-full bg-white/12 text-white hover:bg-white/18" onClick={() => setRestSeconds((current) => (current > 0 ? 0 : 60))}>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full bg-white/12 text-white hover:bg-white/18"
+                  aria-label={restSeconds > 0 ? (isSpanish ? "Pausar descanso" : "Pause rest") : (isSpanish ? "Iniciar descanso" : "Start rest")}
+                  title={restSeconds > 0 ? (isSpanish ? "Pausar descanso" : "Pause rest") : (isSpanish ? "Iniciar descanso" : "Start rest")}
+                  onClick={() => setRestSeconds((current) => (current > 0 ? 0 : 60))}
+                >
                   {restSeconds > 0 ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
                 </Button>
-                <Button variant="secondary" size="icon" className="rounded-full bg-white/12 text-white hover:bg-white/18" onClick={() => setRestSeconds(0)}>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full bg-white/12 text-white hover:bg-white/18"
+                  aria-label={isSpanish ? "Reiniciar descanso" : "Reset rest"}
+                  title={isSpanish ? "Reiniciar descanso" : "Reset rest"}
+                  onClick={() => setRestSeconds(0)}
+                >
                   <TimerReset className="h-4 w-4" />
                 </Button>
               </div>
@@ -340,10 +354,20 @@ function ActiveWorkoutPageContent() {
                     <Label className="text-xs">{isSpanish ? "Desc. (s)" : "Rest (s)"}</Label>
                     <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "descanso en segundos" : "rest in seconds"}`} value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
                   </div>
-                  <Button variant={set.completed ? "default" : "outline"} className="rounded-2xl" onClick={() => updateSet(workoutExercise.exerciseId, setIndex, { completed: !set.completed })}>
+                  <Button
+                    variant={set.completed ? "default" : "outline"}
+                    className="rounded-2xl"
+                    aria-label={`${localizedExercise.name} · ${isSpanish ? `serie ${setIndex + 1}` : `set ${setIndex + 1}`} · ${set.completed ? (isSpanish ? "hecha" : "done") : (isSpanish ? "marcar serie" : "mark set")}`}
+                    onClick={() => updateSet(workoutExercise.exerciseId, setIndex, { completed: !set.completed })}
+                  >
                     {set.completed ? (isSpanish ? "Hecha" : "Done") : (isSpanish ? "Marcar" : "Mark")}
                   </Button>
-                  <Button variant="ghost" className="rounded-2xl" onClick={() => startRest(Number(set.restSeconds) || workoutExercise.rest, `${localizedExercise.name} · ${isSpanish ? "serie" : "set"} ${setIndex + 1}`)}>
+                  <Button
+                    variant="ghost"
+                    className="rounded-2xl"
+                    aria-label={`${localizedExercise.name} · ${isSpanish ? `serie ${setIndex + 1}` : `set ${setIndex + 1}`} · ${isSpanish ? "iniciar descanso" : "start rest"}`}
+                    onClick={() => startRest(Number(set.restSeconds) || workoutExercise.rest, `${localizedExercise.name} · ${isSpanish ? "serie" : "set"} ${setIndex + 1}`)}
+                  >
                     {isSpanish ? "Descanso" : "Rest"}
                   </Button>
                 </fieldset>
