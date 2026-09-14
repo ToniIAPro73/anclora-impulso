@@ -151,7 +151,15 @@ export function Navigation({ isCollapsed, setIsCollapsed }: NavigationProps) {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="icon" onClick={() => setIsMobileMenuOpen((prev) => !prev)} className="rounded-2xl bg-white/80 dark:bg-slate-950/70">
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={isMobileMenuOpen ? t.navigation.collapseSidebar : t.navigation.expandSidebar}
+            title={isMobileMenuOpen ? t.navigation.collapseSidebar : t.navigation.expandSidebar}
+            aria-expanded={isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="rounded-2xl bg-white/80 dark:bg-slate-950/70"
+          >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>

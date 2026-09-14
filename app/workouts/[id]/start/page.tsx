@@ -249,7 +249,11 @@ function ActiveWorkoutPageContent() {
               {isSpanish ? "Progreso de la sesión" : "Session progress"}
             </p>
             <p className="mt-2 text-3xl font-semibold">{completionRate}%</p>
-            <Progress value={completionRate} className="mt-3 h-2.5 bg-white/10" />
+            <Progress
+              value={completionRate}
+              aria-label={isSpanish ? "Progreso de la sesión" : "Session progress"}
+              className="mt-3 h-2.5 bg-white/10"
+            />
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/6 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between gap-3">
