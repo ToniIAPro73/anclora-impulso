@@ -1,0 +1,8 @@
+- button [ref=e2]
+- heading "Welcome back, Antonio Ballesteros Alonso" [level=2, ref=e3]
+- button "LIGHT" [expanded=false, ref=e4]
+- button "EN" [expanded=false, ref=e5]
+- button "Antonio Ballesteros Alonso" [expanded=false, ref=e6]
+- heading "Gamification" [level=1, ref=e7]
+- heading "Unlocked (1)" [level=2, ref=e8]
+- button "Cookie preferences" [ref=e1]

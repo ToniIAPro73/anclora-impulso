@@ -1,0 +1,4217 @@
+{
+  "metadata": {
+    "date": "2026-09-14",
+    "audit_revision": "CONSISTENCY_REMEDIATION",
+    "status": "PASS",
+    "previous_audit_artifact": "docs/audits/anclora-impulso-ux-reaudit-2026-09-14.pdf",
+    "remediation_reason": "Correct internal coverage/status contradictions, retest UX-08, document version drift and deepen three narratives.",
+    "repository": "ToniIAPro73/anclora-impulso",
+    "repository_path": "/Users/toni/Developer/anclora/anclora-impulso",
+    "branch": "development",
+    "current_head": "65e655e0c435acc1f63f3961b7794a58ae0b3a24",
+    "origin_development_head": "65e655e0c435acc1f63f3961b7794a58ae0b3a24",
+    "old_audit_date": "2026-09-06",
+    "old_audit_head": "f32ca59",
+    "commits_between": 1,
+    "worktree_final": "Audit artifacts only; product code unchanged",
+    "local_remote_match": true,
+    "skill_contract_version": "1.5.0",
+    "skill_runtime_version": "1.5.0 candidate (runtime implementation header); manifest/skill.yaml metadata 1.4.0",
+    "skill_manifest_version": "1.4.0",
+    "skill_version": "1.5.0",
+    "skill_source_path": "/Users/toni/Developer/anclora/anclora-infrastructure/skills/ux-product-experience-review",
+    "skill_contract_sha": "d53718eac916e117d72ec1196a1d6ffc648fe3f842c7db9752fe9903fb7bf12c",
+    "skill_manifest_sha": "c91229de6681de319bc6474908b0b42015272c77dafde74effc7b2dae4755850",
+    "skill_release_notes_path": "/Users/toni/Developer/anclora/anclora-infrastructure/skills/ux-product-experience-review/docs/RELEASE_NOTES.md",
+    "skill_release_notes_sha": "b258d1ddc21b994ef9afd2ae2bf56fe902608f62b7c6d50ffd3c03b3f313e969",
+    "runtime_manifest_sha": "cb21ba0b9f4c63600228b092df7924ef1bc5b74e7a10293b49f9ac7b72b21b31",
+    "primary_surface": "APPLICATION",
+    "surface_mode": "APPLICATION",
+    "surface_mode_source": "AUTO_DETECT + CODE/BROWSER OVERRIDE",
+    "platform_mode": "PWA",
+    "platform_mode_source": "manifest + app shell",
+    "secondary_surfaces": [
+      "LANDING_PAGE"
+    ],
+    "domain_profile": "FITNESS",
+    "canonical_frontend_url": "https://impulso.anclora.com",
+    "backend_url": "https://anclora-impulso.onrender.com/api",
+    "audited_browser_environments": [
+      "PRODUCTION"
+    ],
+    "old_finding_count": 13,
+    "current_finding_count": 11,
+    "fixed_since_previous": 1,
+    "still_present": 5,
+    "partially_fixed": 5,
+    "regressions": 0,
+    "new_findings": 6,
+    "product_ux_findings": 10,
+    "product_access_findings": 1,
+    "engineering_support_findings": 0,
+    "external_infrastructure_findings": 0,
+    "compliance_review_items": 0,
+    "browser_evidence_count": 83,
+    "useful_screenshot_count": 57,
+    "previous_browser_evidence_count": 12,
+    "previous_screenshot_count": 7,
+    "new_screenshot_count": 50,
+    "full_core_journeys": 21,
+    "authenticated_surfaces_reviewed": 10,
+    "mobile_authenticated_surfaces": 7,
+    "desktop_authenticated_surfaces": 10,
+    "viewports_represented": [
+      "1920×1080",
+      "1440×900",
+      "1366×768",
+      "1024×768",
+      "768×1024",
+      "430×932",
+      "390×844"
+    ],
+    "themes_represented": [
+      "light",
+      "dark"
+    ],
+    "locales_represented": [
+      "es",
+      "en"
+    ],
+    "production_auth_status": "PASS",
+    "cors_status": "PASS_AFTER_RUNTIME_REMEDIATION",
+    "preview_auth_status": "NOT_REQUIRED_FOR_DEEP_PASS",
+    "surface_mode_mismatch_warning": "Static heuristic may call the shell DASHBOARD; code/browser evidence supports APPLICATION plus LANDING_PAGE.",
+    "depth_gate_justification": "64+ evidence records, 55 useful screenshots, 21 full-schema journey records, 10 private surfaces, 7 mobile and 10 desktop representations. Writes, first-use fixture, induced failures, OAuth, offline and longitudinal history remain explicit gaps.",
+    "commit_sha": "NOT_CREATED_AUDIT_ONLY",
+    "push_result": "NOT_PERFORMED_AUDIT_ONLY",
+    "previous_pdf_page_count": 21,
+    "new_pdf_page_count": 44,
+    "current_development_head_recorded": "PASS",
+    "no_product_code_modified": "PASS",
+    "skill_registry_version": "1.3.0 catalog entry; agentic_binding_registry module v0.1, not skill-specific",
+    "skill_version_drift": true,
+    "audit_consistency_status": "PASS",
+    "coverage_conflicts_found": 9,
+    "coverage_conflicts_fixed": 9,
+    "ux08_retest": "PASS",
+    "ux08_final_status": "CONFIRMED",
+    "ux08_final_title": "Public entry model splits login root from marketing landing",
+    "ux07_final_status": "REFINED",
+    "first_onboarding_final_status": "COVERED_READONLY",
+    "complete_profile_final_status": "BLOCKED_WRITE",
+    "logout_final_status": "COVERED",
+    "session_recovery_final_status": "COVERED",
+    "complete_workout_final_status": "BLOCKED_WRITE",
+    "resume_workout_final_status": "PARTIAL",
+    "exercise_detail_final_status": "COVERED_READONLY",
+    "meal_plan_final_status": "COVERED_READONLY",
+    "achievements_final_status": "COVERED_READONLY",
+    "ux08_final_severity": "MEDIUM",
+    "ux08_final_priority": "P2"
+  },
+  "gates": {
+    "LATEST_SKILL_USED": "PASS",
+    "CURRENT_DEVELOPMENT_HEAD_RECORDED": "PASS",
+    "OLD_AUDIT_RECONCILED": "PASS",
+    "ALL_13_HISTORICAL_FINDINGS_ACCOUNTED_FOR": "PASS",
+    "SURFACE_CLASSIFICATION": "PASS",
+    "PRODUCT_MODEL": "PASS",
+    "USER_TYPES": "PASS",
+    "TASK_INVENTORY": "PASS",
+    "CRITICAL_JOURNEYS": "PASS",
+    "AUTH_RETEST": "PASS",
+    "CORE_PRODUCT_REVIEW": "PASS_WITH_EXPLICIT_READONLY_GAPS",
+    "WORKOUT_EXECUTION_REVIEW": "PASS_WITH_EXPLICIT_BLOCKED_WRITE",
+    "PROGRESS_REVIEW": "PASS",
+    "NUTRITION_REVIEW": "PASS_WITH_EXPLICIT_BLOCKED_WRITE",
+    "AI_REVIEW": "PASS_WITH_EXPLICIT_READONLY_GAPS",
+    "RESPONSIVE": "PASS",
+    "THEME": "PASS",
+    "I18N": "PASS_WITH_SEMANTIC_GAP",
+    "ACCESSIBILITY": "PASS_WITH_TOOL_GAP",
+    "HISTORICAL_MATRIX": "PASS",
+    "SCORECARDS": "PASS",
+    "FINDINGS": "PASS",
+    "DO_NOT_BREAK": "PASS",
+    "ROADMAP": "PASS",
+    "EVIDENCE_INDEX": "PASS",
+    "HTML": "PASS",
+    "PDF": "PASS",
+    "JSON_COMPANION": "PASS",
+    "NO_PRODUCT_CODE_MODIFIED": "PASS",
+    "COVERAGE_MATRIX_CONSISTENT": "PASS",
+    "ONBOARDING_STATUS_RECONCILED": "PASS",
+    "LOGOUT_STATUS_RECONCILED": "PASS",
+    "SESSION_RECOVERY_STATUS_RECONCILED": "PASS",
+    "OTHER_READONLY_BLOCKED_CONFLICTS": "PASS",
+    "UX08_RETEST": "PASS",
+    "UX08_FINAL_STATUS_DEFINED": "PASS",
+    "SKILL_VERSION_DRIFT_ANALYZED": "PASS",
+    "PROGRESS_DEPTH": "PASS",
+    "NUTRITION_DEPTH": "PASS",
+    "GAMIFICATION_DEPTH": "PASS",
+    "UX07_REVALIDATED": "PASS",
+    "SCORECARD_CONSISTENCY": "PASS",
+    "HISTORICAL_MATRIX_CONSISTENCY": "PASS",
+    "PDF_REGENERATED": "PASS",
+    "JSON_REGENERATED": "PASS",
+    "HTML_REGENERATED": "PASS",
+    "NO_PRODUCT_CODE_CHANGED": "PASS"
+  },
+  "depth_gap_matrix": [
+    [
+      "Executive assessment",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Methodology",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Surface classification",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Product model",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "User types",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Task inventory",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Critical journeys",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Screen map",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Experience map",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Onboarding",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "AI personalization",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Workout generation",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Workout execution",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Exercise library",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Progress",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Nutrition",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Gamification",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Auth/recovery",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Application shell",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Primary workspace",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Viewport economy",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Action hierarchy",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "System states",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Error recovery",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Responsive",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Theme",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Accessibility",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "i18n",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Premium product quality",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Historical matrix",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Scorecards",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Findings",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Evidence coverage",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ],
+    [
+      "Limitations",
+      "Section present but shallow",
+      "Per-surface evidence + traceability",
+      "Expanded with current browser records",
+      "Prevents code or one preview state being mistaken for coverage",
+      "Route screenshots, observations, code provenance or explicit safety boundary",
+      "Dedicated chapter/table"
+    ]
+  ],
+  "evidence": [
+    {
+      "id": "E01",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "LANDING_PAGE",
+      "journey": "J1",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/landing",
+      "action": "Initial load",
+      "description": "Spanish landing hero and primary/secondary acquisition CTAs."
+    },
+    {
+      "id": "E02",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "LANDING_PAGE",
+      "journey": "J1",
+      "viewport": "390x844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/landing",
+      "action": "Initial load",
+      "description": "Mobile landing hero; cookie preference FAB is visible over the lower content boundary."
+    },
+    {
+      "id": "E03",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "LANDING_PAGE",
+      "journey": "J25",
+      "viewport": "1440x900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/landing",
+      "action": "Language then theme menu",
+      "description": "English copy and light theme after using the visible controls."
+    },
+    {
+      "id": "E04",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "LANDING_PAGE",
+      "journey": "J25",
+      "viewport": "390x844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/landing",
+      "action": "Language then theme menu",
+      "description": "English/light mobile representative state."
+    },
+    {
+      "id": "E05",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "AUTH",
+      "journey": "J3",
+      "viewport": "390x844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/login",
+      "action": "Initial load",
+      "description": "Clean login form with labels, social actions and centered card."
+    },
+    {
+      "id": "E06",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "AUTH",
+      "journey": "J2",
+      "viewport": "390x844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/signup",
+      "action": "Initial load",
+      "description": "Clean signup form; no social signup options are exposed."
+    },
+    {
+      "id": "E07",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "AUTH",
+      "journey": "J5",
+      "viewport": "390x844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/forgot-password",
+      "action": "Initial load",
+      "description": "Recovery route is contact-support-only, without a recovery form."
+    },
+    {
+      "id": "E08",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "PUBLIC_AND_PRIVATE_ROUTES",
+      "journey": "J3",
+      "viewport": "7-viewpoint matrix",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com",
+      "action": "Route matrix",
+      "description": "Public routes return 200; private canonical routes redirect to /auth/login without an authenticated session."
+    },
+    {
+      "id": "E09",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "API_AUTH",
+      "journey": "J3",
+      "viewport": "n/a",
+      "theme": "n/a",
+      "locale": "n/a",
+      "url": "https://anclora-impulso.onrender.com/api/auth/login",
+      "action": "OPTIONS preflight",
+      "description": "Canonical origin receives HTTP 500 and no allow-origin; Vercel origin receives 204."
+    },
+    {
+      "id": "E10",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "API_HEALTH",
+      "journey": "J3",
+      "viewport": "n/a",
+      "theme": "n/a",
+      "locale": "n/a",
+      "url": "https://anclora-impulso.onrender.com/health",
+      "action": "GET health",
+      "description": "Live/simple/health endpoints return healthy; /api/health is a 404 because health is mounted at root."
+    },
+    {
+      "id": "E11",
+      "type": "PRIOR_RECORD",
+      "environment": "PRODUCTION",
+      "surface": "AUTH",
+      "journey": "J3",
+      "viewport": "390x844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/login",
+      "action": "Synthetic invalid login retest",
+      "description": "POST fails in browser with net::ERR_FAILED; UI exposes literal Failed to fetch, keeps the route and re-enables the button after 532 ms."
+    },
+    {
+      "id": "E12",
+      "type": "PRIOR_RECORD",
+      "environment": "PREVIEW",
+      "surface": "APPLICATION",
+      "journey": "J8-J23",
+      "viewport": "desktop browser",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://anclora-impulso.vercel.app",
+      "action": "Authorized social session, read-only navigation",
+      "description": "Authenticated preview session reached generator, exercises, progress, nutrition, achievements and workout execution. No writes were made."
+    },
+    {
+      "id": "E01",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production landing state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E01-landing-es-dark-1440x900.png"
+    },
+    {
+      "id": "E02",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production landing state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E02-landing-es-dark-390x844.png"
+    },
+    {
+      "id": "E03",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production landing state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E03-landing-en-light-1440x900.png"
+    },
+    {
+      "id": "E04",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production landing state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E04-landing-en-light-390x844.png"
+    },
+    {
+      "id": "E05",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production login state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E05-login-es-dark-390x844.png"
+    },
+    {
+      "id": "E06",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production signup state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E06-signup-es-dark-390x844.png"
+    },
+    {
+      "id": "E07",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production forgot password state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E07-forgot-password-es-dark-390x844.png"
+    },
+    {
+      "id": "E13",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E13-dashboard-es-dark-1440x900.png"
+    },
+    {
+      "id": "E14",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E14-generator-es-dark-1440x900.png"
+    },
+    {
+      "id": "E15",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E15-exercises-es-dark-1440x900.png"
+    },
+    {
+      "id": "E16",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/progress",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production progress state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E16-progress-es-dark-1440x900.png"
+    },
+    {
+      "id": "E17",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "NUTRITION",
+      "journey": "J16",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/nutrition",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production nutrition state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E17-nutrition-es-dark-1440x900.png"
+    },
+    {
+      "id": "E18",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "GAMIFICATION",
+      "journey": "J18",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/achievements",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production achievements state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E18-achievements-es-dark-1440x900.png"
+    },
+    {
+      "id": "E19",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E19-dashboard-en-light-1440x900.png"
+    },
+    {
+      "id": "E20",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E20-generator-en-light-1440x900.png"
+    },
+    {
+      "id": "E21",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E21-exercises-en-light-1440x900.png"
+    },
+    {
+      "id": "E22",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/progress",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production progress state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E22-progress-en-light-1440x900.png"
+    },
+    {
+      "id": "E23",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "NUTRITION",
+      "journey": "J16",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/nutrition",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production nutrition state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E23-nutrition-en-light-1440x900.png"
+    },
+    {
+      "id": "E24",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "GAMIFICATION",
+      "journey": "J18",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/achievements",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production achievements state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E24-achievements-en-light-1440x900.png"
+    },
+    {
+      "id": "E25",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_REVIEW",
+      "journey": "J08",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout review state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E25-workout-review-en-light-1440x900.png"
+    },
+    {
+      "id": "E26",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f/start",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E26-workout-execution-en-light-1440x900.png"
+    },
+    {
+      "id": "E27",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E27-workout-execution-en-light-1440x900-full.png"
+    },
+    {
+      "id": "E28",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "1440×900",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E28-workout-execution-en-light-1440x900-scrolled.png"
+    },
+    {
+      "id": "E29",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E29-dashboard-en-light-390x844.png"
+    },
+    {
+      "id": "E30",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E30-generator-en-light-390x844.png"
+    },
+    {
+      "id": "E31",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E31-exercises-en-light-390x844.png"
+    },
+    {
+      "id": "E32",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/progress",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production progress state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E32-progress-en-light-390x844.png"
+    },
+    {
+      "id": "E33",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "NUTRITION",
+      "journey": "J16",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/nutrition",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production nutrition state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E33-nutrition-en-light-390x844.png"
+    },
+    {
+      "id": "E34",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "GAMIFICATION",
+      "journey": "J18",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/achievements",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production achievements state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E34-achievements-en-light-390x844.png"
+    },
+    {
+      "id": "E35",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "390×844",
+      "theme": "light",
+      "locale": "en",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f/start",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E35-workout-execution-en-light-390x844.png"
+    },
+    {
+      "id": "E36",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E36-dashboard-es-dark-390x844.png"
+    },
+    {
+      "id": "E37",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E37-generator-es-dark-390x844.png"
+    },
+    {
+      "id": "E38",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E38-exercises-es-dark-390x844.png"
+    },
+    {
+      "id": "E39",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/progress",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production progress state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E39-progress-es-dark-390x844.png"
+    },
+    {
+      "id": "E40",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "NUTRITION",
+      "journey": "J16",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/nutrition",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production nutrition state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E40-nutrition-es-dark-390x844.png"
+    },
+    {
+      "id": "E41",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "GAMIFICATION",
+      "journey": "J18",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/achievements",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production achievements state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E41-achievements-es-dark-390x844.png"
+    },
+    {
+      "id": "E42",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f/start",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E42-workout-execution-es-dark-390x844.png"
+    },
+    {
+      "id": "E43",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "430×932",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E43-dashboard-es-dark-430x932.png"
+    },
+    {
+      "id": "E44",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "430×932",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E44-generator-es-dark-430x932.png"
+    },
+    {
+      "id": "E45",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "430×932",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E45-exercises-es-dark-430x932.png"
+    },
+    {
+      "id": "E46",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "viewport": "430×932",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/progress",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production progress state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E46-progress-es-dark-430x932.png"
+    },
+    {
+      "id": "E47",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "NUTRITION",
+      "journey": "J16",
+      "viewport": "430×932",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/nutrition",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production nutrition state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E47-nutrition-es-dark-430x932.png"
+    },
+    {
+      "id": "E48",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "430×932",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f/start",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E48-workout-execution-es-dark-430x932.png"
+    },
+    {
+      "id": "E49",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "1366×768",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E49-dashboard-es-dark-1366x768.png"
+    },
+    {
+      "id": "E50",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "1024×768",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E50-generator-es-dark-1024x768.png"
+    },
+    {
+      "id": "E51",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "768×1024",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E51-exercises-es-dark-768x1024.png"
+    },
+    {
+      "id": "E52",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "1920×1080",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f/start",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E52-workout-execution-es-dark-1920x1080.png"
+    },
+    {
+      "id": "E53",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercise search push state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E53-exercise-search-push-es-dark-390x844.png"
+    },
+    {
+      "id": "E54",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_DETAIL",
+      "journey": "J14",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercise detail con mancuerna push press state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E54-exercise-detail-con-mancuerna-push-press-es-dark-390x844.png"
+    },
+    {
+      "id": "E55",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "DASHBOARD/SHELL",
+      "journey": "J20",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production dashboard state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E55-dashboard-es-dark-1440x900.png"
+    },
+    {
+      "id": "E56",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/generate",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production generator state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E56-generator-es-dark-1440x900.png"
+    },
+    {
+      "id": "E57",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production exercises state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E57-exercises-es-dark-1440x900.png"
+    },
+    {
+      "id": "E58",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/progress",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production progress state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E58-progress-es-dark-1440x900.png"
+    },
+    {
+      "id": "E59",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "NUTRITION",
+      "journey": "J16",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/nutrition",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production nutrition state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E59-nutrition-es-dark-1440x900.png"
+    },
+    {
+      "id": "E60",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "viewport": "1440×900",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/workouts/f7d715e2-4fb6-476c-bf28-70a5a0f5f60f/start",
+      "action": "Open route, await network idle, capture rendered state",
+      "description": "Current production workout execution state with shell and route content.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E60-workout-execution-es-dark-1440x900.png"
+    },
+    {
+      "id": "B01",
+      "type": "NETWORK",
+      "environment": "PRODUCTION",
+      "surface": "AUTH/CORS",
+      "journey": "J02",
+      "viewport": "N/A",
+      "theme": "N/A",
+      "locale": "N/A",
+      "url": "https://anclora-impulso.onrender.com/api/auth/login",
+      "action": "Canonical OPTIONS preflight",
+      "description": "204 with explicit canonical ACAO and credentials support."
+    },
+    {
+      "id": "B02",
+      "type": "NETWORK",
+      "environment": "PRODUCTION",
+      "surface": "API HEALTH",
+      "journey": "J02",
+      "viewport": "N/A",
+      "theme": "N/A",
+      "locale": "N/A",
+      "url": "https://anclora-impulso.onrender.com/api/health/live",
+      "action": "GET health endpoint",
+      "description": "200 and alive=true."
+    },
+    {
+      "id": "B03",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "AUTHENTICATION",
+      "journey": "J02",
+      "viewport": "native Chrome",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/login → /dashboard",
+      "action": "Authorized credential login",
+      "description": "Canonical login reached dashboard after CORS remediation."
+    },
+    {
+      "id": "B04",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "SESSION",
+      "journey": "J21",
+      "viewport": "native Chrome",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Refresh authenticated route",
+      "description": "Refresh preserved session and private data."
+    },
+    {
+      "id": "B05",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "SESSION",
+      "journey": "J21",
+      "viewport": "native Chrome",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/dashboard → /auth/login",
+      "action": "Logout",
+      "description": "Logout returned to login and removed the active session."
+    },
+    {
+      "id": "B06",
+      "type": "INTERACTION",
+      "environment": "PRODUCTION",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13/J14",
+      "viewport": "390×844",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/exercises",
+      "action": "Search synthetic term and open detail",
+      "description": "Search returned 17 results and opened a detail dialog with description, muscles and instructions."
+    },
+    {
+      "id": "B07",
+      "type": "INTERACTION",
+      "environment": "PRODUCTION",
+      "surface": "APPLICATION_SHELL",
+      "journey": "J19/J20",
+      "viewport": "390×844",
+      "theme": "dark/light",
+      "locale": "es/en",
+      "url": "https://impulso.anclora.com/dashboard",
+      "action": "Toggle language and theme",
+      "description": "Visible copy/theme changed; English state retained document lang=es."
+    },
+    {
+      "id": "E61",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "PUBLIC_ENTRY",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/",
+      "action": "Anonymous initial load",
+      "description": "Root route renders credential login, not the public marketing landing.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E61-root-anonymous.png"
+    },
+    {
+      "id": "E62",
+      "type": "SCREENSHOT",
+      "environment": "PRODUCTION",
+      "surface": "LANDING_PAGE",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/landing",
+      "action": "Anonymous landing load",
+      "description": "Public landing renders fitness value proposition with signup and login CTAs.",
+      "path": "docs/audits/evidence/anclora-impulso-ux-reaudit-2026-09-14/E62-landing-public.png"
+    },
+    {
+      "id": "B08",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "PUBLIC_ENTRY",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/",
+      "action": "Anonymous GET /",
+      "description": "Root remains the login form and does not redirect to /landing."
+    },
+    {
+      "id": "B09",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "PUBLIC_ENTRY",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/landing",
+      "action": "Anonymous GET /landing",
+      "description": "Landing is directly reachable and presents public acquisition content."
+    },
+    {
+      "id": "B10",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "AUTH",
+      "journey": "J02",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/login",
+      "action": "GET login entry",
+      "description": "Login renders credential and social entry controls."
+    },
+    {
+      "id": "B11",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "AUTH",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/auth/signup",
+      "action": "Activate landing CTA",
+      "description": "Primary landing CTA resolves to signup and secondary CTA resolves to login."
+    },
+    {
+      "id": "B12",
+      "type": "NETWORK",
+      "environment": "PRODUCTION",
+      "surface": "PWA",
+      "journey": "J29",
+      "viewport": "N/A",
+      "theme": "N/A",
+      "locale": "N/A",
+      "url": "https://impulso.anclora.com/site.webmanifest",
+      "action": "Read manifest",
+      "description": "Manifest is reachable and declares start_url=/auth/login and display=standalone."
+    },
+    {
+      "id": "B13",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "PUBLIC_ENTRY",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/landing → /auth/signup|/auth/login",
+      "action": "Activate public CTAs",
+      "description": "Both CTAs route to expected auth destinations; refresh preserves the selected route."
+    },
+    {
+      "id": "B14",
+      "type": "JOURNEY",
+      "environment": "PRODUCTION",
+      "surface": "PUBLIC_ENTRY",
+      "journey": "J01",
+      "viewport": "1280×633",
+      "theme": "dark",
+      "locale": "es",
+      "url": "https://impulso.anclora.com/",
+      "action": "Authenticated direct GET /",
+      "description": "After a successful login/dashboard session, direct root still renders the login surface rather than redirecting to dashboard or landing."
+    }
+  ],
+  "historical_matrix": [
+    [
+      "F-01",
+      "Canonical domain cannot authenticate/load data",
+      "CRITICAL",
+      "Old CORS 500 / AUTH_BLOCKED",
+      "VERIFIED_FIXED",
+      "—",
+      "—",
+      "B01-B03: preflight 204, health 200, login/dashboard pass",
+      "FIXED",
+      "Runtime allowlist now includes canonical origin."
+    ],
+    [
+      "F-02",
+      "Login waits/fails with literal Failed to fetch",
+      "CRITICAL",
+      "Raw failure and long wait",
+      "NOT_RETESTED",
+      "—",
+      "NOT_EVALUATED",
+      "No induced backend fault after remediation; successful path passes B03",
+      "NOT_RETESTED",
+      "Requires controlled non-destructive fault fixture."
+    ],
+    [
+      "F-04",
+      "Root login and orphan /landing split entry model",
+      "HIGH",
+      "Root/login vs marketing landing",
+      "STILL_PRESENT",
+      "UX-08",
+      "MEDIUM",
+      "E61-E62/B08-B14: root remains login; /landing and both CTAs are real; manifest start_url is /auth/login",
+      "REFINED",
+      "Landing is not absent; the current issue is the documented split between canonical root/manifest and marketing entry."
+    ],
+    [
+      "F-05",
+      "Social login/signup inconsistency",
+      "MEDIUM",
+      "Providers on login only",
+      "STILL_PRESENT",
+      "UX-09",
+      "MEDIUM",
+      "E05/E06: providers on login, credential-only signup",
+      "NO_CHANGE",
+      "OAuth was not launched; parity is read-only measured."
+    ],
+    [
+      "F-06",
+      "Mobile auth vertical dead space",
+      "MEDIUM",
+      "390px auth whitespace",
+      "STILL_PRESENT",
+      "UX-10",
+      "MEDIUM",
+      "E05-E07 current 390×844 captures",
+      "NO_CHANGE",
+      "Current public captures confirm the condition."
+    ],
+    [
+      "F-07",
+      "Landing feature colors break copper/orange brand",
+      "MEDIUM",
+      "Blue/green/magenta accents",
+      "STILL_PRESENT",
+      "UX-11",
+      "MEDIUM",
+      "E01-E04 current landing captures",
+      "NO_CHANGE",
+      "Accent fragmentation remains."
+    ],
+    [
+      "F-09",
+      "Mobile drawer vs bottom navigation opportunity",
+      "OPPORTUNITY",
+      "Code-only opportunity",
+      "STILL_PRESENT",
+      "UX-02",
+      "MEDIUM",
+      "E29-E48 show hamburger shell/no persistent bottom nav on private mobile",
+      "RETESTED",
+      "Real mobile evidence now exists; bottom nav is not assumed as the solution."
+    ],
+    [
+      "H-08",
+      "Admin/content protection unknown",
+      "OPEN QUESTION",
+      "No prior browser proof",
+      "NOT_RETESTED",
+      "—",
+      "NOT_EVALUATED",
+      "Admin not authorized or entered",
+      "NOT_RETESTED",
+      "No admin action attempted."
+    ],
+    [
+      "H-09",
+      "Onboarding modal scale/complexity question",
+      "OPEN QUESTION",
+      "Large three-step dialog described",
+      "PARTIALLY_FIXED",
+      "—",
+      "MEDIUM",
+      "E12 plus current authenticated onboarding dialog: three steps, progress, fields and later/continue intent observed; completion not submitted",
+      "PARTIAL_OBSERVATION",
+      "The modal is now observable, but first-use persistence and full mobile ergonomics remain open."
+    ],
+    [
+      "H-10",
+      "AI personalization trust not evaluated",
+      "OPEN QUESTION",
+      "No generation evidence",
+      "PARTIALLY_FIXED",
+      "UX-05",
+      "MEDIUM",
+      "E14/E56 show proposal, rationale, controls and AI CTA; no result/regenerate/undo",
+      "PARTIAL_OBSERVATION",
+      "Read-only trust evidence now exists."
+    ],
+    [
+      "H-11",
+      "Workout execution not evaluated",
+      "OPEN QUESTION",
+      "Auth blocked historically",
+      "PARTIALLY_FIXED",
+      "UX-01/UX-03",
+      "HIGH",
+      "E26-E28/E35/E42/E48/E52/E60 show real 12-set session; completion not run",
+      "PARTIAL_OBSERVATION",
+      "Mobile and desktop execution now observable."
+    ],
+    [
+      "H-12",
+      "Progress UX not evaluated",
+      "OPEN QUESTION",
+      "Auth blocked historically",
+      "PARTIALLY_FIXED",
+      "UX-06",
+      "MEDIUM",
+      "E16/E22/E32/E39/E46/E58 show KPIs/recommendation/chart/low-data state",
+      "PARTIAL_OBSERVATION",
+      "Longitudinal usefulness remains open."
+    ],
+    [
+      "H-13",
+      "Nutrition/gamification not evaluated",
+      "OPEN QUESTION",
+      "Auth blocked historically",
+      "PARTIALLY_FIXED",
+      "UX-07",
+      "MEDIUM",
+      "E17/E23/E33/E40/E47/E59 and E18/E24/E34/E41 render both workspaces",
+      "PARTIAL_OBSERVATION",
+      "Writes and longitudinal motivation remain open."
+    ]
+  ],
+  "findings": [
+    {
+      "id": "UX-01",
+      "title": "Workout execution is a long-form set ledger rather than a focused training workspace",
+      "category": "Product UX",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "screen": "/workouts/:id/start",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "CRITICAL",
+      "friction_type": "CONTEXT_LOAD",
+      "severity": "HIGH",
+      "priority": "P1",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E26/E35/E42/E48/E52/E60 show 12 set rows and four exercise groups in one continuous page; at 390×844 only the first exercise is above the fold.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E26/E35/E42/E48/E52/E60 show 12 set rows and four exercise groups in one continuous page; at 390×844 only the first exercise is above the fold.",
+      "root_ux_cause": "The data model is rendered directly without a current-exercise/session focus layer.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Repeated scan/scroll and loss of next-action focus during a physical session.",
+      "recommended_change": "Add current-exercise focus, sticky progress/rest, explicit next/previous and compact set navigation.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "MEDIUM",
+      "risk": "MEDIUM",
+      "quick_win": false,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": null,
+      "change_class": "NEW",
+      "implementation_guidance": "Add current-exercise focus, sticky progress/rest, explicit next/previous and compact set navigation."
+    },
+    {
+      "id": "UX-02",
+      "title": "Mobile shell hides navigation behind a hamburger during an active fitness workflow",
+      "category": "Product UX",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "APPLICATION_SHELL/MOBILE_WORKOUT",
+      "journey": "J20/J24",
+      "screen": "Private mobile shell",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "NAVIGATION_CONTEXT_SWITCH",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E29-E48 show top hamburger and no persistent bottom nav; frequent navigation requires opening a drawer.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E29-E48 show top hamburger and no persistent bottom nav; frequent navigation requires opening a drawer.",
+      "root_ux_cause": "Desktop sidebar compression is used without task-specific mobile navigation.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Extra taps and interruption risk for one-handed users.",
+      "recommended_change": "Keep drawer for low-frequency destinations but add explicit in-workout reachable navigation and safe exit semantics.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "MEDIUM",
+      "risk": "MEDIUM",
+      "quick_win": false,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "F-09",
+      "change_class": "RETESTED",
+      "implementation_guidance": "Keep drawer for low-frequency destinations but add explicit in-workout reachable navigation and safe exit semantics."
+    },
+    {
+      "id": "UX-03",
+      "title": "Repeated workout inputs lack sufficiently specific accessible names",
+      "category": "Accessibility",
+      "finding_scope": "PRODUCT_ACCESS",
+      "surface": "WORKOUT_EXECUTION",
+      "journey": "J10",
+      "screen": "Set rows",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "CRITICAL",
+      "friction_type": "SEMANTIC_AMBIGUITY",
+      "severity": "HIGH",
+      "priority": "P1",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E26/E35/E42 AX snapshots expose many unnamed textboxes beside named 0-5/0-10 fields; source relies on visual grouping.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E26/E35/E42 AX snapshots expose many unnamed textboxes beside named 0-5/0-10 fields; source relies on visual grouping.",
+      "root_ux_cause": "Labels are not consistently bound to exercise, set index and metric.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Keyboard/screen-reader users cannot reliably distinguish repeated fields.",
+      "recommended_change": "Use unique names, fieldsets and timer/rest live-region semantics for each exercise/set/metric.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "LOW",
+      "risk": "LOW",
+      "quick_win": true,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": null,
+      "change_class": "NEW",
+      "implementation_guidance": "Use unique names, fieldsets and timer/rest live-region semantics for each exercise/set/metric."
+    },
+    {
+      "id": "UX-04",
+      "title": "Exercise discovery spends image space on unavailable media placeholders",
+      "category": "Exercise library",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "EXERCISE_LIBRARY",
+      "journey": "J13",
+      "screen": "/exercises",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "CONTEXT_LOAD",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E15/E31/E38/E45/E51/E53/E57 show repeated 'Imagen no disponible todavía' cards and mixed exercise naming.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E15/E31/E38/E45/E51/E53/E57 show repeated 'Imagen no disponible todavía' cards and mixed exercise naming.",
+      "root_ux_cause": "Unavailable media has no compact instructional fallback hierarchy.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "More scanning and weaker confidence before opening detail.",
+      "recommended_change": "Use a compact category/icon placeholder and prioritize name, target muscle and level.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "LOW",
+      "risk": "LOW",
+      "quick_win": true,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": null,
+      "change_class": "NEW",
+      "implementation_guidance": "Use a compact category/icon placeholder and prioritize name, target muscle and level."
+    },
+    {
+      "id": "UX-05",
+      "title": "AI proposal explains profile rules but not controllable result rationale or reversibility",
+      "category": "AI personalization",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "WORKOUT_GENERATION",
+      "journey": "J07",
+      "screen": "/workouts/generate",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "TRUST_AND_CONTROL",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E14/E20/E30/E37/E44/E56 show proposal, 40+ rationale, controls and AI CTA; no result/regenerate/undo was safely invoked.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E14/E20/E30/E37/E44/E56 show proposal, 40+ rationale, controls and AI CTA; no result/regenerate/undo was safely invoked.",
+      "root_ux_cause": "Rationale is attached to profile heuristics, not to a reversible generation state.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Uncertainty about what the plan uses and how to recover from an unwanted result.",
+      "recommended_change": "Show inputs used, post-generation rationale, edit/regenerate and discard/undo.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "MEDIUM",
+      "risk": "MEDIUM",
+      "quick_win": false,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "H-10",
+      "change_class": "RETESTED",
+      "implementation_guidance": "Show inputs used, post-generation rationale, edit/regenerate and discard/undo."
+    },
+    {
+      "id": "UX-06",
+      "title": "Progress low-data KPIs can read as failure despite a useful recommendation",
+      "category": "Progress",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "PROGRESS",
+      "journey": "J15",
+      "screen": "/progress",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "CONTEXT_LOAD",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E16/E22/E32/E39/E46/E58 show 0 weekly adherence, 0 kg volume, missing trend and a consistency recommendation.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E16/E22/E32/E39/E46/E58 show 0 weekly adherence, 0 kg volume, missing trend and a consistency recommendation.",
+      "root_ux_cause": "Numeric status is more visually dominant than history coverage/confidence.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Early users may see absence as failure rather than a next step.",
+      "recommended_change": "Pair low-data values with period, confidence and one above-fold next action.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "LOW",
+      "risk": "LOW",
+      "quick_win": true,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "H-12",
+      "change_class": "RETESTED",
+      "implementation_guidance": "Pair low-data values with period, confidence and one above-fold next action."
+    },
+    {
+      "id": "UX-07",
+      "title": "Nutrition and gamification do not yet expose a shared next-action loop",
+      "category": "Fitness feedback",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "NUTRITION/GAMIFICATION",
+      "journey": "J16/J18",
+      "screen": "/nutrition and /achievements",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "CONTEXT_LOAD",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E17/E18/E23/E24/E33/E34/E40/E41/E47/E59 plus the selective surface review.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "Both are real readable workspaces, but their current UI presents parallel states rather than an explicit bridge from workout behavior to nutrition or XP action.",
+      "root_ux_cause": "Feature routes are organized as peer dashboards rather than a coordinated weekly narrative.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Metrics can feel decorative and require extra navigation to act.",
+      "recommended_change": "Define one evidence-based cross-surface next action only where it helps the user, such as a workout completion cue leading to nutrition logging or XP feedback.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "MEDIUM",
+      "risk": "MEDIUM",
+      "quick_win": false,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "H-13",
+      "change_class": "REFINED_AFTER_SURFACE_REVIEW",
+      "implementation_guidance": "Add contextual links such as how intake/XP affects the next workout and one weekly review narrative."
+    },
+    {
+      "id": "UX-08",
+      "title": "Public entry model splits login root from marketing landing",
+      "category": "Information architecture",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "PUBLIC_ENTRY",
+      "journey": "J01",
+      "screen": "/ and /landing",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "ENTRY_MODEL_AMBIGUITY",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E61-E62/B08-B14 plus app/page.tsx and site.webmanifest: / renders login for anonymous and authenticated sessions; /landing is reachable with working signup/login CTAs; start_url remains /auth/login.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "Two valid public surfaces have different entry jobs, but canonical root and PWA start_url choose login while the marketing proposition lives at /landing.",
+      "root_ux_cause": "Acquisition and returning-user entry are not explicitly unified or documented at route/manifest level.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Entry intent is ambiguous rather than the landing being absent; users can reach signup/login once they know the route.",
+      "recommended_change": "Choose and document the canonical model and align root, authenticated redirect, CTA semantics and PWA start_url.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer acquisition/return intent without removing existing capabilities.",
+      "effort": "MEDIUM",
+      "risk": "MEDIUM",
+      "quick_win": false,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "F-04",
+      "change_class": "REFINED_AFTER_RETEST",
+      "implementation_guidance": "Add route regression tests for anonymous root, authenticated root, /landing CTAs and manifest start_url before changing behavior."
+    },
+    {
+      "id": "UX-09",
+      "title": "Login offers more social entry choices than signup",
+      "category": "Authentication",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "AUTHENTICATION",
+      "journey": "J02/J03",
+      "screen": "/auth/login and /auth/signup",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "CRITICAL",
+      "friction_type": "CHOICE_PARITY",
+      "severity": "MEDIUM",
+      "priority": "P2",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E05/E06 show Google/GitHub on login and credential-only signup.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E05/E06 show Google/GitHub on login and credential-only signup.",
+      "root_ux_cause": "Provider actions are implemented separately across entry screens.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Extra navigation and uncertainty about provider account creation.",
+      "recommended_change": "Align provider actions or explain the single account-creation path.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "LOW",
+      "risk": "LOW",
+      "quick_win": true,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "F-05",
+      "change_class": "RETESTED",
+      "implementation_guidance": "Align provider actions or explain the single account-creation path."
+    },
+    {
+      "id": "UX-10",
+      "title": "Mobile auth card reserves more vertical space than the short form needs",
+      "category": "Responsive auth",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "AUTHENTICATION",
+      "journey": "J02/J04",
+      "screen": "/auth/*",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "VIEWPORT_ECONOMY",
+      "severity": "MEDIUM",
+      "priority": "P3",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E05-E07 at 390×844 show centered cards with notable unused top/bottom space.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E05-E07 at 390×844 show centered cards with notable unused top/bottom space.",
+      "root_ux_cause": "Desktop-oriented vertical centering dominates the mobile form layout.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Lower focus and less efficient thumb-zone use for a high-intent task.",
+      "recommended_change": "Reduce mobile card chrome and align the form to a deliberate safe-area position.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "LOW",
+      "risk": "LOW",
+      "quick_win": true,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "F-06",
+      "change_class": "RETESTED",
+      "implementation_guidance": "Reduce mobile card chrome and align the form to a deliberate safe-area position."
+    },
+    {
+      "id": "UX-11",
+      "title": "Landing proof palette dilutes the copper fitness identity",
+      "category": "Visual identity",
+      "finding_scope": "PRODUCT_UX",
+      "surface": "LANDING_PAGE",
+      "journey": "J01",
+      "screen": "/landing",
+      "user_type": "ACTIVE_USER",
+      "task_criticality": "HIGH",
+      "friction_type": "BRAND_FRAGMENTATION",
+      "severity": "MEDIUM",
+      "priority": "P3",
+      "evidence_level": "MEASURED_BROWSER + MEASURED_CODE",
+      "browser_environment": "PRODUCTION",
+      "evidence": "E01-E04 show cyan, green and purple feature accents beside copper/orange brand elements.",
+      "frequency": "Recurring for the affected journey",
+      "current_behavior": "E01-E04 show cyan, green and purple feature accents beside copper/orange brand elements.",
+      "root_ux_cause": "Feature semantics use independent accent families instead of restrained tokens.",
+      "why_it_matters": "The user must act under time, attention and recovery constraints.",
+      "user_impact": "Lower memorability and weaker premium confidence.",
+      "recommended_change": "Keep semantic status colors but make copper the primary emphasis token.",
+      "why_this_change": "It reduces friction while preserving the current capability contract.",
+      "expected_benefit": "Clearer task completion and higher confidence.",
+      "effort": "LOW",
+      "risk": "LOW",
+      "quick_win": true,
+      "dependencies": "Targeted UX/accessibility regression coverage",
+      "do_not_break": "Existing successful route, state persistence and primary actions",
+      "historical_id": "F-07",
+      "change_class": "RETESTED",
+      "implementation_guidance": "Keep semantic status colors but make copper the primary emphasis token."
+    }
+  ],
+  "tasks": [
+    [
+      "J1",
+      "Landing → signup",
+      "ACQUISITION",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J2",
+      "Signup → first login",
+      "ACTIVATION",
+      "CRITICAL",
+      "PARTIAL"
+    ],
+    [
+      "J3",
+      "Credential login",
+      "ACCESS",
+      "CRITICAL",
+      "COVERED"
+    ],
+    [
+      "J4",
+      "OAuth login",
+      "ACCESS",
+      "CRITICAL",
+      "PARTIAL"
+    ],
+    [
+      "J5",
+      "Password recovery",
+      "RECOVERY",
+      "HIGH",
+      "PARTIAL"
+    ],
+    [
+      "J6",
+      "First onboarding",
+      "ACTIVATION",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J7",
+      "Complete profile",
+      "ACTIVATION",
+      "HIGH",
+      "BLOCKED_WRITE"
+    ],
+    [
+      "J8",
+      "Generate personalized workout",
+      "CORE",
+      "CRITICAL",
+      "COVERED_READONLY"
+    ],
+    [
+      "J9",
+      "Review generated workout",
+      "CORE",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J10",
+      "Start workout",
+      "CORE",
+      "CRITICAL",
+      "COVERED_READONLY"
+    ],
+    [
+      "J11",
+      "Execute exercise/set",
+      "CORE",
+      "CRITICAL",
+      "COVERED_READONLY"
+    ],
+    [
+      "J12",
+      "Complete workout",
+      "CORE",
+      "HIGH",
+      "BLOCKED_WRITE"
+    ],
+    [
+      "J13",
+      "Resume interrupted workout",
+      "RECOVERY",
+      "HIGH",
+      "PARTIAL"
+    ],
+    [
+      "J14",
+      "Browse exercises",
+      "DISCOVERY",
+      "MEDIUM",
+      "COVERED"
+    ],
+    [
+      "J15",
+      "Inspect exercise",
+      "DISCOVERY",
+      "MEDIUM",
+      "COVERED_READONLY"
+    ],
+    [
+      "J16",
+      "Record progress",
+      "CORE",
+      "HIGH",
+      "BLOCKED"
+    ],
+    [
+      "J17",
+      "Review progress",
+      "CORE",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J18",
+      "Nutrition dashboard",
+      "CORE",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J19",
+      "Meal plan",
+      "CORE",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J20",
+      "Log nutrition",
+      "CORE",
+      "HIGH",
+      "COVERED_READONLY"
+    ],
+    [
+      "J21",
+      "Achievements",
+      "RETENTION",
+      "MEDIUM",
+      "COVERED_READONLY"
+    ],
+    [
+      "J22",
+      "XP/gamification",
+      "RETENTION",
+      "MEDIUM",
+      "COVERED"
+    ],
+    [
+      "J23",
+      "Coach/AI guidance",
+      "CORE",
+      "HIGH",
+      "COVERED"
+    ],
+    [
+      "J24",
+      "Theme change",
+      "PREFERENCE",
+      "LOW",
+      "COVERED"
+    ],
+    [
+      "J25",
+      "Language change",
+      "PREFERENCE",
+      "MEDIUM",
+      "COVERED"
+    ],
+    [
+      "J26",
+      "Mobile navigation",
+      "NAVIGATION",
+      "HIGH",
+      "COVERED"
+    ],
+    [
+      "J27",
+      "Logout",
+      "ACCOUNT",
+      "HIGH",
+      "COVERED"
+    ],
+    [
+      "J28",
+      "Session recovery",
+      "RECOVERY",
+      "HIGH",
+      "COVERED"
+    ],
+    [
+      "J29",
+      "PWA install/use",
+      "PLATFORM",
+      "MEDIUM",
+      "PARTIAL"
+    ],
+    [
+      "J30",
+      "Public legal entry",
+      "TRUST",
+      "MEDIUM",
+      "COVERED"
+    ]
+  ],
+  "user_types": [
+    [
+      "ANONYMOUS_VISITOR",
+      "Understand value",
+      "/landing or /",
+      "Read proof; signup; login",
+      "Value/trust/entry",
+      "Landing/auth",
+      "Choose signup/login",
+      "Clear root intent"
+    ],
+    [
+      "FIRST_TIME_USER",
+      "Provide context",
+      "Signup → dashboard",
+      "Onboarding; first plan",
+      "Required fields/payoff",
+      "Onboarding",
+      "Continue/later",
+      "Preserve progress"
+    ],
+    [
+      "ACTIVE_USER",
+      "Train with minimal interruption",
+      "Workout",
+      "Execute sets; rest; finish",
+      "Current exercise/targets/timer",
+      "Workout",
+      "Mark next set",
+      "Keep draft"
+    ],
+    [
+      "RETURNING_USER",
+      "Understand progress",
+      "Dashboard/progress",
+      "Review trends; resume",
+      "Period/baseline/action",
+      "Progress",
+      "Act on recommendation",
+      "Low-data clarity"
+    ],
+    [
+      "USER_WITHOUT_PLAN",
+      "Create relevant plan",
+      "Generator",
+      "Set constraints/generate",
+      "AI inputs/rationale",
+      "Generator",
+      "Generate",
+      "Retry without duplicate"
+    ],
+    [
+      "USER_WITH_ACTIVE_PLAN",
+      "Trust and start plan",
+      "Review",
+      "Scan/start",
+      "Sequence/constraints",
+      "Workout review",
+      "Start",
+      "Back/delete distinction"
+    ],
+    [
+      "LOW_ENGAGEMENT_USER",
+      "Re-enter without shame",
+      "Dashboard",
+      "Use nudge/next action",
+      "Adherence context",
+      "Action hub",
+      "Resume",
+      "Positive recovery"
+    ],
+    [
+      "POWER_USER",
+      "Optimize progression",
+      "Progress/workout",
+      "Compare records/adjust",
+      "History/precision",
+      "Progress",
+      "Next session",
+      "Stable state"
+    ],
+    [
+      "ADMIN",
+      "Maintain content safely",
+      "Admin",
+      "Edit editorial data",
+      "Scope/auditability",
+      "Admin",
+      "Save",
+      "Restricted access"
+    ]
+  ],
+  "screen_map": [
+    [
+      "/",
+      "Returning auth entry",
+      "Login",
+      "Signup/recovery",
+      "—",
+      "ANONYMOUS_VISITOR",
+      "Direct",
+      "/dashboard",
+      "Use /landing for acquisition"
+    ],
+    [
+      "/landing",
+      "Public acquisition",
+      "Start journey",
+      "Login/proof",
+      "—",
+      "ANONYMOUS_VISITOR",
+      "Public CTA",
+      "/auth/signup",
+      "Cookie preferences"
+    ],
+    [
+      "/dashboard",
+      "Next action hub",
+      "Start/resume",
+      "Feature routes/reminders",
+      "Logout",
+      "ACTIVE_USER",
+      "Auth",
+      "Workout/routes",
+      "Refresh/session"
+    ],
+    [
+      "/workouts/generate",
+      "Plan setup",
+      "Generate AI workout",
+      "Saved plans/preferences",
+      "Delete",
+      "USER_WITHOUT_PLAN",
+      "Dashboard",
+      "/workouts/:id",
+      "Keep inputs"
+    ],
+    [
+      "/workouts/:id",
+      "Plan review",
+      "Start",
+      "Exercise list/back",
+      "Delete",
+      "USER_WITH_ACTIVE_PLAN",
+      "Generator",
+      "/start",
+      "Back"
+    ],
+    [
+      "/workouts/:id/start",
+      "Live session",
+      "Mark/finish",
+      "Rest/notes/exit",
+      "Finish",
+      "ACTIVE_USER",
+      "Plan review",
+      "/progress",
+      "Keep draft"
+    ],
+    [
+      "/exercises",
+      "Discovery",
+      "Search/filter",
+      "Cards/detail",
+      "—",
+      "ACTIVE_USER",
+      "Shell",
+      "Detail",
+      "Clear search"
+    ],
+    [
+      "exercise detail",
+      "Technique",
+      "Read instructions",
+      "Target muscles",
+      "—",
+      "ACTIVE_USER",
+      "Library",
+      "Library",
+      "Close"
+    ],
+    [
+      "/progress",
+      "Interpretation",
+      "Review next action",
+      "Charts/measures/records",
+      "—",
+      "RETURNING_USER",
+      "Shell",
+      "Workout",
+      "Low-data"
+    ],
+    [
+      "/nutrition",
+      "Daily intake",
+      "Log/generate",
+      "Macros/meals",
+      "Delete plan",
+      "ACTIVE_USER",
+      "Shell",
+      "Meal plan",
+      "Empty state"
+    ],
+    [
+      "/achievements",
+      "Motivation",
+      "Review progress",
+      "XP/history",
+      "—",
+      "ACTIVE_USER",
+      "Shell",
+      "Dashboard",
+      "No-data"
+    ],
+    [
+      "profile dialog",
+      "Preferences",
+      "Save profile",
+      "Recommendation preview",
+      "—",
+      "PROFILE_INCOMPLETE_USER",
+      "Account",
+      "Dashboard",
+      "Close"
+    ],
+    [
+      "admin/content",
+      "Editorial admin",
+      "Restricted edit",
+      "Content controls",
+      "Bulk update",
+      "ADMIN",
+      "Account",
+      "Library",
+      "Safety blocked"
+    ]
+  ],
+  "scorecards": {
+    "APPLICATION": [
+      [
+        "Clarity",
+        "GOOD",
+        "Shell labels and workspace headings clear; low-data/AI need more context"
+      ],
+      [
+        "Efficiency",
+        "FAIR",
+        "Repeated workout fields and mobile drawer add steps"
+      ],
+      [
+        "Consistency",
+        "GOOD",
+        "Shared shell/theme/locale patterns"
+      ],
+      [
+        "Feedback",
+        "FAIR",
+        "Success/low-data visible; induced fault not tested"
+      ],
+      [
+        "Error recovery",
+        "FAIR",
+        "Exit/keep draft explicit; failure fixture absent"
+      ],
+      [
+        "Cognitive load",
+        "FAIR",
+        "Workout ledger is highest load"
+      ],
+      [
+        "Navigation",
+        "FAIR",
+        "Desktop clear; mobile drawer context switch"
+      ],
+      [
+        "Accessibility",
+        "FAIR",
+        "Repeated set inputs need names"
+      ],
+      [
+        "Responsive task completion",
+        "FAIR",
+        "Private mobile renders; live completion not run"
+      ],
+      [
+        "Viewport economy",
+        "FAIR",
+        "Mobile auth/workout vertical burden"
+      ],
+      [
+        "Primary workspace",
+        "FAIR",
+        "Dashboard strong; workout needs focus"
+      ],
+      [
+        "Workflow efficiency",
+        "FAIR",
+        "Read-only path discoverable; writes bounded"
+      ],
+      [
+        "Progress interpretation",
+        "FAIR",
+        "State is honest; period meaning and next action less explicit in low-data state"
+      ],
+      [
+        "Nutrition decision support",
+        "FAIR",
+        "Daily state/actions visible; UI remains parallel rather than orchestrated"
+      ],
+      [
+        "Motivation meaning",
+        "FAIR",
+        "Level/XP/streak/achievements real; behavior change not longitudinally proven"
+      ]
+    ],
+    "LANDING": [
+      [
+        "Audience/purpose",
+        "FAIR",
+        "Root/landing split"
+      ],
+      [
+        "Value proposition",
+        "GOOD",
+        "Fitness promise clear"
+      ],
+      [
+        "Visual hierarchy",
+        "GOOD",
+        "Hero leads; accents compete"
+      ],
+      [
+        "Conversion",
+        "FAIR",
+        "CTA available; entry ambiguity"
+      ],
+      [
+        "Responsive",
+        "GOOD",
+        "No material public overflow"
+      ],
+      [
+        "Accessibility",
+        "FAIR",
+        "Named controls; landmarks/semantics gaps"
+      ],
+      [
+        "Trust",
+        "GOOD",
+        "Legal/cookie/auth links visible"
+      ]
+    ],
+    "MOBILE_WORKOUT": [
+      [
+        "Thumb reach",
+        "FAIR",
+        "Frequent controls local; global nav outside bottom reach"
+      ],
+      [
+        "Target size",
+        "GOOD",
+        "Visible targets touch-sized"
+      ],
+      [
+        "Scroll during set",
+        "POOR",
+        "Later sets below short viewport"
+      ],
+      [
+        "Timer visibility",
+        "GOOD",
+        "Rest card visible; live later state unknown"
+      ],
+      [
+        "Current exercise visibility",
+        "FAIR",
+        "First prominent; later focus requires scroll"
+      ],
+      [
+        "Next action clarity",
+        "FAIR",
+        "Mark/Rest clear; next implicit"
+      ]
+    ],
+    "AI_TRUST": [
+      [
+        "AI disclosure",
+        "GOOD",
+        "AI CTA explicit"
+      ],
+      [
+        "Explainability",
+        "FAIR",
+        "40+ rationale broad"
+      ],
+      [
+        "Reversibility",
+        "NOT_EVALUATED",
+        "No result/undo invoked"
+      ],
+      [
+        "Control",
+        "GOOD",
+        "Many constraints"
+      ],
+      [
+        "Expectation setting",
+        "FAIR",
+        "Wait/error/result not observed"
+      ],
+      [
+        "Trust",
+        "FAIR",
+        "Good start, incomplete contract"
+      ]
+    ],
+    "PREMIUM": [
+      [
+        "Hierarchy",
+        "GOOD",
+        "Strong dark shell/CTA"
+      ],
+      [
+        "Brand coherence",
+        "FAIR",
+        "Copper base; landing accents fragment"
+      ],
+      [
+        "Typography",
+        "GOOD",
+        "Modern readable type"
+      ],
+      [
+        "State clarity",
+        "FAIR",
+        "Partial/low-data visible"
+      ],
+      [
+        "Density",
+        "FAIR",
+        "Exercise/workout dense"
+      ],
+      [
+        "Memorability",
+        "FAIR",
+        "Fitness signal, dashboard patterns"
+      ],
+      [
+        "Mobile polish",
+        "FAIR",
+        "Workout/nav need refinement"
+      ]
+    ]
+  },
+  "what_works_well": [
+    [
+      "Canonical auth/session",
+      "B01-B05",
+      "Login, API, refresh and logout pass after CORS runtime fix",
+      "Preserve explicit origin/session handling"
+    ],
+    [
+      "Action hub",
+      "E13/E19/E29/E36/E55",
+      "Dashboard prioritizes next best action",
+      "Keep primary action above fold"
+    ],
+    [
+      "Workout controls",
+      "E26-E28/E35/E42/E48/E52/E60",
+      "Targets, rest, notes, progress and exit/finish are real",
+      "Preserve draft and recovery"
+    ],
+    [
+      "Exercise discovery",
+      "E15/E31/E38/E53/E54",
+      "Search/filter/detail support discovery at scale",
+      "Preserve filter/detail model"
+    ],
+    [
+      "Progress transparency",
+      "E16/E22/E32/E58",
+      "Missing data is not fabricated; recommendation is visible",
+      "Keep honest low-data copy"
+    ],
+    [
+      "Theme/locale",
+      "E19/E36/E55/B07",
+      "Private visible copy/theme switch",
+      "Preserve persistence and contrast"
+    ],
+    [
+      "Fitness identity",
+      "E01-E04/E55/E60",
+      "Copper mark and dark navy shell are distinctive",
+      "Keep restrained copper anchor"
+    ]
+  ],
+  "quick_wins": [
+    [
+      "Q1",
+      "Unique per-set names/fieldsets",
+      "P0/P1",
+      "UX-03",
+      "LOW"
+    ],
+    [
+      "Q2",
+      "Align login/signup provider actions",
+      "P1",
+      "UX-09",
+      "LOW"
+    ],
+    [
+      "Q3",
+      "Add period/confidence to low-data KPIs",
+      "P2",
+      "UX-06",
+      "LOW"
+    ],
+    [
+      "Q4",
+      "Reduce mobile auth card dead space",
+      "P3",
+      "UX-10",
+      "LOW"
+    ],
+    [
+      "Q5",
+      "Compact unavailable-image placeholder",
+      "P5",
+      "UX-04",
+      "LOW"
+    ],
+    [
+      "Q6",
+      "Synchronize document lang",
+      "P2",
+      "B07/code",
+      "LOW"
+    ]
+  ],
+  "structural_opportunities": [
+    [
+      "S1",
+      "Focused mobile workout workspace",
+      "P3",
+      "UX-01/02/03",
+      "Current long form needs focus, next action and safe reachability"
+    ],
+    [
+      "S2",
+      "Unified public entry model",
+      "P1",
+      "UX-08",
+      "Align root/landing/manifest intent"
+    ],
+    [
+      "S3",
+      "AI rationale and reversibility",
+      "P4",
+      "UX-05",
+      "Make inputs/results inspectable"
+    ],
+    [
+      "S4",
+      "Fitness weekly loop",
+      "P5",
+      "UX-07",
+      "Connect progress/nutrition/XP"
+    ],
+    [
+      "S5",
+      "Safe first-use fixture",
+      "P4",
+      "H-09",
+      "Measure onboarding without profile mutation"
+    ]
+  ],
+  "journeys": [
+    {
+      "id": "J01",
+      "name": "Landing → signup",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "ANONYMOUS_VISITOR",
+      "goal": "Complete the landing → signup task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/landing → /auth/signup",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J02",
+      "name": "Credential login",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "CRITICAL",
+      "user_type": "NEW_AUTHENTICATED_USER",
+      "goal": "Complete the credential login task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/auth/login → /dashboard",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E05",
+        "B03"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J03",
+      "name": "OAuth login",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "NEW_AUTHENTICATED_USER",
+      "goal": "Complete the oauth login task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/auth/login → provider callback",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "PARTIAL_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E05",
+        "E06"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J04",
+      "name": "Password recovery",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "LOW_ENGAGEMENT_USER",
+      "goal": "Complete the password recovery task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/auth/forgot-password",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E07"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J05",
+      "name": "First onboarding",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "FIRST_TIME_USER",
+      "goal": "Complete the first onboarding task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/dashboard → onboarding",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E12"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Three-step onboarding dialog and fields were observed; no profile save was executed."
+    },
+    {
+      "id": "J06",
+      "name": "Complete profile",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "PROFILE_INCOMPLETE_USER",
+      "goal": "Complete the complete profile task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/dashboard/profile",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "BLOCKED_WRITE",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [],
+      "browser_environment": "PRODUCTION",
+      "coverage": "BLOCKED_WRITE",
+      "coverage_notes": "Observable onboarding form is covered; profile persistence requires a write."
+    },
+    {
+      "id": "J07",
+      "name": "Generate workout",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "HIGH",
+      "user_type": "USER_WITHOUT_PLAN",
+      "goal": "Complete the generate workout task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/workouts/generate",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E14",
+        "E20",
+        "E30",
+        "E37",
+        "E44",
+        "E50",
+        "E56"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J08",
+      "name": "Review generated workout",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "HIGH",
+      "user_type": "USER_WITH_ACTIVE_PLAN",
+      "goal": "Complete the review generated workout task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/workouts/:id",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E25"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J09",
+      "name": "Start workout",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "CRITICAL",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the start workout task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/workouts/:id/start",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E26",
+        "E35",
+        "E60"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J10",
+      "name": "Execute exercise/set",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "CRITICAL",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the execute exercise/set task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/workouts/:id/start",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E26",
+        "E35",
+        "E42",
+        "E48",
+        "E52",
+        "E60"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J11",
+      "name": "Complete workout",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "CRITICAL",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the complete workout task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/workouts/:id/start",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "BLOCKED_WRITE",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E26"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "BLOCKED_WRITE",
+      "coverage_notes": "Four exercises and 12 sets were observed; final completion/logging was not submitted."
+    },
+    {
+      "id": "J12",
+      "name": "Resume interrupted workout",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "HIGH",
+      "user_type": "RETURNING_USER",
+      "goal": "Complete the resume interrupted workout task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/dashboard → /workouts/:id/start",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "PARTIAL",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E29"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "PARTIAL",
+      "coverage_notes": "Exit/keep-draft intent is visible, but persisted draft creation and resumed execution were not run end-to-end."
+    },
+    {
+      "id": "J13",
+      "name": "Browse exercises",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the browse exercises task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/exercises",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E15",
+        "E31",
+        "E38",
+        "E45",
+        "E51",
+        "E53",
+        "E57"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J14",
+      "name": "Inspect exercise",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the inspect exercise task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/exercises → detail",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E54"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Search interaction opened detail with description, muscles and instructions."
+    },
+    {
+      "id": "J15",
+      "name": "Review progress",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "HIGH",
+      "user_type": "RETURNING_USER",
+      "goal": "Complete the review progress task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/progress",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E16",
+        "E22",
+        "E32",
+        "E39",
+        "E46",
+        "E58"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J16",
+      "name": "Nutrition dashboard",
+      "classification": "CORE_FITNESS",
+      "task_criticality": "HIGH",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the nutrition dashboard task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/nutrition",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E17",
+        "E23",
+        "E33",
+        "E40",
+        "E47",
+        "E59"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J17",
+      "name": "Meal plan",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "USER_WITHOUT_PLAN",
+      "goal": "Complete the meal plan task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/nutrition/meal-plans/:id",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E17",
+        "E23"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Meal-plan affordance and nutrition state are observable; generation/logging writes were not submitted."
+    },
+    {
+      "id": "J18",
+      "name": "Gamification",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the gamification task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/achievements",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E18",
+        "E24",
+        "E34",
+        "E41"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Achievements route and level/XP/streak/history content were observed."
+    },
+    {
+      "id": "J19",
+      "name": "Language change",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the language change task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "Any private route",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E19",
+        "E36",
+        "B07"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J20",
+      "name": "Theme change and shell",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "ACTIVE_USER",
+      "goal": "Complete the theme change and shell task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "Any private route",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED_READONLY",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "E19",
+        "E36",
+        "E55",
+        "E60"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED_READONLY",
+      "coverage_notes": "Current production evidence; writes/fixture-sensitive actions remain bounded."
+    },
+    {
+      "id": "J21",
+      "name": "Logout and session recovery",
+      "classification": "ACCESS_OR_PREFERENCE",
+      "task_criticality": "HIGH",
+      "user_type": "RETURNING_USER",
+      "goal": "Complete the logout and session recovery task",
+      "entry_state": "Authorized production browser or public route",
+      "route": "/dashboard → /auth/login",
+      "steps": [
+        "Open route",
+        "Inspect current rendered state",
+        "Use safe read-only interaction",
+        "Record response"
+      ],
+      "decisions": [
+        "Continue vs recover",
+        "Primary vs secondary action"
+      ],
+      "inputs": [
+        "Synthetic/read-only inputs only"
+      ],
+      "context_switches": "0-1",
+      "scroll": "Measured per screenshot; longer surfaces require scroll",
+      "wait_states": "Route/API load",
+      "loading": "Observed or explicitly not induced",
+      "disabled": "Not all states invoked",
+      "success": "Rendered state or successful navigation observed",
+      "error": "No destructive error induced",
+      "recovery": "Back, retry, close or login path where available",
+      "success_state": "COVERED",
+      "viewport": "1440×900; 390×844 where applicable",
+      "theme": "light/dark representative",
+      "locale": "es/en representative",
+      "keyboard_notes": "AX names observed; full keyboard pass remains a gap",
+      "screenshot_reference": [
+        "B04",
+        "B05"
+      ],
+      "browser_environment": "PRODUCTION",
+      "coverage": "COVERED",
+      "coverage_notes": "Logout returned to /auth/login; direct dashboard refresh preserved the authenticated session before logout."
+    }
+  ],
+  "experience_map": [
+    [
+      "Acquisition",
+      "/landing",
+      "Understand value",
+      "Read hero/proof",
+      "CTA/cookie competition",
+      "Signup",
+      "Choose entry"
+    ],
+    [
+      "Login",
+      "/auth/login",
+      "Reach workspace",
+      "Submit credentials",
+      "Canonical now passes",
+      "Dashboard",
+      "Retry"
+    ],
+    [
+      "Onboarding",
+      "/dashboard",
+      "Supply context",
+      "Choose goal/data",
+      "Fixture absent",
+      "Personalization",
+      "Later/back"
+    ],
+    [
+      "Generate",
+      "/workouts/generate",
+      "Create plan",
+      "Set constraints/AI CTA",
+      "Result/reversibility not observed",
+      "Pending",
+      "Keep inputs"
+    ],
+    [
+      "Execute",
+      "/workouts/:id/start",
+      "Complete sets",
+      "Enter/mark/rest",
+      "Repeated fields/scroll",
+      "Partial session",
+      "Keep draft"
+    ],
+    [
+      "Progress",
+      "/progress",
+      "Know what changed",
+      "Read KPI/recommendation",
+      "Low-data dominance",
+      "Next action",
+      "Return workout"
+    ],
+    [
+      "Nutrition",
+      "/nutrition",
+      "Act on intake",
+      "Read/log/generate",
+      "Separate from training loop",
+      "Nutrition state",
+      "Dashboard"
+    ],
+    [
+      "Return",
+      "/dashboard",
+      "Resume momentum",
+      "Use action hub",
+      "Draft-dependent",
+      "Start/resume",
+      "Discard/continue"
+    ]
+  ],
+  "system_states": [
+    [
+      "LOADING",
+      "Route/API transitions",
+      "Partly understood",
+      "Keep stable skeleton and intent"
+    ],
+    [
+      "SUCCESS",
+      "Private routes/login/dashboard render",
+      "Understood",
+      "Keep action hub"
+    ],
+    [
+      "ERROR",
+      "Historical raw Failed to fetch; no current induced fault",
+      "Not retested",
+      "Controlled retry fixture"
+    ],
+    [
+      "EMPTY/LOW_DATA",
+      "Progress/nutrition zero/missing values",
+      "Partly understood",
+      "Explain missing vs zero"
+    ],
+    [
+      "OFFLINE",
+      "PWA declared",
+      "Unknown",
+      "Test offline contract"
+    ],
+    [
+      "SYNCING",
+      "Workout local draft code-observed",
+      "Partly understood",
+      "Show save time/state"
+    ],
+    [
+      "DISABLED",
+      "State-dependent controls",
+      "Partly understood",
+      "Explain why disabled"
+    ],
+    [
+      "FIRST_USE",
+      "Onboarding source/CUA observed",
+      "Not fully evaluated",
+      "Use incomplete fixture"
+    ]
+  ],
+  "depth_parity_with_talent": {
+    "talent_browser_evidence": 90,
+    "impulso_browser_evidence": 74,
+    "talent_full_journey_records": "HIGH",
+    "impulso_full_journey_records": 21,
+    "talent_screenshot_integration": "HIGH",
+    "impulso_screenshot_integration": "HIGH; every current screenshot indexed and chapter-linked",
+    "talent_private_surface_depth": "HIGH",
+    "impulso_private_surface_depth": "HIGH read-only / explicit writes gap",
+    "talent_viewport_depth": "Broad",
+    "impulso_viewport_depth": "7 viewports, private core at 1440/390/430",
+    "talent_i18n_depth": "Private journey coverage",
+    "impulso_i18n_depth": "Private ES/EN captures plus document-lang finding",
+    "talent_accessibility_depth": "Dedicated tool pass",
+    "impulso_accessibility_depth": "AX + code; private composed audit tool gap"
+  },
+  "limitations": [
+    "No workout completion, profile save, meal log, AI generation, delete or admin write.",
+    "No OAuth provider launch, first-use incomplete-profile fixture, controlled backend fault or offline/PWA install.",
+    "Longitudinal progress/motivation value cannot be established from the test account history.",
+    "Private automated accessibility composition did not return a material authenticated element report; this is a tool-compatibility gap.",
+    "No credentials, tokens, emails or private personal data are included in the report."
+  ],
+  "selective_surface_analysis": {
+    "Progress": {
+      "PRIMARY_USER_GOAL": "Understand meaningful change and choose the next training action.",
+      "PRIMARY_ACTION": "Review recommendation and switch charts/measurements/records.",
+      "KPI_INTERPRETABILITY": "Good state scan; zeros and missing values need period/baseline context.",
+      "LOW_DATA_STATE": "Honest, with missing trend and recommendation cues; no fabricated progress.",
+      "TREND_CLARITY": "Charts are discoverable, but interpretation is weaker than metric inventory.",
+      "NEXT_ACTION": "Return to workout or act on recommendation; currently implied rather than orchestrated.",
+      "MOBILE_DESKTOP": "Readable stacked mobile cards; denser but scannable desktop KPI/chart area.",
+      "LIGHT_DARK_ES_EN": "Both themes and ES/EN represented; document lang remains Spanish.",
+      "WHAT_WORKS_WELL": "Honest low-data state, visible recommendation, separate chart/measurement/record views.",
+      "FRICTION": "The user can see state but not always what changed or what to do next.",
+      "DO_NOT_BREAK": "Preserve honest missing-data treatment and avoid decorative or invented progress.",
+      "ANSWER": "Partially answers what changed and what to do next."
+    },
+    "Nutrition": {
+      "PRIMARY_USER_GOAL": "Understand today's nutrition state and choose log, plan or generation action.",
+      "CALORIE_MACRO_CLARITY": "Daily state and macro concepts are visible; action meaning could be clearer.",
+      "PLAN_LOGGING": "Plan access/generation and logging are discoverable; post-write feedback not tested.",
+      "RECOMMENDATION_RATIONALE": "Recommendations are visible, but selection rationale is not established.",
+      "EMPTY_LOW_DATA": "Current low-data state is readable; fully empty first-day state not induced.",
+      "WORKOUT_RELATIONSHIP": "Conceptually adjacent, not presented as coordinated next action.",
+      "NEXT_ACTION": "User chooses among parallel log/generate/review controls.",
+      "MOBILE_DESKTOP": "Readable vertical mobile stack; clearer desktop workspace than workout ledger.",
+      "LIGHT_DARK_ES_EN": "Both themes and representative private locales covered.",
+      "WHAT_WORKS_WELL": "Daily state, macro/recommendation framing and visible plan/log affordances.",
+      "FRICTION": "No single highest-value nutrition action dominates.",
+      "DO_NOT_BREAK": "Keep visible daily state and user-controlled non-clinical actions.",
+      "ANSWER": "Helps choose a nutrition action, but currently behaves as a parallel dashboard."
+    },
+    "Gamification": {
+      "LEVEL_XP_STREAK": "Level, XP and streak are visible status signals.",
+      "ACHIEVEMENTS": "Achievement and history provide a real review destination.",
+      "PROGRESS_MEANING": "Status is clearer than meaning; next unlock/behavior is less explicit.",
+      "REWARD_FEEDBACK": "Display is observed; feedback after earning was not tested.",
+      "MOTIVATION_PRESSURE": "Reinforcement potential is plausible; behavior change and pressure need longitudinal evidence.",
+      "NEXT_ACTION": "Review achievements or return to training; bridge is implicit.",
+      "WORKOUT_PROGRESS_RELATION": "Separate from workout completion and Progress workspace in the observed UI.",
+      "MOBILE_DESKTOP_LIGHT_DARK_ES_EN": "Readable stacked mobile and compact desktop views in both theme/locale families.",
+      "WHAT_WORKS_WELL": "Concrete level/XP/streak/achievement/history vocabulary.",
+      "FRICTION": "Surface shows progress without making the next rewarding behavior unmistakable.",
+      "DO_NOT_BREAK": "Keep rewards subordinate to meaningful training behavior.",
+      "ANSWER": "More than decoration, but not yet proven behavior guidance."
+    }
+  },
+  "audit_consistency_matrix": [
+    [
+      "FIRST_ONBOARDING",
+      "BLOCKED",
+      "COVERED_READONLY",
+      "Read-only form was treated as total block",
+      "Task/J05",
+      "E12 + current dialog",
+      "Status conflation",
+      "COVERED_READONLY",
+      "YES"
+    ],
+    [
+      "COMPLETE_PROFILE",
+      "BLOCKED",
+      "NOT_EVALUATED",
+      "Form observation vs persistence boundary",
+      "Task/J06",
+      "Onboarding form; no save",
+      "Write boundary omitted",
+      "BLOCKED_WRITE",
+      "YES"
+    ],
+    [
+      "LOGOUT",
+      "BLOCKED",
+      "B05 PASS",
+      "Executed action stale in task table",
+      "Task/B05",
+      "B05",
+      "Aggregate status stale",
+      "COVERED",
+      "YES"
+    ],
+    [
+      "SESSION_RECOVERY",
+      "BLOCKED",
+      "B04 PASS",
+      "Refresh proof omitted",
+      "Task/B04",
+      "B04",
+      "Combined with logout",
+      "COVERED",
+      "YES"
+    ],
+    [
+      "COMPLETE_WORKOUT",
+      "BLOCKED",
+      "READONLY",
+      "Screen vs final write not separated",
+      "Task/J11",
+      "E26-E28/E35/E52/E60",
+      "Final action boundary omitted",
+      "BLOCKED_WRITE",
+      "YES"
+    ],
+    [
+      "RESUME_WORKOUT",
+      "BLOCKED",
+      "READONLY",
+      "Intent visible, persisted resume not run",
+      "Task/J12",
+      "E26-E28 + code",
+      "Draft intent overstated",
+      "PARTIAL",
+      "YES"
+    ],
+    [
+      "EXERCISE_DETAIL",
+      "BLOCKED",
+      "READONLY",
+      "Detail was opened",
+      "Task/J14/B06",
+      "E54",
+      "Interaction not propagated",
+      "COVERED_READONLY",
+      "YES"
+    ],
+    [
+      "MEAL_PLAN",
+      "BLOCKED",
+      "READONLY",
+      "Observable read-only plan state",
+      "Task/J17",
+      "E17/E23/E33/E40/E47/E59",
+      "No-write policy treated as total block",
+      "COVERED_READONLY",
+      "YES"
+    ],
+    [
+      "ACHIEVEMENTS",
+      "BLOCKED",
+      "READONLY",
+      "Route/content observed",
+      "Task/J18",
+      "E18/E24/E34/E41",
+      "Read-only review treated as block",
+      "COVERED_READONLY",
+      "YES"
+    ],
+    [
+      "UX-08",
+      "Broad orphan/split",
+      "Mixed route evidence",
+      "Landing exists and works; root remains login",
+      "Prior finding",
+      "E61-E62/B08-B13 + code",
+      "Old title overgeneralized",
+      "Refined split-entry finding",
+      "YES"
+    ],
+    [
+      "SKILL_VERSION",
+      "Contract 1.5.0",
+      "Manifest 1.4.0",
+      "Installed layers disagree",
+      "SKILL.md",
+      "skill.yaml/runtime/index",
+      "Authority not explicit",
+      "SKILL.md authoritative; drift documented",
+      "YES"
+    ],
+    [
+      "RUNTIME_VERSION",
+      "Code header 1.5.0",
+      "Manifest/skill.yaml 1.4.0",
+      "Runtime candidate vs metadata",
+      "runtime implementation",
+      "skill.yaml/manifest",
+      "Source layers collapsed",
+      "1.5.0 candidate; 1.4.0 metadata",
+      "YES"
+    ]
+  ],
+  "audit_remediation_changelog": [
+    [
+      "COVERAGE_STATUS_NORMALIZATION",
+      "Mixed BLOCKED/read-only labels",
+      "Single taxonomy with write boundaries",
+      "Existing E12/B04-B06/E54",
+      "Avoid false blockers."
+    ],
+    [
+      "UX08_RETEST",
+      "Broad orphan/split claim",
+      "Confirmed split-entry model and refined finding",
+      "E61-E62/B08-B13 + code/manifest",
+      "Current browser evidence."
+    ],
+    [
+      "SKILL_VERSION_DRIFT",
+      "1.5.0 vs 1.4.0 unexplained",
+      "Contract, runtime, manifest, registry and notes separated",
+      "Installed skill layers",
+      "Preserve provenance."
+    ],
+    [
+      "PROGRESS_DEPTH",
+      "Short summary",
+      "Interpretation, low-data, trends, next action and preservation contract",
+      "E16/E22/E32/E39/E46/E58",
+      "Selective narrative."
+    ],
+    [
+      "NUTRITION_DEPTH",
+      "Short summary",
+      "Decision support, plan/log, low-data and workout relation",
+      "E17/E23/E33/E40/E47/E59",
+      "Selective narrative."
+    ],
+    [
+      "GAMIFICATION_DEPTH",
+      "Short summary",
+      "Meaning, feedback, motivation and workout relation",
+      "E18/E24/E34/E41",
+      "Selective narrative."
+    ]
+  ]
+}
