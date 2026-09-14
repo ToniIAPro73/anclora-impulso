@@ -13,6 +13,7 @@ import { workoutsApi } from "@/lib/api"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
 import { getMuscleGroupLabel, type AppLanguage } from "@/lib/workout-domain-labels"
+import { getWorkoutDisplayName } from "@/lib/workout-display-name"
 import { useWorkouts } from "@/hooks/use-workouts"
 
 function WorkoutDetailContent() {
@@ -94,7 +95,7 @@ function WorkoutDetailContent() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             {isSpanish ? "Volver" : "Back"}
           </Button>
-          <h1 className="truncate text-2xl font-semibold text-slate-900 dark:text-white">{workout.name}</h1>
+          <h1 className="truncate text-2xl font-semibold text-slate-900 dark:text-white">{getWorkoutDisplayName(workout.name, labelLanguage)}</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             {isSpanish
               ? "Tu entrenamiento está listo. Revisa los ejercicios antes de empezar."

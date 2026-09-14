@@ -28,6 +28,7 @@ import {
   type Equipment,
   type MuscleGroup,
 } from "@/lib/workout-domain-labels"
+import { getWorkoutDisplayName } from "@/lib/workout-display-name"
 
 type WorkoutType = 'strength' | 'cardio' | 'hiit' | 'flexibility' | 'full_body'
 type WorkoutDifficulty = 'beginner' | 'intermediate' | 'advanced'
@@ -202,7 +203,7 @@ export function WorkoutGenerator() {
             {workouts.slice(0, 5).map((workout) => (
               <div key={workout.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-slate-700/60 dark:bg-slate-900/40 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900 dark:text-white">{workout.name}</p>
+                  <p className="truncate font-semibold text-slate-900 dark:text-white">{getWorkoutDisplayName(workout.name, labelLanguage)}</p>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                     {new Date(workout.createdAt).toLocaleDateString(isSpanish ? "es-ES" : "en-US")} · {workout.exercises.length} {isSpanish ? "ejercicios" : "exercises"}
                   </p>
@@ -456,7 +457,7 @@ export function WorkoutGenerator() {
             <CardHeader>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <CardTitle className="text-2xl">{generatedWorkout.name}</CardTitle>
+                  <CardTitle className="text-2xl">{getWorkoutDisplayName(generatedWorkout.name, labelLanguage)}</CardTitle>
                   <CardDescription className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
