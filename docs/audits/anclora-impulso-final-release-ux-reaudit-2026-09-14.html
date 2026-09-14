@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anclora Impulso — Final Release Certification</title>
+<style>
+@page{size:A4;margin:14mm 13mm 16mm}*{box-sizing:border-box}body{font:10pt/1.45 Arial,sans-serif;color:#10213f;background:#fff}h1,h2,h3{color:#071638;line-height:1.15}h1{font-size:30pt;margin:0 0 12pt}h2{font-size:18pt;border-bottom:2px solid #d77b36;padding-bottom:5pt;margin-top:24pt}h3{font-size:12pt;margin-top:15pt}.cover{min-height:240mm;display:flex;flex-direction:column;justify-content:center;border-bottom:7px solid #d77b36;page-break-after:always}.kicker{color:#b75e25;letter-spacing:.12em;text-transform:uppercase;font-weight:700}.status{display:inline-block;background:#8d1d1d;color:#fff;padding:5pt 9pt;border-radius:4pt;font-weight:700}.meta{display:grid;grid-template-columns:145pt 1fr;gap:4pt 10pt;margin-top:20pt}.meta div:nth-child(odd){font-weight:700;color:#53617a}.callout{background:#f5f7fb;border-left:4px solid #d77b36;padding:10pt;margin:10pt 0}.pass{color:#087443;font-weight:700}.fail{color:#8d1d1d;font-weight:700}.partial{color:#a05c00;font-weight:700}table{width:100%;border-collapse:collapse;margin:8pt 0 14pt;font-size:8.6pt;page-break-inside:auto}th{background:#071638;color:#fff;text-align:left}td,th{padding:5pt 6pt;border:1px solid #d8deea;vertical-align:top}tr{page-break-inside:avoid}code{background:#f1f4f8;padding:1pt 3pt;border-radius:2pt}ul{margin-top:4pt}figure{margin:10pt 0;break-inside:avoid}figure img{width:100%;max-height:115mm;object-fit:contain;border:1px solid #d8deea;border-radius:4pt}figcaption{font-size:8pt;color:#53617a;margin-top:4pt}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10pt}.card{border:1px solid #d8deea;border-radius:5pt;padding:9pt;break-inside:avoid}.small{font-size:8pt;color:#53617a}.pagebreak{break-before:page}.footer{margin-top:24pt;color:#53617a;font-size:8pt;border-top:1px solid #d8deea;padding-top:5pt}
+</style>
+</head>
+<body>
+<section class="cover">
+<div class="kicker">Anclora Impulso · Release certification</div>
+<h1>Production Authenticated Smoke<br>+ Final UX Re-audit</h1>
+<p class="status">FINAL_RESULT: FAIL — RELEASE GATE OPEN</p>
+<div class="meta">
+<div>Fecha</div><div>2026-09-14</div>
+<div>Commit auditado</div><div><code>1dc9241f3e18c2df434d82cc531d6943af1fa6c7</code></div>
+<div>Ramas</div><div>development · staging · production · main — sincronizadas</div>
+<div>Producción</div><div>https://impulso.anclora.com</div>
+<div>Skill</div><div>ux-product-experience-review 1.5.0 contract / 1.4.0 manifest</div>
+<div>Evidencia</div><div>35 registros nuevos + 83 reutilizados · 27 capturas nuevas + 57 reutilizadas</div>
+</div>
+<div class="callout"><strong>Decisión:</strong> auth, CORS, sesión, dashboard y Ruta Vital funcionan en producción. No se certifica el release porque falta el smoke seguro de workout execution y, por consecuencia, la validación final completa de accesibilidad/responsive del core fitness.</div>
+</section>
+
+<h2>00 · Index</h2>
+<div class="grid"><div class="card"><strong>Certificado</strong><ul><li>branch sync y CI</li><li>public entry</li><li>production login/API/CORS</li><li>session refresh/logout</li><li>Ruta Vital enrollment/persistence</li><li>ES/EN y light/dark read-only</li></ul></div><div class="card"><strong>Abierto</strong><ul><li>workout fixture/execution</li><li>full a11y core pass</li><li>final responsive matrix</li><li>complete cross-module loop</li></ul></div></div>
+
+<h2>01 · Executive assessment</h2>
+<table><tr><th>Dimension</th><th>Assessment</th></tr><tr><td>User friction</td><td>Incomplete profile/onboarding disables workout generation.</td></tr><tr><td>Simplification</td><td>Unify first authenticated setup for profile, workout and Ruta Vital.</td></tr><tr><td>Cognitive load</td><td>Dashboard exposes several parallel nudges; one next action should dominate.</td></tr><tr><td>Premium opportunity</td><td>Replace generic empty/nudge blocks with state-specific guidance.</td></tr><tr><td>Mobile workout</td><td>Focused implementation exists, but production execution was not safely reachable.</td></tr><tr><td>Overall</td><td>Strong access foundation; incomplete confidence on the core recurring fitness task.</td></tr></table>
+
+<h2>02 · Gate results</h2>
+<table><tr><th>Gate</th><th>Result</th><th>Evidence</th></tr><tr><td>Branches / CI / Vercel</td><td class="pass">PASS</td><td>All four branches at 1dc9241; CI 34896340988 success; Vercel Ready.</td></tr><tr><td>Production auth smoke</td><td class="pass">PASS</td><td>Login POST 200, redirect dashboard, API 200.</td></tr><tr><td>Session refresh/logout</td><td class="pass">PASS</td><td>Refresh stays private; logout and protected-route redirect pass.</td></tr><tr><td>Ruta Vital</td><td class="partial">PARTIAL</td><td>Discovery, enrollment 201, onboarding, phase/week, CTA and persistence pass; cross-module completion incomplete.</td></tr><tr><td>Workout smoke</td><td class="fail">BLOCKED_WRITE</td><td>No safe existing workout fixture; no generation/profile write executed.</td></tr><tr><td>Accessibility</td><td class="partial">PARTIAL</td><td>Snapshot semantics pass on reachable surfaces; full core pass pending workout fixture.</td></tr><tr><td>Release gate</td><td class="fail">FAIL</td><td>Three release blockers remain open.</td></tr></table>
+
+<h2>03 · Production smoke</h2>
+<p>Canonical production loaded successfully. Login with the authorized test account returned HTTP 200 and redirected to <code>/dashboard</code>. The browser observed successful calls to <code>/api/auth/me</code>, <code>/api/profile</code>, <code>/api/progress/complete</code>, <code>/api/nutrition/summary</code>, <code>/api/nutrition/meal-plans</code>, <code>/api/workouts</code> and <code>/api/engagement/nudges</code>. The canonical preflight returned 204 with explicit origin <code>https://impulso.anclora.com</code> and credentials enabled.</p>
+<figure><img src="evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/final-release-dashboard-es-light-1440-auth.png"><figcaption>R03 — Production authenticated dashboard, 1440×900, light, ES. Dashboard and shell rendered after real login.</figcaption></figure>
+
+<h2>04 · Ruta Vital smoke</h2>
+<p>Ruta Vital is discoverable from the authenticated shell. The production flow rendered a non-clinical onboarding with goal, activity, available time, limitations and a professional-review choice. Enrollment returned 201. After saving, the home showed Foundation/current week, weekly actions and one dominant “Continue my week” action. The handoff reached workout generation, where the product correctly disabled generation while the separate workout onboarding remained incomplete.</p>
+<div class="grid"><figure><img src="evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/final-release-health-plans-en-dark-390-onboarding.png"><figcaption>R10 — Enrollment/onboarding and safety-review choice.</figcaption></figure><figure><img src="evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/final-release-health-plans-en-dark-390-home.png"><figcaption>R11 — Current week, objective and next action.</figcaption></figure></div>
+
+<h2>05 · Core surfaces</h2>
+<table><tr><th>Surface</th><th>Observed result</th></tr><tr><td>Dashboard / shell</td><td>Authenticated; sidebar desktop; hamburger mobile; setup state visible.</td></tr><tr><td>Progress</td><td>Charts/Measurements/Records tabs; low-data state and Ruta Vital link.</td></tr><tr><td>Nutrition</td><td>Log Meal and first-plan empty state; AI plan disabled until profile setup.</td></tr><tr><td>Gamification</td><td>Gamification page and locked state render.</td></tr><tr><td>Exercises</td><td>Search, four filters, dense library, mixed image/no-image cards and detail modal.</td></tr><tr><td>Profile</td><td><code>/profile</code> returned 404; no current page route found. This is recorded, not silently treated as available.</td></tr><tr><td>Workout generation/execution</td><td>Generator visible but disabled; execution requires a safe fixture or authorized write.</td></tr></table>
+
+<h2>06 · UX-01…UX-11</h2>
+<table><tr><th>Finding</th><th>Final status</th><th>Basis</th></tr><tr><td>UX-01 focused workout workspace</td><td class="partial">PARTIALLY_RESOLVED</td><td>Implementation/previous execution evidence; final production fixture not reached.</td></tr><tr><td>UX-02 mobile shell</td><td class="fail">STILL_PRESENT</td><td>Mobile shell remains hamburger-first; active workout not reached.</td></tr><tr><td>UX-03 set accessible names</td><td class="partial">PARTIALLY_RESOLVED</td><td>Unique names supported by code/previous browser evidence; final execution pending.</td></tr><tr><td>UX-04 media placeholders</td><td class="fail">STILL_PRESENT</td><td>R16 shows mixed image/no-image cards.</td></tr><tr><td>UX-05 AI trust</td><td class="partial">PARTIAL</td><td>Generator state visible; real generation/regeneration not executed.</td></tr><tr><td>UX-06 progress low-data</td><td class="fail">STILL_PRESENT</td><td>Low-data state and recommendation render; interpretation remains open.</td></tr><tr><td>UX-07 fitness loop</td><td class="partial">REFINED_PARTIAL</td><td>Cross-links exist; direct Ruta Vital outbound orchestration incomplete.</td></tr><tr><td>UX-08 public entry</td><td class="partial">REFINED_STILL_PRESENT</td><td>Both root and landing render; manifest start_url is /landing; duplicate model remains.</td></tr><tr><td>UX-09 provider parity</td><td class="pass">RESOLVED_READONLY</td><td>Login and signup expose Google/GitHub.</td></tr><tr><td>UX-10 mobile auth card</td><td class="fail">STILL_PRESENT</td><td>Generous card remains around short form.</td></tr><tr><td>UX-11 brand palette</td><td class="fail">STILL_PRESENT</td><td>Copper/orange remains secondary to broader proof accents.</td></tr></table>
+
+<h2>07 · Public entry, PWA and backend dependency</h2>
+<p><code>/</code> and <code>/landing</code> both render the public landing. Login/signup remain explicit routes. The manifest is valid and declares <code>start_url=/landing</code>. Render health routes are correctly mounted at root (<code>/health/live</code>, <code>/health/ready</code>, <code>/health/simple</code>, <code>/health</code>); all returned 200. The historical <code>/api/health/*</code> paths are not referenced by frontend source or production traffic and are therefore classified as legacy/non-blocking.</p>
+<figure><img src="evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/final-release-landing-es.png"><figcaption>R29 — Public root/landing model observed in production.</figcaption></figure>
+
+<h2>08 · Themes, locales and accessibility</h2>
+<p>Light and dark private surfaces rendered at 1440×900 and 390×844. ES and EN private navigation/content rendered, and <code>document.documentElement.lang</code> switched correctly. Browser accessibility snapshots confirmed headings, named controls, tabs, labels and the visible Ruta Vital onboarding semantics. This is not a full certification of contrast, reduced motion, screen reader traversal or workout timer semantics because the execution surface was not reached.</p>
+<div class="grid"><figure><img src="evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/final-release-dashboard-es-light-390-no-dialog.png"><figcaption>R06 — Dashboard mobile light.</figcaption></figure><figure><img src="evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/final-release-dashboard-en-dark-390.png"><figcaption>R08 — Dashboard mobile dark, EN.</figcaption></figure></div>
+
+<h2>09 · Historical reconciliation</h2>
+<p>F-01 and F-05 are verified fixed. F-04 is refined, not removed: the landing exists, but the entry model remains split. F-02, H-08, and OAuth callback remain not retested. F-06, F-07, F-09, UX-02, UX-04, UX-06 and UX-11 remain open or partially open as documented. H-09–H-13 are partially verified with current private browser evidence.</p>
+
+<h2>10 · Release blockers and next action</h2>
+<ol><li>Provide/authorize a non-destructive existing workout fixture.</li><li>Run workout review/execution at 1440×900, 390×844 and 430×932, including keyboard and accessible-name checks.</li><li>Complete the final responsive matrix and Ruta Vital outbound continuity.</li><li>Regenerate the final UX artifact with those results and close the gate only if no blocker remains.</li></ol>
+<div class="callout"><strong>Conclusion:</strong> The release is technically deployed and production auth is healthy, but the evidence bar requested by this certification is not met. No product change is recommended or made in this certification.</div>
+<div class="footer">Evidence directory: docs/audits/evidence/anclora-impulso-final-release-ux-reaudit-2026-09-14/ · Report generated from production browser observations plus prior reusable evidence.</div>
+</body></html>
