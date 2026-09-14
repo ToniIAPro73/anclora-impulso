@@ -136,11 +136,11 @@ export function ExerciseLibrary() {
 
     return (
       <div
-        className={`flex items-center justify-center overflow-hidden rounded-[24px] border border-slate-200/70 bg-[linear-gradient(145deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.9))] text-center shadow-inner dark:border-slate-700/60 dark:bg-[linear-gradient(145deg,_rgba(15,23,42,0.92),_rgba(2,6,23,0.92))] ${compact ? "mb-4 h-48" : "mb-6 h-72"}`}
+        className={`flex items-center justify-center overflow-hidden rounded-[24px] border border-slate-200/70 bg-[linear-gradient(145deg,_rgba(248,250,252,0.95),_rgba(255,255,255,0.9))] text-center shadow-inner dark:border-slate-700/60 dark:bg-[linear-gradient(145deg,_rgba(15,23,42,0.92),_rgba(2,6,23,0.92))] ${compact ? "mb-4 h-20" : "mb-6 h-72"}`}
       >
         <div className="px-6">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            {isSpanish ? "Imagen no disponible todavía" : "Image not available yet"}
+            {compact ? (isSpanish ? "Sin imagen" : "No image") : (isSpanish ? "Imagen no disponible todavía" : "Image not available yet")}
           </p>
         </div>
       </div>
