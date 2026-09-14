@@ -154,6 +154,12 @@ export function WorkoutGenerator() {
     setError(null)
   }
 
+  const handleDiscardGenerated = async () => {
+    if (!generatedWorkout) return
+    await deleteWorkout(generatedWorkout.id)
+    setGeneratedWorkout(null)
+  }
+
   const handleDeleteWorkout = async (workoutId: string) => {
     const confirmed = window.confirm(
       isSpanish ? "¿Quieres eliminar este plan de entrenamiento?" : "Do you want to delete this workout plan?"
@@ -469,6 +475,16 @@ export function WorkoutGenerator() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-2xl border border-orange-200/70 bg-orange-50/70 p-4 dark:border-orange-400/10 dark:bg-orange-950/20">
+                <p className="text-sm font-semibold text-orange-900 dark:text-orange-200">{isSpanish ? "Por qué aparece esta propuesta" : "Why this proposal appeared"}</p>
+                <p className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "La IA usa tu perfil y las preferencias que acabas de revisar. Puedes regenerar o descartar antes de empezar." : "The AI uses your profile and the preferences you just reviewed. You can regenerate or discard before starting."}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-orange-900 dark:text-orange-200">
+                  <Badge variant="outline">{profile.age ? `${isSpanish ? "Edad" : "Age"}: ${profile.age}` : (isSpanish ? "Edad no indicada" : "Age not provided")}</Badge>
+                  <Badge variant="outline">{preferences.duration} min</Badge>
+                  <Badge variant="outline">{getDifficultyLabel(labelLanguage, preferences.difficulty)}</Badge>
+                  <Badge variant="outline">{preferences.trainingEnvironment}</Badge>
+                </div>
+              </div>
               {generatedWorkout.exercises.map((workoutExercise, index) => (
                 <div key={workoutExercise.id} className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                   <div className="flex items-start gap-3">
@@ -507,6 +523,9 @@ export function WorkoutGenerator() {
                 </Button>
                 <Button onClick={handleGenerateAnother} variant="outline" size="lg" className="w-full sm:w-auto">
                   {isSpanish ? "Generar Otro" : "Generate Another"}
+                </Button>
+                <Button onClick={() => void handleDiscardGenerated()} variant="ghost" size="lg" className="w-full sm:w-auto" disabled={isDeleting}>
+                  {isSpanish ? "Descartar propuesta" : "Discard proposal"}
                 </Button>
               </div>
             </CardContent>
