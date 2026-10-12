@@ -38,6 +38,11 @@ Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos
 *Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
 nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
 
+### Actualización (2026-10-13): gate Hermes, segunda ronda
+Aplicadas las cadenas 9 (fallback) y 10 (tope de generaciones) con E2E 13/13 (`42-…`). La 10 es una variante de Toni, no la propuesta
+literal de Hermes: **debe reenviarse**. Sigue pendiente la cadena 8 (aviso del modo IA), que Hermes no llegó a revisar. AI-02 sigue sin
+aceptarse (falta la matriz promesa → función → prueba).
+
 ### Actualización (2026-10-13): B1-F1/B1-F7 desplegados y dictámenes B1/B2 adoptados por delegación
 - **Producción (Render `0606586`, desplegado y verificado):** B1-F1 (CORS sin comodines por prefijo) y B1-F7 (`userId` en logs). Los
   orígenes exactos siguen aceptados; los previews por hash dejan de poder llamar a la API hasta configurar su sufijo.

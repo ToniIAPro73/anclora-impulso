@@ -142,7 +142,7 @@ export function WorkoutGenerator() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 429 && typeof err.details.windowResetsAt === "string") {
         const resetAt = new Date(err.details.windowResetsAt).toLocaleTimeString(isSpanish ? "es-ES" : "en-US", { hour: "2-digit", minute: "2-digit" })
-        setError(isSpanish ? `Has alcanzado el límite de este periodo. Se restablece a las ${resetAt}.` : `You have reached the limit for this period. It resets at ${resetAt}.`)
+        setError(isSpanish ? `Has alcanzado el límite de generaciones de este periodo. Podrás generar otra a las ${resetAt}.` : `You have reached the generation limit for this period. You can generate another at ${resetAt}.`)
       } else {
         setError(err instanceof Error ? err.message : isSpanish ? "Error al generar entrenamiento" : "Error generating workout")
       }
@@ -489,7 +489,7 @@ export function WorkoutGenerator() {
               <div className="rounded-2xl border border-orange-200/70 bg-orange-50/70 p-4 dark:border-orange-400/10 dark:bg-orange-950/20">
                 <p className="text-sm font-semibold text-orange-900 dark:text-orange-200">{isSpanish ? "Por qué aparece esta propuesta" : "Why this proposal appeared"}</p>
                 {generatedWorkout.generation?.mode === "fallback" ? (
-                  <p role="status" data-testid="fallback-notice" className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "Plantilla estándar: la generación con IA no estaba disponible en este momento, así que hemos preparado un plan estándar adaptado a tu perfil y preferencias. Es un plan válido: puedes empezar o regenerarlo más tarde." : "Standard template: AI generation was not available at this moment, so we prepared a standard plan adapted to your profile and preferences. It is a valid plan: you can start it or regenerate it later."}</p>
+                  <p role="status" data-testid="fallback-notice" className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "Plantilla estándar: la generación con IA no pudo completarse, así que hemos preparado un plan estándar adaptado a tu perfil y preferencias. Es un plan válido: puedes empezar o regenerarlo cuando quieras." : "Standard template: AI generation could not complete, so we prepared a standard plan adapted to your profile and preferences. It is a valid plan: you can start it or regenerate it anytime."}</p>
                 ) : generatedWorkout.generation?.mode === "ai" ? (
                   <p className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "Generado con IA a partir de tu perfil y las preferencias que acabas de revisar. Puedes regenerarlo o descartarlo antes de empezar." : "Generated with AI from your profile and the preferences you just reviewed. You can regenerate or discard it before starting."}</p>
                 ) : (

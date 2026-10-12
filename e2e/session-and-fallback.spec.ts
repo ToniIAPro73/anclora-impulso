@@ -265,6 +265,9 @@ test('generation: a lost response is retried with the same key and creates exact
   await expect(page.getByTestId('generation-mode')).toHaveAttribute('data-mode', 'fallback');
   await expect(page.getByTestId('generate-error')).toHaveCount(0);
   await expect(page.getByTestId('fallback-notice')).not.toContainText(/error|fall[oó]/i);
+  // Hermes gate (2026-10-13): honest for every fallback cause (unavailable, timeout, error, rejected by validation).
+  await expect(page.getByTestId('fallback-notice')).toContainText(/no pudo completarse|could not complete/);
+  await expect(page.getByTestId('fallback-notice')).not.toContainText(/no estaba disponible|was not available/);
 
   expect(keys.length).toBeGreaterThanOrEqual(2);
   expect(new Set(keys).size).toBe(1);
@@ -319,6 +322,9 @@ test('error states: server failure and quota exhaustion are explained and create
   const expected = new Date(resetsAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   const expectedEn = new Date(resetsAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   await expect(page.getByTestId('generate-error')).toContainText(new RegExp(`${expected}|${expectedEn}`));
+  // Hermes gate (2026-10-13): the window is rolling, so at that time ONE generation frees up, not the whole allowance.
+  await expect(page.getByTestId('generate-error')).toContainText(/Podrás generar otra|You can generate another/);
+  await expect(page.getByTestId('generate-error')).not.toContainText(/restablece|resets/i);
 
   expect(sql(`select count(*) from workouts where "userId"='${user.id}'`)).toBe('0');
 });
