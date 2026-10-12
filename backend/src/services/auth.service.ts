@@ -3,7 +3,9 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { issueSession } from './session.service';
 import { AppError } from '../middleware/errorHandler';
 import type { RegisterInput, LoginInput } from '../utils/validators';
-import { isAdminEmail } from '../middleware/admin';
+import { isAdminUserId } from '../middleware/admin';
+import { normalizeEmail } from '../utils/email';
+import { lookupAccountByCanonicalEmail } from './account-lookup.service';
 
 export interface AuthResponse {
   user: {
@@ -20,9 +22,13 @@ export interface AuthResponse {
  * Registrar un nuevo usuario
  */
 export async function register(data: RegisterInput): Promise<AuthResponse> {
+  // F-1: canonical address; a case variant of an existing account is the same account (never a second one).
+  const email = normalizeEmail(data.email);
+
   // Verificar si el usuario ya existe
-  const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
+  const existingUser = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: 'insensitive' } },
+    select: { id: true },
   });
 
   if (existingUser) {
@@ -35,7 +41,7 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
   // Crear usuario
   const user = await prisma.user.create({
     data: {
-      email: data.email,
+      email,
       passwordHash,
       fullName: data.fullName,
     },
@@ -49,7 +55,7 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
-      isAdmin: isAdminEmail(user.email),
+      isAdmin: isAdminUserId(user.id),
     },
     accessToken,
     refreshToken,
@@ -57,13 +63,20 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
 }
 
 /**
+ * Lookup by canonical address through the shared policy (account-lookup.service): accounts created before
+ * normalization may be stored with mixed case, and when the canonical set holds several accounts none is selected —
+ * not even an exact match on the normalized value.
+ */
+async function findUserByEmail(rawEmail: string) {
+  const lookup = await lookupAccountByCanonicalEmail(rawEmail);
+  return lookup.status === 'found' ? lookup.user : null;
+}
+
+/**
  * Iniciar sesión
  */
 export async function login(data: LoginInput): Promise<AuthResponse> {
-  // Buscar usuario
-  const user = await prisma.user.findUnique({
-    where: { email: data.email },
-  });
+  const user = await findUserByEmail(data.email);
 
   if (!user || !user.passwordHash || user.disabledAt) {
     throw new AppError(401, 'Email o contraseña incorrectos');
@@ -84,7 +97,7 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
-      isAdmin: isAdminEmail(user.email),
+      isAdmin: isAdminUserId(user.id),
     },
     accessToken,
     refreshToken,
@@ -111,6 +124,6 @@ export async function getCurrentUser(userId: string) {
 
   return {
     ...user,
-    isAdmin: isAdminEmail(user.email),
+    isAdmin: isAdminUserId(user.id),
   };
 }

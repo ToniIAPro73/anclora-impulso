@@ -7,6 +7,9 @@ import { applySecurityPolicy } from './utils/security-config';
 async function startServer() {
   try {
     // Security configuration policy. `warn` (default) logs finding CODES only; `enforce` refuses to start.
+    if (env.adminEmails.length > 0 && env.adminUserIds.length === 0) {
+      console.warn('⚠️ ADMIN_EMAILS is set but no longer grants administrator access; designate users with ADMIN_USER_IDS');
+    }
     const security = applySecurityPolicy(env.securityConfigMode, env);
     if (security.mode !== 'off') {
       const codes = security.findings.map((finding) => `${finding.severity}:${finding.code}`);

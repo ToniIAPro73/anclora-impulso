@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'crypto';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { env } from '../config/env';
 import { AppError } from '../middleware/errorHandler';
@@ -51,11 +52,18 @@ function noteLegacyUse(userId: string, now: Date) {
 
 const unauthorized = (message = 'Refresh token inválido') => new AppError(401, message);
 
-export async function issueSession(user: { id: string; email: string }, now: Date = new Date()): Promise<IssuedSession> {
+/** Either the shared client or an interactive-transaction client (so issuance can commit/roll back with its caller). */
+type DbClient = Pick<Prisma.TransactionClient, 'authSession'>;
+
+export async function issueSession(
+  user: { id: string; email: string },
+  now: Date = new Date(),
+  client: DbClient = prisma,
+): Promise<IssuedSession> {
   const refreshToken = newRefreshSecret();
   const expiresAt = sessionExpiry(now);
 
-  const session = await prisma.authSession.create({
+  const session = await client.authSession.create({
     data: {
       userId: user.id,
       expiresAt,

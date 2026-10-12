@@ -84,6 +84,25 @@ export const createMeasurementSchema = z.object({
   thighs: z.number().positive().optional(),
 });
 
+/**
+ * F-3: the ONLY editable fields of a measurement. `.strict()` rejects any other key (id, userId, relations such as
+ * `user: { connect }`, unknown flags) instead of silently forwarding it to the ORM. At least one field is required.
+ */
+export const updateMeasurementSchema = z
+  .object({
+    date: z.string().datetime(),
+    weight: z.number().positive().nullable(),
+    bodyFat: z.number().min(0).max(100).nullable(),
+    chest: z.number().positive().nullable(),
+    waist: z.number().positive().nullable(),
+    hips: z.number().positive().nullable(),
+    arms: z.number().positive().nullable(),
+    thighs: z.number().positive().nullable(),
+  })
+  .partial()
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, { message: 'Debe indicar al menos un campo editable' });
+
 // Validadores de ejercicios
 export const createExerciseSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -380,6 +399,7 @@ export type ListMealLogsQueryInput = z.infer<typeof listMealLogsQuerySchema>;
 export type CreateSmartMealPlanInput = z.infer<typeof createSmartMealPlanSchema>;
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 export type CreateMeasurementInput = z.infer<typeof createMeasurementSchema>;
+export type UpdateMeasurementInput = z.infer<typeof updateMeasurementSchema>;
 export type CreateExerciseInput = z.infer<typeof createExerciseSchema>;
 export type UpdateExerciseInput = z.infer<typeof updateExerciseSchema>;
 export type UpdateExerciseEditorialInput = z.infer<typeof updateExerciseEditorialSchema>;

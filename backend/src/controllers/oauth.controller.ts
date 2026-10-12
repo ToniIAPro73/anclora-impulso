@@ -13,7 +13,8 @@ import {
   createGitHubAuthorizationUrl,
   fetchGitHubProfile,
 } from '../services/oauth/github.provider';
-import { findOrCreateOAuthUser } from '../services/oauth.service';
+import { resolveOAuthAccount, OAuthRefusal } from '../services/oauth.service';
+import { createOAuthHandoff, redeemOAuthHandoff, HANDOFF_CHALLENGE_PATTERN } from '../services/oauth-handoff.service';
 
 const COOKIE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutos, tiempo de vida del handshake PKCE
 
@@ -50,7 +51,13 @@ export function googleRedirect(req: Request, res: Response) {
     return;
   }
 
-  const transaction = createOAuthTransaction();
+  const challenge = req.query.challenge;
+  if (typeof challenge !== 'string' || !HANDOFF_CHALLENGE_PATTERN.test(challenge)) {
+    res.redirect(`${frontendUrl()}/auth/error?provider=google`);
+    return;
+  }
+
+  const transaction = { ...createOAuthTransaction(), handoffChallenge: challenge };
   setTransactionCookie(res, 'oauth_google_txn', transaction);
   res.redirect(createGoogleAuthorizationUrl(config, transaction));
 }
@@ -74,12 +81,17 @@ export async function googleCallback(req: Request, res: Response) {
 
   try {
     const profile = await fetchGoogleProfile(config, code, transaction.codeVerifier);
-    const auth = await findOrCreateOAuthUser({ provider: 'google', ...profile });
-    res.redirect(
-      `${frontendUrl()}/auth/callback#accessToken=${encodeURIComponent(auth.accessToken)}&refreshToken=${encodeURIComponent(auth.refreshToken)}`
-    );
+    const user = await resolveOAuthAccount({ provider: 'google', ...profile });
+    // No session and no token leave this callback: only a one-time code bound to the browser's own challenge.
+    const handoffCode = await createOAuthHandoff({
+      userId: user.id,
+      provider: 'google',
+      challenge: transaction.handoffChallenge ?? '',
+    });
+    res.redirect(`${frontendUrl()}/auth/callback#code=${encodeURIComponent(handoffCode)}&provider=google`);
   } catch (error) {
-    logger.error('Google OAuth callback failed', { error: redactText((error as Error).message) });
+    const refusal = error instanceof OAuthRefusal ? ` (${error.code})` : '';
+    logger.error(`Google OAuth callback failed${refusal}`, { error: redactText((error as Error).message) });
     res.redirect(`${frontendUrl()}/auth/error?provider=google`);
   }
 }
@@ -92,7 +104,13 @@ export function githubRedirect(req: Request, res: Response) {
     return;
   }
 
-  const transaction = createOAuthTransaction();
+  const challenge = req.query.challenge;
+  if (typeof challenge !== 'string' || !HANDOFF_CHALLENGE_PATTERN.test(challenge)) {
+    res.redirect(`${frontendUrl()}/auth/error?provider=github`);
+    return;
+  }
+
+  const transaction = { ...createOAuthTransaction(), handoffChallenge: challenge };
   setTransactionCookie(res, 'oauth_github_txn', transaction);
   res.redirect(createGitHubAuthorizationUrl(config, transaction));
 }
@@ -116,12 +134,32 @@ export async function githubCallback(req: Request, res: Response) {
 
   try {
     const profile = await fetchGitHubProfile(config, code, transaction.codeVerifier);
-    const auth = await findOrCreateOAuthUser({ provider: 'github', ...profile });
-    res.redirect(
-      `${frontendUrl()}/auth/callback#accessToken=${encodeURIComponent(auth.accessToken)}&refreshToken=${encodeURIComponent(auth.refreshToken)}`
-    );
+    const user = await resolveOAuthAccount({ provider: 'github', ...profile });
+    // No session and no token leave this callback: only a one-time code bound to the browser's own challenge.
+    const handoffCode = await createOAuthHandoff({
+      userId: user.id,
+      provider: 'github',
+      challenge: transaction.handoffChallenge ?? '',
+    });
+    res.redirect(`${frontendUrl()}/auth/callback#code=${encodeURIComponent(handoffCode)}&provider=github`);
   } catch (error) {
-    logger.error('GitHub OAuth callback failed', { error: redactText((error as Error).message) });
+    const refusal = error instanceof OAuthRefusal ? ` (${error.code})` : '';
+    logger.error(`GitHub OAuth callback failed${refusal}`, { error: redactText((error as Error).message) });
     res.redirect(`${frontendUrl()}/auth/error?provider=github`);
+  }
+}
+
+/**
+ * POST /api/auth/oauth/exchange { code, verifier, provider } -> session tokens.
+ * The browser proves it is the one that started the flow by presenting the verifier of its challenge.
+ */
+export async function exchangeOAuthHandoff(req: Request, res: Response, next: (error?: unknown) => void) {
+  try {
+    const { code, verifier, provider } = (req.body ?? {}) as Record<string, unknown>;
+    const auth = await redeemOAuthHandoff({ code, verifier, provider });
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(auth);
+  } catch (error) {
+    next(error);
   }
 }

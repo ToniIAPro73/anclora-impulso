@@ -61,6 +61,7 @@ model User {
 
   // Relaciones - Auth social
   oauthAccounts OAuthAccount[]
+  oauthHandoffs OAuthHandoff[]
 
   // Relaciones - Gamificación
   gamification    UserGamification?
@@ -690,6 +691,23 @@ model HealthDataImport {
   @@index([provider])
   @@index([importedAt])
   @@map("health_data_imports")
+}
+
+/// One-time handoff code of a completed, validated OAuth transaction (F-4). Only the code's SHA-256 is stored.
+model OAuthHandoff {
+  id         String    @id @default(uuid())
+  codeHash   String    @unique
+  challenge  String
+  provider   String
+  userId     String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("oauth_handoffs")
 }
 
 model OAuthAccount {

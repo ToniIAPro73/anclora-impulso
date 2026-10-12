@@ -14,6 +14,7 @@ if (testPath.includes('/tests/integration/')) {
     databaseUrl: process.env.DATABASE_URL,
     scriptPort: process.env.IMPULSO_TEST_DB_PORT,
     scriptName: process.env.IMPULSO_TEST_DB_NAME,
+    scriptUser: process.env.IMPULSO_TEST_DB_USER,
     ci: process.env.CI,
   });
 

@@ -27,6 +27,10 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ): void {
+  // The OAuth handoff exchange carries a one-time code and a verifier in its BODY: that body is never logged, whatever
+  // the key names are (structural redaction is only a second line of defence, never proof of absence).
+  const omitBody = (req.originalUrl ?? req.url ?? '').startsWith('/api/auth/oauth/');
+
   // Contexto del error
   const errorContext = {
     method: req.method,
@@ -34,7 +38,7 @@ export function errorHandler(
     ip: req.ip,
     userAgent: req.get('user-agent'),
     userId: (req as any).user?.id,
-    body: redactSensitive(req.body),
+    body: omitBody ? '[omitted]' : redactSensitive(req.body),
     params: redactSensitive(req.params),
     query: redactSensitive(req.query),
   };

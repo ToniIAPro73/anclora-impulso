@@ -18,11 +18,14 @@ cd "$ROOT"
 
 fail() { echo "E2E RUN $RUN_ID REFUSED/FAILED: $*" | tee -a "$RUN_ART/outcome.txt"; exit 1; }
 
-# ---- 1. database target (loopback URL, port/name, live marker) --------------------------------------------
-case "$DATABASE_URL" in
-  postgresql://*@127.0.0.1:"$TEST_DB_PORT"/"$TEST_DB_NAME"\?*) ;;
-  *) fail "DATABASE_URL does not point to the authorized local test database" ;;
-esac
+# ---- 1. database target (component-wise validation, NF-1; marker and container checked below) ----------------
+# The same validator as backend/scripts/test-db.sh: a glob over the whole string accepted a remote authority followed by
+# a local-looking tail. The CANONICAL URL it returns is the only value handed to the API process.
+if ! CANON_URL="$(TEST_DB_USER="$TEST_DB_USER" TEST_DB_PORT="$TEST_DB_PORT" TEST_DB_NAME="$TEST_DB_NAME" python3 -I "$ROOT/backend/scripts/validate-db-url.py" 2>"$RUN_ART/db-url-refusal.txt")"; then
+  fail "DATABASE_URL does not point to the authorized local test database ($(head -1 "$RUN_ART/db-url-refusal.txt"))"
+fi
+rm -f "$RUN_ART/db-url-refusal.txt"
+DATABASE_URL="$CANON_URL"; export DATABASE_URL
 # the container publishing this port on loopback must be OUR container (not a lookalike or a remote tunnel)
 [ "$(docker port anclora-impulso-test-postgres 5432/tcp 2>/dev/null | head -1)" = "127.0.0.1:$TEST_DB_PORT" ] \
   || fail "docker port of anclora-impulso-test-postgres is not 127.0.0.1:$TEST_DB_PORT"
@@ -65,7 +68,18 @@ done
 descendants() { local p="$1" c; for c in $(pgrep -P "$p" 2>/dev/null || true); do echo "$c"; descendants "$c"; done; }
 SHIELD=(); while IFS= read -r a; do SHIELD+=("$a"); done < <("$ROOT/scripts/support/shield-env.sh")
 
+# E2E_FAKE_OAUTH=1: simulated Google/GitHub (no network): the API process preloads e2e/support/fake-oauth-providers.cjs,
+# which answers the provider token/userinfo endpoints for synthetic codes; the browser leg is intercepted by Playwright.
+FAKE_OAUTH_ENV=(); WEB_OAUTH_ENV=()
+if [ "${E2E_FAKE_OAUTH:-0}" = "1" ]; then
+  FAKE_OAUTH_ENV=(NODE_OPTIONS="--require $ROOT/e2e/support/fake-oauth-providers.cjs"
+    GOOGLE_OAUTH_CLIENT_ID=synthetic-google GOOGLE_OAUTH_CLIENT_SECRET=synthetic GOOGLE_OAUTH_CALLBACK_URL="http://127.0.0.1:$API_PORT/api/auth/google/callback"
+    GITHUB_OAUTH_CLIENT_ID=synthetic-github GITHUB_OAUTH_CLIENT_SECRET=synthetic GITHUB_OAUTH_CALLBACK_URL="http://127.0.0.1:$API_PORT/api/auth/github/callback")
+  WEB_OAUTH_ENV=(NEXT_PUBLIC_ENABLE_GOOGLE_AUTH=true NEXT_PUBLIC_ENABLE_GITHUB_AUTH=true)
+fi
+
 ( cd "$BCLONE/backend" && exec env -i PATH="$PATH" HOME="$HOME" "${SHIELD[@]}" NODE_ENV=development PORT=$API_PORT \
+    ${FAKE_OAUTH_ENV[@]+"${FAKE_OAUTH_ENV[@]}"} \
     DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET" \
     JWT_EXPIRES_IN="${E2E_JWT_EXPIRES_IN:-5s}" AUTH_REFRESH_REUSE_GRACE_SECONDS=10 \
     FRONTEND_URL="http://127.0.0.1:$WEB_PORT,http://localhost:$WEB_PORT" \
@@ -75,7 +89,7 @@ SHIELD=(); while IFS= read -r a; do SHIELD+=("$a"); done < <("$ROOT/scripts/supp
 API_PID=$!
 
 ( cd "$FCLONE" && exec env -i PATH="$PATH" HOME="$HOME" NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_PUBLIC_API_URL="http://127.0.0.1:$API_PORT/api" \
+    NEXT_PUBLIC_API_URL="http://127.0.0.1:$API_PORT/api" ${WEB_OAUTH_ENV[@]+"${WEB_OAUTH_ENV[@]}"} \
     ./node_modules/.bin/next dev -p $WEB_PORT -H 127.0.0.1 ) > "$RUN_ART/web.log" 2>&1 &
 WEB_PID=$!
 

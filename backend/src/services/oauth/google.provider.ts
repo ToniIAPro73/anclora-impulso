@@ -76,11 +76,25 @@ export async function fetchGoogleProfile(
     throw new Error(`Google userinfo fetch failed: ${profileResponse.status}`);
   }
 
-  const profile = (await profileResponse.json()) as { sub: string; email?: string; name?: string };
+  const profile = (await profileResponse.json()) as {
+    sub?: unknown;
+    email?: unknown;
+    email_verified?: unknown;
+    name?: unknown;
+  };
+
+  // The stable provider identity must be a non-empty string from the authenticated userinfo response.
+  if (typeof profile.sub !== 'string' || profile.sub.length === 0 || profile.sub.length > 255) {
+    throw new Error('Google userinfo returned no stable subject');
+  }
+
+  // The e-mail is only usable when Google itself states it is verified (boolean true in the authenticated response).
+  const email =
+    typeof profile.email === 'string' && profile.email.length > 0 && profile.email_verified === true ? profile.email : null;
 
   return {
     providerAccountId: profile.sub,
-    email: profile.email ?? null,
-    fullName: profile.name ?? null,
+    email,
+    fullName: typeof profile.name === 'string' ? profile.name : null,
   };
 }

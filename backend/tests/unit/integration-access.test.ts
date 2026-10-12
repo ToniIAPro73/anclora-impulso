@@ -35,4 +35,34 @@ describe('evaluateIntegrationAccess (R6: runner variables are not proof)', () =>
   it('denies by default', () => {
     expect(evaluateIntegrationAccess({ databaseUrl: LOCAL }).allowed).toBe(false);
   });
+
+  describe('NF-1: components, not substrings (query/scheme/user)', () => {
+    const run = (databaseUrl: string, scriptUser?: string) =>
+      evaluateIntegrationAccess({ databaseUrl, scriptPort: '54329', scriptName: 'anclora_impulso_test', scriptUser });
+
+    it('rejects a local-looking tail behind a remote authority', () => {
+      expect(run('postgresql://u:p@remote.invalid:5432/other?decoy=@127.0.0.1:54329/anclora_impulso_test').allowed).toBe(false);
+      expect(run('postgresql://u:p@remote.invalid:5432/x/@127.0.0.1:54329/anclora_impulso_test').allowed).toBe(false);
+    });
+
+    it('rejects parameters that can change the effective destination', () => {
+      for (const q of ['host=remote.invalid', 'hostaddr=192.0.2.1', 'port=5432', 'schema=public&host=remote.invalid', '%68ost=remote.invalid', 'schema=public&schema=public', 'schema=other']) {
+        expect(run(`${LOCAL}?${q}`).allowed).toBe(false);
+      }
+      expect(run(`${LOCAL}#@remote.invalid`).allowed).toBe(false);
+    });
+
+    it('rejects other schemes and accepts the canonical URL, with or without schema=public', () => {
+      expect(run('mysql://u:p@127.0.0.1:54329/anclora_impulso_test').allowed).toBe(false);
+      expect(run('postgres://u:p@127.0.0.1:54329/anclora_impulso_test').allowed).toBe(false);
+      expect(run(LOCAL).allowed).toBe(true);
+      expect(run(`${LOCAL}?schema=public`).allowed).toBe(true);
+    });
+
+    it('compares the user when the runner announces it', () => {
+      expect(run(LOCAL, 'u').allowed).toBe(true);
+      expect(run(LOCAL, 'admin').allowed).toBe(false);
+      expect(run('postgresql://u%40x:p@127.0.0.1:54329/anclora_impulso_test', 'u@x').allowed).toBe(true);
+    });
+  });
 });

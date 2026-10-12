@@ -81,23 +81,35 @@ export async function fetchGitHubProfile(
     throw new Error(`GitHub user fetch failed: ${userResponse.status}`);
   }
 
-  const user = (await userResponse.json()) as { id: number; email: string | null; name: string | null; login: string };
+  const user = (await userResponse.json()) as { id?: unknown; name?: unknown; login?: unknown };
 
-  let email = user.email;
+  // Stable identity: GitHub's numeric account id from the authenticated response.
+  if (typeof user.id !== 'number' || !Number.isSafeInteger(user.id) || user.id <= 0) {
+    throw new Error('GitHub user response carried no valid account id');
+  }
 
-  if (!email) {
-    const emailsResponse = await fetch(GITHUB_EMAILS_ENDPOINT, { headers: authHeaders });
+  // The e-mail comes ONLY from the authenticated /user/emails list and only when it is verified. The profile's
+  // public `email` field is not used, and a failed or malformed lookup yields no e-mail (no fallback).
+  let email: string | null = null;
+  const emailsResponse = await fetch(GITHUB_EMAILS_ENDPOINT, { headers: authHeaders });
 
-    if (emailsResponse.ok) {
-      const emails = (await emailsResponse.json()) as Array<{ email: string; primary: boolean; verified: boolean }>;
-      const primaryEmail = emails.find((entry) => entry.primary && entry.verified) ?? emails.find((entry) => entry.verified);
-      email = primaryEmail?.email ?? null;
+  if (emailsResponse.ok) {
+    const emails = await emailsResponse.json().catch(() => null);
+    if (Array.isArray(emails)) {
+      const verified = emails.filter(
+        (entry): entry is { email: string; primary?: boolean; verified: true } =>
+          Boolean(entry) && typeof entry.email === 'string' && entry.email.length > 0 && entry.verified === true,
+      );
+      email = (verified.find((entry) => entry.primary === true) ?? verified[0])?.email ?? null;
     }
   }
+
+  const displayName =
+    typeof user.name === 'string' && user.name.length > 0 ? user.name : typeof user.login === 'string' ? user.login : null;
 
   return {
     providerAccountId: String(user.id),
     email,
-    fullName: user.name ?? user.login,
+    fullName: displayName,
   };
 }

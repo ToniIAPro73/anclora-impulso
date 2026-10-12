@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import type { CreateSessionInput } from '../utils/validators';
@@ -70,31 +71,53 @@ export async function getSessionById(id: string, userId: string) {
  * Crear una nueva sesión de entrenamiento
  */
 export async function createSession(userId: string, data: CreateSessionInput) {
-  const session = await prisma.workoutSession.create({
-    data: {
-      userId,
-      workoutId: data.workoutId,
-      duration: data.duration,
-      notes: data.notes,
-      exercises: {
-        create: data.exercises.map((exercise) => ({
-          exerciseId: exercise.exerciseId,
-          sets: {
-            create: exercise.sets,
+  // F-2: the workout must belong to the caller BEFORE it is connected or returned. Missing and foreign workouts get the
+  // same 404 (no existence oracle). Check and insert share one transaction; a workout deleted in between trips the
+  // foreign key and is mapped to the same 404. Post-commit side effects below keep their pre-existing, non-atomic form.
+  let session;
+  try {
+    session = await prisma.$transaction(async (tx) => {
+      const owned = await tx.workout.findFirst({ where: { id: data.workoutId, userId }, select: { id: true } });
+      if (!owned) {
+        throw new AppError(404, 'Entrenamiento no encontrado');
+      }
+
+      return tx.workoutSession.create({
+        data: {
+          userId,
+          workoutId: data.workoutId,
+          duration: data.duration,
+          notes: data.notes,
+          exercises: {
+            create: data.exercises.map((exercise) => ({
+              exerciseId: exercise.exerciseId,
+              sets: {
+                create: exercise.sets,
+              },
+            })),
           },
-        })),
-      },
-    },
-    include: {
-      workout: true,
-      exercises: {
-        include: {
-          exercise: true,
-          sets: true,
         },
-      },
-    },
-  });
+        include: {
+          workout: true,
+          exercises: {
+            include: {
+              exercise: true,
+              sets: true,
+            },
+          },
+        },
+      });
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2003' &&
+      String(error.meta?.field_name ?? '').includes('workoutId')
+    ) {
+      throw new AppError(404, 'Entrenamiento no encontrado');
+    }
+    throw error;
+  }
 
   await updateStreak(userId);
   await awardXP(userId, 'complete_workout');

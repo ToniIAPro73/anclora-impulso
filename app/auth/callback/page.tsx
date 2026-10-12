@@ -1,33 +1,62 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { apiClient } from "@/lib/api/client"
+import { replaceWith } from "@/lib/auth/navigate"
+import { redeemOAuthHandoff, storedIdentity, takeOAuthAttempt } from "@/lib/auth/oauth"
 
+/**
+ * F-4. This page installs a session ONLY if (a) this very tab started an OAuth flow, (b) the URL carries that flow's
+ * one-time handoff code and (c) the backend accepts the code together with this tab's verifier. Tokens in the URL
+ * (fragment or query, from older backends or from an attacker) are never read, and the URL is cleaned first.
+ */
 function OAuthCallbackHandler() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const started = useRef(false)
 
   useEffect(() => {
-    // Tokens arrive in the URL fragment (never sent to servers or Referer). The query string is only read
-    // for links issued by a backend that predates the fragment change.
-    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""))
-    const accessToken = fragment.get("accessToken") ?? searchParams.get("accessToken")
-    const refreshToken = fragment.get("refreshToken") ?? searchParams.get("refreshToken")
+    if (started.current) return // React StrictMode runs effects twice in development
+    started.current = true
 
-    // Remove credentials from the address bar and history immediately.
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""))
+    const code = fragment.get("code")
+    const provider = fragment.get("provider")
+
+    // Remove everything from the address bar and history immediately, success or failure.
     window.history.replaceState(null, "", window.location.pathname)
 
-    if (!accessToken || !refreshToken) {
-      router.replace("/auth/error?provider=unknown")
+    const fail = () => router.replace("/auth/error?provider=unknown")
+
+    const attempt = takeOAuthAttempt() // single use: removed from sessionStorage whatever happens next
+    if (!code || !attempt || attempt.provider !== provider) {
+      fail()
+      return
+    }
+    // The session this tab holds must be the one it held when the flow started (another tab may have signed in/out).
+    if (storedIdentity() !== attempt.identity) {
+      fail()
       return
     }
 
-    apiClient.setToken(accessToken)
-    localStorage.setItem("refreshToken", refreshToken)
-    // Recarga completa para que AuthProvider re-lea el token recién guardado.
-    window.location.replace("/dashboard")
-  }, [router, searchParams])
+    const generation = apiClient.getSessionGeneration()
+    void (async () => {
+      try {
+        const auth = await redeemOAuthHandoff(code, attempt)
+        // A login/logout in this tab while the exchange was in flight wins: a late result must not replace it.
+        if (apiClient.getSessionGeneration() !== generation || storedIdentity() !== attempt.identity) {
+          fail()
+          return
+        }
+        apiClient.setToken(auth.accessToken)
+        localStorage.setItem("refreshToken", auth.refreshToken)
+        // Full reload so AuthProvider re-reads the stored session.
+        replaceWith("/dashboard")
+      } catch {
+        fail()
+      }
+    })()
+  }, [router])
 
   return null
 }

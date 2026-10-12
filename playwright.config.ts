@@ -20,6 +20,8 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
+    // A service worker could answer or forward requests outside context-level routing (isolated E2E network policy).
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

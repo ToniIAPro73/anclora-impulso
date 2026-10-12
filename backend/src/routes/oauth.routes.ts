@@ -7,5 +7,6 @@ router.get('/google', oauthController.googleRedirect);
 router.get('/google/callback', oauthController.googleCallback);
 router.get('/github', oauthController.githubRedirect);
 router.get('/github/callback', oauthController.githubCallback);
+router.post('/oauth/exchange', oauthController.exchangeOAuthHandoff);
 
 export default router;

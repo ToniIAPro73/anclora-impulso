@@ -19,16 +19,22 @@ die() { echo "REFUSED: $*" >&2; exit 3; }
 
 # Effective-target guard. Runs BEFORE any operation that can write (migrate, verify-migrations, test).
 # The IMPULSO_TEST_DB_* variables are NOT evidence of anything; the target is proven by:
-#   1. DATABASE_URL is exactly postgresql://<test user>:<secret>@127.0.0.1:<port>/<name>[?...]
+#   1. DATABASE_URL validated COMPONENT BY COMPONENT by scripts/validate-db-url.py (NF-1: a glob over the whole string
+#      accepted a remote authority followed by a local-looking tail). The validated, canonical URL replaces the original
+#      in this process: it is the only value ever handed to Prisma/Jest.
 #   2. that port is the one THIS project's container publishes on 127.0.0.1 (ties the URL to our container)
 #   3. the live database of that container carries the test marker
 assert_target() {
   [ -n "${DATABASE_URL:-}" ] && [ -n "${TEST_DB_PORT:-}" ] && [ -n "${TEST_DB_NAME:-}" ] && [ -n "${TEST_DB_USER:-}" ] \
     || die "test environment file is incomplete"
-  case "$DATABASE_URL" in
-    postgresql://"$TEST_DB_USER":*@127.0.0.1:"$TEST_DB_PORT"/"$TEST_DB_NAME"|postgresql://"$TEST_DB_USER":*@127.0.0.1:"$TEST_DB_PORT"/"$TEST_DB_NAME"\?*) ;;
-    *) die "DATABASE_URL does not match the authorized local test database (loopback host, expected user, port and name)" ;;
-  esac
+  local canonical reason
+  reason="$(mktemp)"
+  if ! canonical="$(python3 -I "$BACKEND_DIR/scripts/validate-db-url.py" 2>"$reason")"; then
+    local why; why="$(head -1 "$reason")"; rm -f "$reason"
+    die "DATABASE_URL does not match the authorized local test database ($why)"
+  fi
+  rm -f "$reason"
+  DATABASE_URL="$canonical"; export DATABASE_URL
   local published marker
   published="$(docker port "$CONTAINER" 5432/tcp 2>/dev/null | head -1 || true)"
   [ "$published" = "127.0.0.1:$TEST_DB_PORT" ] || die "container $CONTAINER does not publish 127.0.0.1:$TEST_DB_PORT (found: ${published:-nothing})"
@@ -44,8 +50,43 @@ clean_env_run() {
   env -i HOME="$HOME" PATH="$PATH" TERM="${TERM:-dumb}" "${SHIELD[@]}" \
     DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET" \
     JWT_EXPIRES_IN="${JWT_EXPIRES_IN:-15m}" IDEMPOTENCY_KEY_ENFORCEMENT="${IDEMPOTENCY_KEY_ENFORCEMENT:-warn}" \
-    NODE_ENV=test IMPULSO_TEST_DB_PORT="$TEST_DB_PORT" IMPULSO_TEST_DB_NAME="$TEST_DB_NAME" \
+    NODE_ENV=test IMPULSO_TEST_DB_PORT="$TEST_DB_PORT" IMPULSO_TEST_DB_NAME="$TEST_DB_NAME" IMPULSO_TEST_DB_USER="$TEST_DB_USER" \
     "$@"
+}
+
+# Local, database-free runs (unit tests, typecheck, build) from a fresh env-free clone of the CURRENT working tree:
+# no .env* file is in the lookup path of dotenv/Prisma, every name the backend reads is predefined empty, no database
+# target is configured. Each run gets a NEW evidence directory with identity.json and MANIFEST.sha256.
+isolated_local_run() { # kind label cmd...
+  local kind="$1"; shift
+  . "$REPO_ROOT/scripts/support/evidence-lib.sh"
+  local run_id art clone code rc ident
+  run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 4)"
+  art="$(evidence_new_dir "$BACKEND_DIR/artifacts/local-runs" "$run_id")" || exit 1
+  clone="$(mktemp -d)"
+  "$REPO_ROOT/scripts/support/clone-backend.sh" "$clone"
+  ident="$("$REPO_ROOT/scripts/support/code-identity.sh")"
+  SHIELD=(); while IFS= read -r a; do SHIELD+=("$a"); done < <("$REPO_ROOT/scripts/support/shield-env.sh")
+  set +e
+  ( cd "$clone/backend" && env -i HOME="$HOME" PATH="$PATH" TERM="${TERM:-dumb}" "${SHIELD[@]}" \
+      JWT_SECRET="unit-secret-not-used" JWT_REFRESH_SECRET="unit-refresh-not-used" NODE_ENV=test "$@" ) > "$art/output.log" 2>&1
+  rc=$?
+  set -e
+  sed -E -i '' 's#postgres(ql)?://[^[:space:]@]*@#postgresql://***@#g; s#Bearer [A-Za-z0-9._~+/=-]+#Bearer ***#g' "$art/output.log"
+  RUN_ID="$run_id" KIND="$kind" CMD="$*" RC="$rc" IDENT="$ident" ART="$art" python3 - <<'PY'
+import json, os, datetime
+e = os.environ
+open(os.path.join(e["ART"], "identity.json"), "w").write(json.dumps({
+  "runId": e["RUN_ID"], "kind": e["KIND"], "command": e["CMD"],
+  "finishedAtUtc": datetime.datetime.utcnow().isoformat() + "Z",
+  "code": json.loads(e["IDENT"]), "exitCode": int(e["RC"]),
+  "copy": "fresh clone of backend, no .env*, fidelity-checked; shielded environment; no database target",
+}, indent=2))
+PY
+  evidence_manifest_write "$art" || true
+  rm -rf "$clone"
+  echo "[test-db] $kind exit $rc; evidence: $art"
+  return "$rc"
 }
 
 case "${1:-}" in
@@ -226,7 +267,11 @@ SQL
     run_prisma "" "No difference detected" migrate diff --from-url "$(url_for "$CLEAN")" --to-schema-datamodel prisma/schema.prisma --exit-code
     say "clean == schema.prisma: no drift"
     ;;
+  unit)       shift; isolated_local_run backend-unit ./node_modules/.bin/jest --config jest.config.js --ci --runInBand "$@" --testPathIgnorePatterns=/tests/integration/ ;;
+  typecheck)  isolated_local_run backend-typecheck ./node_modules/.bin/tsc --noEmit ;;
+  build)      isolated_local_run backend-build ./node_modules/.bin/tsc --outDir ./dist-check ;;
+  check-target) load_env; assert_target; echo "target ok: 127.0.0.1:$TEST_DB_PORT/$TEST_DB_NAME (validated, no operation performed)" ;;
   status)  "${COMPOSE[@]}" ps ;;
   down)    "${COMPOSE[@]}" down -v ;;   # removes ONLY this project's container, network and volume
-  *) echo "usage: $0 {init-env|up|migrate|verify-migrations|test [jest args]|status|down}"; exit 2 ;;
+  *) echo "usage: $0 {init-env|up|migrate|verify-migrations|test [jest args]|unit [jest args]|typecheck|build|check-target|status|down}"; exit 2 ;;
 esac

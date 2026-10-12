@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
-import type { CreateMeasurementInput } from '../utils/validators';
+import { createMeasurementSchema, updateMeasurementSchema } from '../utils/validators';
+import type { CreateMeasurementInput, UpdateMeasurementInput } from '../utils/validators';
 import * as sessionsService from './sessions.service';
 import { getPersonalizationSnapshot } from './personalization.service';
 import { getStrengthProgress } from './strength-progress.service';
@@ -21,10 +22,17 @@ export async function getUserMeasurements(userId: string) {
  * Crear una nueva medida corporal
  */
 export async function createMeasurement(userId: string, data: CreateMeasurementInput) {
+  // F-3: only the declared measurement fields are used (zod drops every other key). The owner is always the
+  // authenticated user, never a value from the body: the previous `{ userId, ...data }` let `data.userId` win.
+  const parsed = createMeasurementSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new AppError(400, 'Datos de medida inválidos');
+  }
+
   const measurement = await prisma.bodyMeasurement.create({
     data: {
+      ...parsed.data,
       userId,
-      ...data,
     },
   });
 
@@ -34,7 +42,14 @@ export async function createMeasurement(userId: string, data: CreateMeasurementI
 /**
  * Actualizar una medida corporal
  */
-export async function updateMeasurement(id: string, userId: string, data: Partial<CreateMeasurementInput>) {
+export async function updateMeasurement(id: string, userId: string, data: UpdateMeasurementInput) {
+  // F-3: runtime validation with an explicit field list; a TypeScript annotation does not validate a request body.
+  // Unknown or non-editable keys (id, userId, relations) are rejected as a whole: nothing is partially applied.
+  const parsed = updateMeasurementSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new AppError(400, 'Datos de medida inválidos');
+  }
+
   const existingMeasurement = await prisma.bodyMeasurement.findFirst({
     where: { id, userId },
   });
@@ -45,7 +60,7 @@ export async function updateMeasurement(id: string, userId: string, data: Partia
 
   const measurement = await prisma.bodyMeasurement.update({
     where: { id },
-    data,
+    data: parsed.data,
   });
 
   return measurement;

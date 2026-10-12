@@ -10,6 +10,7 @@ jest.mock('dotenv', () => ({ __esModule: true, default: { config: () => ({ parse
 
 const expectedPort = process.env.IMPULSO_TEST_DB_PORT;
 const expectedName = process.env.IMPULSO_TEST_DB_NAME;
+const expectedUser = process.env.IMPULSO_TEST_DB_USER;
 const target = describeDatabaseTarget(process.env.DATABASE_URL);
 
 if (!expectedPort || !expectedName) {
@@ -20,6 +21,9 @@ if (!target.ok) {
 }
 if (target.port !== expectedPort || target.database !== expectedName) {
   throw new Error('Integration guard: refusing to run — database port/name differ from the authorized test database');
+}
+if (expectedUser && target.user !== expectedUser) {
+  throw new Error('Integration guard: refusing to run — database user differs from the authorized test user');
 }
 if (process.env.GROQ_API_KEY || process.env.SMTP_HOST) {
   throw new Error('Integration guard: external service credentials present in test environment');

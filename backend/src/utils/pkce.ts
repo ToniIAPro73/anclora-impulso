@@ -4,6 +4,8 @@ export interface OAuthTransaction {
   state: string;
   codeVerifier: string;
   codeChallenge: string;
+  /** S256 challenge presented by the BROWSER that started this flow (F-4); the handoff is bound to it. */
+  handoffChallenge?: string;
 }
 
 function createRandomBase64Url(): string {

@@ -48,6 +48,13 @@ export const env = {
   authAcceptLegacyTokens: process.env.AUTH_ACCEPT_LEGACY_TOKENS !== 'false',
   securityConfigMode: (process.env.SECURITY_CONFIG_MODE || 'warn') as 'off' | 'warn' | 'enforce',
 
+  // OAuth handoff (F-4): lifetime of the one-time code between the provider callback and its redemption by the browser.
+  // Clamped to 10..300 s; anything unparsable falls back to 60 s.
+  oauthHandoffTtlSeconds: (() => {
+    const parsed = parseInt(process.env.OAUTH_HANDOFF_TTL_SECONDS || '60', 10);
+    return Number.isFinite(parsed) ? Math.min(300, Math.max(10, parsed)) : 60;
+  })(),
+
   // Server
   port: parseInt(process.env.PORT || '3001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -56,6 +63,14 @@ export const env = {
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   frontendUrls: expandFrontendAliases(configuredFrontendUrls),
 
+  // F-1: administrative privileges are granted to USER IDS designated out of band (ADMIN_USER_IDS), never to an
+  // e-mail address: an address is free text that anyone can register, an id is assigned by the database.
+  adminUserIds: (process.env.ADMIN_USER_IDS || '')
+    .split(',')
+    .map((id) => id.trim().toLowerCase())
+    .filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)),
+
+  // DEPRECATED and IGNORED for authorization (kept only so startup can warn that the old variable no longer applies).
   adminEmails: (process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((email) => email.trim().toLowerCase())

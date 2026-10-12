@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as progressService from '../services/progress.service';
 import * as sessionsService from '../services/sessions.service';
 import * as strengthProgressService from '../services/strength-progress.service';
-import type { CreateMeasurementInput } from '../utils/validators';
+import type { CreateMeasurementInput, UpdateMeasurementInput } from '../utils/validators';
 
 /**
  * GET /api/progress/measurements
@@ -52,7 +52,7 @@ export async function createMeasurement(
  * PUT /api/progress/measurements/:id
  */
 export async function updateMeasurement(
-  req: Request<{ id: string }, {}, Partial<CreateMeasurementInput>>,
+  req: Request<{ id: string }, {}, UpdateMeasurementInput>,
   res: Response,
   next: NextFunction
 ): Promise<void> {

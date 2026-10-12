@@ -1,4 +1,4 @@
-const SENSITIVE_KEY = /pass(word)?|secret|token|authorization|cookie|api[-_]?key|^code$|code_verifier|credential|avatardataurl/i;
+const SENSITIVE_KEY = /pass(word)?|secret|token|authorization|cookie|api[-_]?key|^code$|code[-_]?verifier|verifier|handoff|credential|avatardataurl/i;
 const MAX_DEPTH = 6;
 
 /** Deep-copies a value replacing the content of sensitive keys; safe for logging. Never mutates the input. */
@@ -26,7 +26,7 @@ export function stripQueryString(url: string | undefined): string {
   return index === -1 ? url : `${url.slice(0, index)}?[query-redacted]`;
 }
 
-const SECRET_PARAMS = 'code|state|token|access_token|refresh_token|id_token|accessToken|refreshToken|client_secret|clientSecret|password|secret|api_key|apikey|key|authorization|code_verifier';
+const SECRET_PARAMS = 'code|state|token|access_token|refresh_token|id_token|accessToken|refreshToken|client_secret|clientSecret|password|secret|api_key|apikey|key|authorization|code_verifier|verifier|codeVerifier|handoffCode';
 
 /**
  * Best-effort redaction of secrets inside FREE TEXT (error messages, stacks, URLs). It complements, and does not

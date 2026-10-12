@@ -27,4 +27,9 @@ done
 for stale in dist .next coverage artifacts logs; do
   [ -e "$TARGET/backend/$stale" ] && { echo "clone-backend: unexpected $stale in clone" >&2; exit 1; }
 done
+# 4. the Prisma client inside the CLONE is regenerated from the clone's own schema (new models, e.g. oauth_handoffs, would
+#    otherwise be missing from the stale generated client). The clone has no .env*, so nothing operational can be loaded;
+#    node_modules was cloned copy-on-write, so the original client is untouched. No network: engines are already present.
+( cd "$TARGET/backend" && env -i HOME="$HOME" PATH="$PATH" CHECKPOINT_DISABLE=1 PRISMA_HIDE_UPDATE_MESSAGE=1 \
+    ./node_modules/.bin/prisma generate >/dev/null 2>&1 ) || { echo "clone-backend: prisma generate failed in the clone" >&2; exit 1; }
 exit 0

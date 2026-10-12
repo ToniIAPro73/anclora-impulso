@@ -18,6 +18,10 @@ Scope: exception `IMPULSO-TEST-DB-2026-10-12` in `.anclora/AOS_ADOPTION.md`. Syn
 ./scripts/test-db.sh up         # start container and wait for healthcheck
 ./scripts/test-db.sh migrate    # prisma migrate deploy against the test DB only
 ./scripts/test-db.sh test [jest args]   # integration tests, clean env, guards active
+./scripts/test-db.sh check-target       # validates DATABASE_URL + container + marker; performs no operation
+./scripts/test-db.sh verify-migrations  # clean install vs upgrade equivalence on throw-away databases
+./scripts/test-db.sh unit [jest args]   # database-free unit tests from an env-free clone (new evidence dir)
+./scripts/test-db.sh typecheck | build  # tsc from the same env-free clone (build writes ./dist-check inside the clone)
 ./scripts/test-db.sh status
 ./scripts/test-db.sh down       # removes ONLY this project's container, network and volume
 ```
@@ -25,6 +29,13 @@ Scope: exception `IMPULSO-TEST-DB-2026-10-12` in `.anclora/AOS_ADOPTION.md`. Syn
 Optional extra cleanup of the local credentials file: `rm backend/.env.test.local`. No global Docker prune is needed or recommended.
 
 ## Guards
+0. **NF-1 (2026-10-12):** `DATABASE_URL` is validated component by component by `scripts/validate-db-url.py`
+   (scheme `postgresql://`, one `@` in the authority, user, password percent-encoded, host exactly `127.0.0.1`, authorized
+   port, exact database name, query limited to a single `schema=public`; no fragment). The CANONICAL URL rebuilt from those
+   components is what Prisma/Jest receive; a refusal never prints the URL. The earlier shell glob accepted a remote authority
+   followed by a local-looking tail. `scripts/test-guards.sh` covers it offline with `docker`/`pnpm` shims (the `test`
+   branch is covered through `check-target`, which runs the same guard prefix). Not proven: universal isolation, nor how
+   Prisma would interpret parameters that are now rejected.
 1. `scripts/test-db.sh` runs jest through `env -i`: operational `.env` values are not inherited, JWT secrets are local random values, LLM/SMTP credentials are absent.
 2. `tests/support/integration-guard.ts` (isolated config): `DATABASE_URL` must be loopback with the expected port and name, and the live server must report the test marker; `dotenv` is mocked so `backend/.env` is not loaded.
 3. `tests/support/default-integration-guard.ts` (default config): integration tests refuse to run unless started through the script or in CI with a loopback `DATABASE_URL`.
@@ -87,3 +98,10 @@ E2E additionally proves that the listener on each port is **in the process tree 
 run's copy (cwd), and answers a unique `/__run-<id>` request that appears in **this run's** log; it removes only its
 own recorded processes and reports force-kills/survivors. A free port is a precondition, not a proof.
 Artifacts: `artifacts/qa/runs/<id>/` (E2E), `backend/artifacts/test-runs/<id>/` (integration).
+
+## OAuth with simulated providers (F-4 increment)
+`E2E_FAKE_OAUTH=1 ./scripts/e2e-isolated.sh e2e/oauth-handoff-attacks.spec.ts e2e/oauth-handoff-flow.spec.ts` starts the API with
+`e2e/support/fake-oauth-providers.cjs` (answers Google/GitHub token/userinfo endpoints for synthetic codes) and the web copy with the
+social buttons enabled. The browser never leaves the local stack (the API's own redirect response is served to it) and any request to a
+provider host fails the test. This proves the local flow only, not real Google/GitHub interoperability.
+Frontend Jest from a copy without `.env*`: `./scripts/frontend-jest-isolated.sh [jest args]`.

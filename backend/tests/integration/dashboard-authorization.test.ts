@@ -10,7 +10,7 @@ import { prisma } from '../../src/config/database';
 const tag = `d8-${randomUUID().slice(0, 8)}`;
 const routes = ['/api/dashboard/metrics', '/api/dashboard/db-metrics', '/api/dashboard/logs-stats', '/api/dashboard/logs', '/api/dashboard/summary'];
 const emails: string[] = [];
-const originalAdmins = [...env.adminEmails];
+const originalAdmins = [...env.adminUserIds];
 
 async function register(label: string) {
   const email = `${tag}-${label}@example.test`;
@@ -22,7 +22,7 @@ async function register(label: string) {
 }
 
 afterAll(async () => {
-  env.adminEmails.splice(0, env.adminEmails.length, ...originalAdmins);
+  env.adminUserIds.splice(0, env.adminUserIds.length, ...originalAdmins);
   await prisma.user.deleteMany({ where: { email: { in: emails } } });
   await prisma.$disconnect();
 });
@@ -42,7 +42,7 @@ describe('dashboard authorization', () => {
 
   it('admin → 200 with operational data only', async () => {
     const admin = await register('admin');
-    env.adminEmails.push(admin.email.toLowerCase());
+    env.adminUserIds.push(admin.userId);
     for (const route of routes) {
       const res = await request(app).get(route).set('Authorization', `Bearer ${admin.token}`);
       expect(res.status).toBe(200);
@@ -53,7 +53,7 @@ describe('dashboard authorization', () => {
 
   it('logs endpoint caps the limit and rejects unknown levels', async () => {
     const admin = await register('admin-limits');
-    env.adminEmails.push(admin.email.toLowerCase());
+    env.adminUserIds.push(admin.userId);
     const big = await request(app).get('/api/dashboard/logs?limit=999999').set('Authorization', `Bearer ${admin.token}`);
     expect(big.status).toBe(200);
     expect(big.body.length).toBeLessThanOrEqual(500);
