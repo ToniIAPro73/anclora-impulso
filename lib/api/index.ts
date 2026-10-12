@@ -1,3 +1,4 @@
+import { runIdempotent } from '../idempotency';
 import type { UserProfile } from '@/lib/user-profile';
 import { apiClient } from './client';
 
@@ -154,6 +155,12 @@ export interface Workout {
   updatedAt: string;
   exercises: WorkoutExercise[];
   explanation?: RecommendationExplanation;
+  /** Origin of the plan. "unknown" for routines created before provenance was recorded. */
+  generation?: {
+    mode: 'ai' | 'fallback' | 'manual' | 'unknown';
+    version: string | null;
+    reason: string | null;
+  };
 }
 
 export interface SessionSet {
@@ -312,6 +319,8 @@ export interface CoachMessageResponse {
     estimatedOutputTokens: number;
     estimatedTotalTokens: number;
     remainingWindowRequests: number;
+    /** ISO instant at which the fixed quota window resets. */
+    windowResetsAt?: string;
   };
 }
 
@@ -679,8 +688,11 @@ export const workoutsApi = {
     equipment?: string[];
     age?: number;
     sex?: 'male' | 'female';
-  }): Promise<Workout> {
-    return apiClient.post<Workout>('/workouts/generate', params);
+  }, scope = 'anon'): Promise<Workout> {
+    // One Idempotency-Key per logical generation, reused across retries (see lib/idempotency.ts).
+    return runIdempotent('workouts.generate', scope, params, (key) =>
+      apiClient.post<Workout>('/workouts/generate', params, { headers: { 'Idempotency-Key': key } }),
+    );
   },
 };
 
@@ -780,8 +792,10 @@ export const progressionApi = {
 };
 
 export const coachApi = {
-  async sendMessage(data: CoachMessagePayload): Promise<CoachMessageResponse> {
-    return apiClient.post<CoachMessageResponse>('/v1/coach/messages', data);
+  async sendMessage(data: CoachMessagePayload, scope = 'anon'): Promise<CoachMessageResponse> {
+    return runIdempotent('coach.message', scope, { conversationId: data.conversationId ?? null, message: data.message.trim() }, (key) =>
+      apiClient.post<CoachMessageResponse>('/v1/coach/messages', data, { headers: { 'Idempotency-Key': key } }),
+    );
   },
 };
 

@@ -197,7 +197,7 @@ describe("modal scrolling, close behavior, and workout localization", () => {
       await user.click(dumbbells)
     }
 
-    await user.click(screen.getByRole("button", { name: /generar entrenamiento con ia/i }))
+    await user.click(screen.getByRole("button", { name: /^generar entrenamiento$/i }))
 
     await waitFor(() => {
       expect(mockGenerateWorkout).toHaveBeenCalledWith(

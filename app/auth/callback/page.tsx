@@ -9,8 +9,14 @@ function OAuthCallbackHandler() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    const accessToken = searchParams.get("accessToken")
-    const refreshToken = searchParams.get("refreshToken")
+    // Tokens arrive in the URL fragment (never sent to servers or Referer). The query string is only read
+    // for links issued by a backend that predates the fragment change.
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""))
+    const accessToken = fragment.get("accessToken") ?? searchParams.get("accessToken")
+    const refreshToken = fragment.get("refreshToken") ?? searchParams.get("refreshToken")
+
+    // Remove credentials from the address bar and history immediately.
+    window.history.replaceState(null, "", window.location.pathname)
 
     if (!accessToken || !refreshToken) {
       router.replace("/auth/error?provider=unknown")

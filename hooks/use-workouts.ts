@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workoutsApi, type Workout } from '@/lib/api';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 interface CreateWorkoutParams {
   name: string;
@@ -28,6 +29,7 @@ interface GenerateWorkoutParams {
  * Usa React Query para caché automático
  */
 export function useWorkouts() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Obtener entrenamientos
@@ -62,7 +64,7 @@ export function useWorkouts() {
 
   // Generar entrenamiento con IA
   const generateMutation = useMutation({
-    mutationFn: (params: GenerateWorkoutParams) => workoutsApi.generate(params),
+    mutationFn: (params: GenerateWorkoutParams) => workoutsApi.generate(params, user?.id ?? 'anon'),
     onSuccess: (newWorkout) => {
       // Actualizar caché
       queryClient.setQueryData<Workout[]>(['workouts'], (prev) =>

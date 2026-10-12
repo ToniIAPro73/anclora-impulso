@@ -13,6 +13,8 @@ import { useWorkouts } from "@/hooks/use-workouts"
 import { useRouter } from "next/navigation"
 import { Loader2, Zap, Clock, Target, Dumbbell, Play, CheckCircle2 } from "lucide-react"
 import type { Workout } from "@/lib/api"
+import { ApiError } from "@/lib/api/client"
+import { discardPendingOperation } from "@/lib/idempotency"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { buildRecommendedPlan, isProfileReadyForPlanGeneration } from "@/lib/user-profile"
@@ -51,7 +53,7 @@ const ENVIRONMENT_EQUIPMENT_MAP: Record<TrainingEnvironment, Equipment[]> = {
 }
 
 export function WorkoutGenerator() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const { language } = useLanguage()
   const isSpanish = language === "es"
   const labelLanguage: AppLanguage = isSpanish ? "es" : "en"
@@ -138,7 +140,12 @@ export function WorkoutGenerator() {
         },
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : isSpanish ? "Error al generar entrenamiento" : "Error generating workout")
+      if (err instanceof ApiError && err.status === 429 && typeof err.details.windowResetsAt === "string") {
+        const resetAt = new Date(err.details.windowResetsAt).toLocaleTimeString(isSpanish ? "es-ES" : "en-US", { hour: "2-digit", minute: "2-digit" })
+        setError(isSpanish ? `Has alcanzado el límite de este periodo. Se restablece a las ${resetAt}.` : `You have reached the limit for this period. It resets at ${resetAt}.`)
+      } else {
+        setError(err instanceof Error ? err.message : isSpanish ? "Error al generar entrenamiento" : "Error generating workout")
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -151,6 +158,8 @@ export function WorkoutGenerator() {
   }
 
   const handleGenerateAnother = () => {
+    // The user explicitly asks for another routine: never reuse the key of an unresolved attempt.
+    discardPendingOperation("workouts.generate", user?.id ?? "anon")
     setGeneratedWorkout(null)
     setError(null)
   }
@@ -408,12 +417,13 @@ export function WorkoutGenerator() {
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div role="alert" data-testid="generate-error" className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
 
             <Button
+              data-testid="generate-workout"
               onClick={handleGenerateWorkout}
               disabled={isGenerating || !isProfileReady}
               className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
@@ -427,7 +437,7 @@ export function WorkoutGenerator() {
               ) : (
                 <>
                   <Zap className="w-4 h-4 mr-2" />
-                  {isSpanish ? "Generar Entrenamiento con IA" : "Generate AI Workout"}
+                  {isSpanish ? "Generar entrenamiento" : "Generate workout"}
                 </>
               )}
             </Button>
@@ -478,7 +488,22 @@ export function WorkoutGenerator() {
             <CardContent className="space-y-4">
               <div className="rounded-2xl border border-orange-200/70 bg-orange-50/70 p-4 dark:border-orange-400/10 dark:bg-orange-950/20">
                 <p className="text-sm font-semibold text-orange-900 dark:text-orange-200">{isSpanish ? "Por qué aparece esta propuesta" : "Why this proposal appeared"}</p>
-                <p className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "La IA usa tu perfil y las preferencias que acabas de revisar. Puedes regenerar o descartar antes de empezar." : "The AI uses your profile and the preferences you just reviewed. You can regenerate or discard before starting."}</p>
+                {generatedWorkout.generation?.mode === "fallback" ? (
+                  <p role="status" data-testid="fallback-notice" className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "Plantilla estándar: la generación con IA no estaba disponible en este momento, así que hemos preparado un plan estándar adaptado a tu perfil y preferencias. Es un plan válido: puedes empezar o regenerarlo más tarde." : "Standard template: AI generation was not available at this moment, so we prepared a standard plan adapted to your profile and preferences. It is a valid plan: you can start it or regenerate it later."}</p>
+                ) : generatedWorkout.generation?.mode === "ai" ? (
+                  <p className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "Generado con IA a partir de tu perfil y las preferencias que acabas de revisar. Puedes regenerarlo o descartarlo antes de empezar." : "Generated with AI from your profile and the preferences you just reviewed. You can regenerate or discard it before starting."}</p>
+                ) : (
+                  <p className="mt-1 text-sm text-orange-800 dark:text-orange-300">{isSpanish ? "Propuesta basada en tu perfil y las preferencias que acabas de revisar. Puedes regenerarla o descartarla antes de empezar." : "Proposal based on your profile and the preferences you just reviewed. You can regenerate or discard it before starting."}</p>
+                )}
+                <div className="mt-3">
+                  <Badge variant="secondary" data-testid="generation-mode" data-mode={generatedWorkout.generation?.mode ?? "unknown"}>
+                    {generatedWorkout.generation?.mode === "ai"
+                      ? (isSpanish ? "Generado con IA" : "Generated with AI")
+                      : generatedWorkout.generation?.mode === "fallback"
+                        ? (isSpanish ? "Plantilla estándar" : "Standard template")
+                        : (isSpanish ? "Propuesta personalizada" : "Personalized proposal")}
+                  </Badge>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-orange-900 dark:text-orange-200">
                   <Badge variant="outline">{profile.age ? `${isSpanish ? "Edad" : "Age"}: ${profile.age}` : (isSpanish ? "Edad no indicada" : "Age not provided")}</Badge>
                   <Badge variant="outline">{preferences.duration} min</Badge>

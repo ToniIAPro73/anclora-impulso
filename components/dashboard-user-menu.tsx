@@ -31,6 +31,7 @@ export function DashboardUserMenu() {
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <Button
+          data-testid="user-menu"
           variant="outline"
           aria-label={`${t.navigation.profile}: ${displayName}`}
           title={`${t.navigation.profile}: ${displayName}`}
@@ -71,6 +72,7 @@ export function DashboardUserMenu() {
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          data-testid="logout"
           onClick={() => {
             logout()
             window.location.replace("/auth/login")

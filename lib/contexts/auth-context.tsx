@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { profileApi } from "@/lib/api"
 import { authApi, type User } from "@/lib/api/auth"
+import { ApiError, apiClient } from "@/lib/api/client"
 import {
   buildRecommendedPlan,
   getProfileStorageKey,
@@ -54,8 +55,9 @@ function readLegacyProfile(userId: string) {
   }
 }
 
-function isNetworkSessionCheckError(error: unknown) {
-  return error instanceof TypeError && error.message.toLowerCase().includes("fetch")
+/** Only a definitive server rejection of the session (401) invalidates it. 5xx, network errors and aborts do not. */
+function isRejectedSession(error: unknown) {
+  return error instanceof ApiError && error.status === 401
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -64,16 +66,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const hasCheckedSession = useRef(false)
 
-  const loadProfile = async (nextUser: User | null) => {
+  /**
+   * Loads (and, if needed, migrates) the profile of `nextUser`. `isStale()` tells whether the session identity this
+   * work was started for is still the active one; it is re-evaluated after every await and BEFORE every effect
+   * (state publication, legacy migration request, legacy key removal). An operation of an older identity is inert.
+   */
+  const loadProfile = async (nextUser: User | null, isStale: () => boolean = () => false) => {
     if (!nextUser) {
       setProfile(mergeUserProfile())
       return
     }
 
     const remoteProfile = await profileApi.get()
+    if (isStale()) return
     const legacyProfile = readLegacyProfile(nextUser.id)
 
     if (!hasPersistedProfileData(remoteProfile) && hasPersistedProfileData(legacyProfile)) {
+      // The update below is sent with whatever credentials the client holds NOW: identity must still be ours.
+      if (isStale()) return
       const migratedProfile = await profileApi.update({
         avatarDataUrl: legacyProfile?.avatarDataUrl ?? null,
         sex: legacyProfile?.sex ?? null,
@@ -90,9 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         onboardingCompletedAt: legacyProfile?.onboardingCompletedAt ?? null,
       })
 
+      // The request was built and sent under our identity, so the legacy copy of THIS user is migrated:
+      // consuming it is correct even if the session changed while the answer was in flight.
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(getProfileStorageKey(nextUser.id))
       }
+      if (isStale()) return
 
       setProfile(normalizeProfile(migratedProfile))
       return
@@ -115,20 +128,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      // Session identity of THIS check = the client's session generation at its start (login/logout/discard bump it).
+      const generation = apiClient.getSessionGeneration()
+      // Stale = another login/logout in this tab, OR another tab replaced the shared credentials with a different identity.
+      const isStale = () => apiClient.getSessionGeneration() !== generation || apiClient.hasIdentityDrifted()
+      const refreshTokenAtStart = localStorage.getItem("refreshToken")
+
+      // 1) Is the SESSION valid? Only this step may end it, and only on a definitive 401.
+      let currentUser: User
       try {
-        const currentUser = await authApi.getCurrentUser()
-        setUser(currentUser)
-        await loadProfile(currentUser)
+        currentUser = await authApi.getCurrentUser()
       } catch (error) {
-        if (!isNetworkSessionCheckError(error)) {
-          console.error("Error al verificar sesión:", error)
+        // A check of an older identity is inert: no state, no warnings, no loading flag, no discard.
+        if (isStale()) return
+        if (isRejectedSession(error)) {
+          authApi.discardRejectedSession(refreshTokenAtStart, "auth-context.checkSession.me")
+          setUser(null)
+          setProfile(mergeUserProfile())
+        } else {
+          // server error, network failure or abort: the session may be perfectly valid. Keep tokens and server session.
+          console.warn("[auth] session check inconclusive; session kept", {
+            kind: error instanceof ApiError ? `http_${error.status}` : error instanceof Error ? error.name : "unknown",
+          })
         }
-        authApi.logout()
-        setUser(null)
-        setProfile(mergeUserProfile())
-      } finally {
         setIsLoading(false)
+        return
       }
+
+      if (isStale()) return
+      setUser(currentUser)
+
+      // 2) The PROFILE is a separate concern: its failure never touches the session.
+      try {
+        await loadProfile(currentUser, isStale)
+      } catch (error) {
+        if (isStale()) return
+        console.warn("[auth] profile load failed; session kept", {
+          kind: error instanceof ApiError ? `http_${error.status}` : error instanceof Error ? error.name : "unknown",
+        })
+      }
+      if (!isStale()) setIsLoading(false)
     }
 
     checkSession()
@@ -136,18 +175,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authApi.login({ email, password })
+    // storeSession already moved the client to the new session generation; any older check is now inert.
+    const generation = apiClient.getSessionGeneration()
 
     localStorage.setItem("refreshToken", response.refreshToken)
     setUser(response.user)
-    await loadProfile(response.user)
+    setIsLoading(false)
+    await loadProfile(response.user, () => apiClient.getSessionGeneration() !== generation || apiClient.hasIdentityDrifted())
   }
 
   const signup = async (email: string, password: string, fullName: string) => {
     const response = await authApi.register({ email, password, fullName })
+    const generation = apiClient.getSessionGeneration()
 
     localStorage.setItem("refreshToken", response.refreshToken)
     setUser(response.user)
-    await loadProfile(response.user)
+    setIsLoading(false)
+    await loadProfile(response.user, () => apiClient.getSessionGeneration() !== generation || apiClient.hasIdentityDrifted())
   }
 
   const updateProfile = async (nextProfile: Partial<UserProfile>) => {
@@ -167,7 +211,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
-    authApi.logout()
+    authApi.logout({ reason: "user_action", origin: "auth-context.logout" })
+    setIsLoading(false)
     setUser(null)
     setProfile(mergeUserProfile())
   }
