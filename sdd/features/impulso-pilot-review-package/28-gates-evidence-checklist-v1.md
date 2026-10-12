@@ -33,6 +33,12 @@ PostgreSQL 17.11; 26 migraciones aplicadas, 0 fallidas) con resultado favorable;
 desactivado; D5/D6 no aplican (una instancia). Mejora la evidencia de AI-08 (Stage D parcial), pero **no la acepta**: siguen
 faltando la revisión independiente (B2), AI-01 aceptada y D2. No cambia ningún gate.
 
+### Actualización (2026-10-13): cliente ante el 429 y B1-F7
+- **Cliente:** el generador ya trata el `429` con `windowResetsAt` y existe un E2E (`e2e/session-and-fallback.spec.ts`, caso
+  «quota exhaustion») con la misma forma de respuesta que emite el backend. Queda anotado que **esa cadena no pasó por Hermes** y que
+  los `429` sin `windowResetsAt` muestran texto del servidor en inglés (`34-…` §6ter).
+- **B1-F7:** corregido en código (atribución de `userId` en logs de error y de petición lenta), con test; **sin desplegar**.
+
 ### Actualización (2026-10-13): B2-F1 verificado en producción
 Desplegada la corrección (Render en `41a427a`, código equivalente a `4eb8e1b`), la sonda D8 (`32-…` §7) obtuvo **10 aceptadas y
 la undécima `429 quota_exhausted`** con instante de reinicio exacto. B2-F1 pasa de «abierto en producción» a **verificado en

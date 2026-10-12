@@ -13,7 +13,7 @@ const stream = {
 morgan.token('safe-url', (req: any) => stripQueryString(req.originalUrl || req.url));
 
 morgan.token('user-id', (req: any) => {
-  return req.user?.userId || req.user?.id || 'anonymous';
+  return req.user?.userId || 'anonymous';
 });
 
 morgan.token('response-time-ms', (req: any, res: any) => {
@@ -62,7 +62,7 @@ export const responseTimeLogger = (req: any, res: any, next: any) => {
         method: req.method,
         url: stripQueryString(req.url),
         responseTime: `${responseTime}ms`,
-        userId: req.user?.id,
+        userId: req.user?.userId,
       });
     }
 

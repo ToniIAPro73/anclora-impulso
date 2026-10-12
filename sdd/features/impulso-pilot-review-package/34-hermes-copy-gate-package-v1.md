@@ -73,6 +73,18 @@ En producción, el **coach de IA está desactivado** (`LLM_COACH_ENABLED` distin
   `generationMode`). Si siempre cae a plantilla, el aviso de *fallback* es el que verá el usuario de forma habitual. Esto es relevante
   para H1 y H6.
 
+## 6ter. Cadena adicional detectada fuera del paquete (2026-10-13)
+
+`components/workout-generator.tsx` (rama `catch`, línea ~143) muestra, cuando el servidor responde `429` con `windowResetsAt`
+(p. ej. al alcanzar el tope de generaciones de `39-…`):
+
+| ES | EN |
+|---|---|
+| Has alcanzado el límite de este periodo. Se restablece a las {hora}. | You have reached the limit for this period. It resets at {hora}. |
+
+**No figuraba en la lista de §3 y no ha pasado por el gate Hermes.** Además, otros `429` sin `windowResetsAt`
+(`concurrency_limit`, `idempotency_attempts_exhausted`) muestran el mensaje del servidor, **en inglés**.
+
 ## 7. Instrucción sugerida para Hermes (copiar y pegar)
 
 ```

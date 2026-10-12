@@ -37,7 +37,7 @@ export function errorHandler(
     url: stripQueryString(req.url),
     ip: req.ip,
     userAgent: req.get('user-agent'),
-    userId: (req as any).user?.id,
+    userId: (req as any).user?.userId,
     body: omitBody ? '[omitted]' : redactSensitive(req.body),
     params: redactSensitive(req.params),
     query: redactSensitive(req.query),

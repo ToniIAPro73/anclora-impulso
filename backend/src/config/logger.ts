@@ -128,17 +128,4 @@ export const logError = (error: Error, context?: any) => {
   });
 };
 
-// Función helper para loguear requests HTTP
-export const logHttpRequest = (req: any, res: any, responseTime: number) => {
-  logger.http('HTTP Request', {
-    method: req.method,
-    url: req.url,
-    statusCode: res.statusCode,
-    responseTime: `${responseTime}ms`,
-    userAgent: req.get('user-agent'),
-    ip: req.ip,
-    userId: req.user?.id,
-  });
-};
-
 export default logger;

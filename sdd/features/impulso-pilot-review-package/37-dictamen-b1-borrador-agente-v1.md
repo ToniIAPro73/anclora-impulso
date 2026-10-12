@@ -5,6 +5,10 @@
 > modificarlo y, solo si lo hace suyo, firmarlo. Hasta entonces no cambia ningún estado ni acepta AI-06, ni gate alguno.
 > Plantilla: `33-dictamen-b1-b2-guide-and-template-v1.md` §4 y §6. Pareja: `38-…` (B2).
 
+> **Actualización (2026-10-13):** B1-F7 corregido en código (sin desplegar): `errorHandler.ts` y `httpLogger.ts` leen `req.user.userId`;
+> se eliminó el auxiliar sin uso `logHttpRequest` (`config/logger.ts`), que además tenía el mismo defecto y registraba `req.url` con su
+> *query string*. Test nuevo `tests/unit/log-user-attribution-b1f7.test.ts` (fase roja observada: fallaban los 2 casos del defecto).
+
 ## 0. Alcance real de esta lectura
 
 | Aspecto | Valor |
