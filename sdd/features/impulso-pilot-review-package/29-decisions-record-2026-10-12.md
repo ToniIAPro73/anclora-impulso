@@ -12,6 +12,8 @@
 | 3 | Staging | Inicialmente «sí, debe existir»; **corregida el mismo día a opción C** (Stage D en producción con identidad QA, sin crear staging), con coste adicional «no» y staging «solo mientras dure Stage D» (sin objeto) | Ver `30-…` §11. No se crea ningún recurso. D4 por construcción (pooler declarado); D5/D6 pendientes de conocer instancias. | Ningún entorno staging existe ni se crea por esta decisión. |
 | 4 | Revisores | A y D: diferidos. B1 y B2: Toni. | B1 y B2 pasan a «DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO». A y D siguen sin designar. | No hay dictamen. Ver §3 sobre independencia. |
 | 5 | Hermes (C) | El propio agente Hermes sobre el repositorio local | C pasa a «DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO» (ruta designada). | Hermes no se ha ejecutado; no hay aprobación de copy. |
+| 6 | Hermes = Copy Curator | Toni declara que **Hermes será el Copy Curator** del gate (2026-10-12, mensaje posterior) | Resuelve la duda del aviso de `34-…` §0: la ruta Hermes cuenta como el gate de `AGENTS.md` por decisión del propietario. | Sigue sin existir una respuesta final de Hermes; no hay aprobación de copy. |
+| 7 | Dictámenes B1/B2 | Toni los redactará personalmente (guía en `33-…`) | Sin cambio de estado hasta que existan los documentos. | No hay dictamen. |
 
 ## 2. Consecuencias sobre tareas y gates
 

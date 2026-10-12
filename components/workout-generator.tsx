@@ -452,7 +452,7 @@ export function WorkoutGenerator() {
                 <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
                 <div>
                   <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
-                    {isSpanish ? "¡Entrenamiento Generado!" : "Workout Generated!"}
+                    {isSpanish ? "Entrenamiento listo" : "Workout ready"}
                   </h3>
                   <p className="text-sm text-green-700 dark:text-green-300">
                     {isSpanish ? "Tu entrenamiento personalizado está listo para comenzar" : "Your personalized workout is ready to start"}

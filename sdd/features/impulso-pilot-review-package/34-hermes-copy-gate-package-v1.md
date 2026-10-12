@@ -57,10 +57,18 @@ Fuentes de verdad: `lib/translations/es.json`, `lib/translations/en.json`, `comp
 | H5 | Cadenas no cambiadas por ser texto legal (encargo D) |
 | H6 | El generador sigue anunciando «¡Entrenamiento Generado!» como éxito en modo *fallback*: ¿aceptable? |
 
+## 6bis. CORRECCIÓN (2026-10-12, tras la primera ejecución de Hermes)
+La primera salida de Hermes dedujo que, al estar el coach desactivado, el modo `ai` del generador «puede no mostrarse nunca» y que
+el *fallback* «es la experiencia por defecto». **Esa inferencia no está respaldada.** En el código (`workouts.service.ts`, línea
+`if (env.groqApiKey)`), el generador de rutinas usa IA **solo si existe `GROQ_API_KEY`**, y es **independiente** de
+`LLM_COACH_ENABLED` (que solo gobierna el coach conversacional). Si producción tiene `GROQ_API_KEY`, el modo `ai` es alcanzable;
+si no la tiene, el *fallback* sería permanente. **Resuelto el 2026-10-12: Toni confirma que `GROQ_API_KEY` existe en Render** (solo el nombre; el valor no se ha visto). Hasta saberlo, ninguna propuesta de copy debe apoyarse
+en que la IA esté «permanentemente desactivada».
+
 ## 6. Hecho nuevo desde la preparación del encargo (afecta a H1/H6)
 
 En producción, el **coach de IA está desactivado** (`LLM_COACH_ENABLED` distinto de `true`; Stage D, documento 32). Por tanto:
-- Las cadenas del coach no llegan hoy a usuarios.
+- Las cadenas del coach conversacional no llegan hoy a usuarios (la bandera solo gobierna el coach; **ver §6bis** para el generador).
 - Verifica si el **generador de rutinas** usa IA o plantilla en producción: **no consta** (el script de Stage D no registró
   `generationMode`). Si siempre cae a plantilla, el aviso de *fallback* es el que verá el usuario de forma habitual. Esto es relevante
   para H1 y H6.
