@@ -3,8 +3,6 @@
 
 Antes de modificar este repositorio, todo agente debe leer:
 
-- `.anclora/global/ANCLORA_ECOSYSTEM_CONTEXT.md`
-- `.anclora/global/GLOBAL_AGENT_WORKFLOW.md`
 - `.anclora/AGENT_PROJECT_CONTEXT.md`
 - `MEMORY.md`
 
