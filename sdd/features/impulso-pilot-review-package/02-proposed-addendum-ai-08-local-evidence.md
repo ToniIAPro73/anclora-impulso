@@ -1,6 +1,6 @@
 # PROPOSED addendum A-08-01 (v2) — local isolated PostgreSQL as evidence for AI-08 (NOT APPROVED)
 
-**Status: PROPOSAL. Not approved. It changes nothing until Toni signs (§7).** The original criteria text is **not
+**Status: APPROVED BY THE OWNER (Toni, 2026-10-12) as written; the independent reviewer's line in §7 remains empty and the independent review is still pending.** Record: `29-decisions-record-2026-10-12.md`. AI-08 is **not** accepted by this approval. The original criteria text is **not
 modified**; this records an interpretation of the *evidence line* only. The local environment is **not** called
 staging, and PostgreSQL 16 local is **not** declared equivalent to the remote environment.
 
@@ -64,5 +64,5 @@ launch. Stage L does not close the plan's "en staging" evidence line by itself; 
 ## 7. Approval block (empty)
 | Role | Name | Decision | Date |
 |---|---|---|---|
-| Owner (Toni) | *pending* | *pending* | *pending* |
+| Owner (Toni) | Toni (ToniIAPro73) | APPROVED as written: Stage L accepts local evidence for Accept 1–3; Stage D mandatory before launch; independent review separate and pending | 2026-10-12 |
 | Independent reviewer (P0) | *pending — not named* | *pending* | *pending* |

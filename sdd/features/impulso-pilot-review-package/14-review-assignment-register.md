@@ -17,9 +17,9 @@ designations **only when Toni makes them expressly**; a suggestion or a name men
 | ID | request / dossier | designated person or agent | reviewer type | competence declared / pending | relation to the implementation | package / hash | state | engagement accepted | agreed target date | expected return | blocker |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | A | `13-review-requests/13a-professional-ai03.md` · `05-packet-professional-exercise.md` · ai-03-reviewer-dossier | — | human professional | to confirm: exercise professional, adults 40+ | pending | pkg `ae3e5575…` · code `dee09279…` | LISTO PARA ASIGNACIÓN | no | — | opinion on A scope only | no reviewer designated |
-| B1 | `13-review-requests/13b-…` §B1 · `06-packet-security.md` · session-security spec/dossier | — | human or AI pre-assessment (to be labelled) | to confirm: application security, auth/sessions, isolation | pending | same | LISTO PARA ASIGNACIÓN | no | — | opinion on AI-06-AC10 only | no reviewer designated |
-| B2 | `13-review-requests/13b-…` §B2 · ai-08-acceptance-analysis · data-integrity dossiers | — | human or AI pre-assessment (to be labelled) | to confirm: PostgreSQL transactions, concurrency, idempotency, quotas, migrations | pending; independence limits to record (same person as B1 allowed only by Toni's designation) | same | LISTO PARA ASIGNACIÓN | no | — | separate opinion from B1 | no reviewer designated |
-| C | `13-review-requests/13c-hermes-copy.md` · `07-packet-hermes-copy.md` · ai-02-copy-diff-for-hermes | — | Hermes Copy Curator (required by `AGENTS.md`) | Hermes — availability unconfirmed | pending | same | LISTO PARA ASIGNACIÓN | no | — | approval/changes per string | Hermes not available in this environment; gate pending; copy already on development/staging |
+| B1 | `13-review-requests/13b-…` §B1 · `06-packet-security.md` · session-security spec/dossier | **Toni (ToniIAPro73)** — designated by Toni 2026-10-12 (self-designation) | human (the owner) | to confirm by Toni: application security, auth/sessions, isolation | **NOT independent:** Toni directed the implementation (product owner of the AI agent's work) | same | DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO | no | — | opinion on AI-06-AC10 only | see `29-…` §3: designation recorded; does not satisfy the plan's *independent* review by itself |
+| B2 | `13-review-requests/13b-…` §B2 · ai-08-acceptance-analysis · data-integrity dossiers | **Toni (ToniIAPro73)** — designated by Toni 2026-10-12 (same person as B1, expressly designated) | human (the owner) | to confirm by Toni: PostgreSQL transactions, concurrency, idempotency, quotas, migrations | **NOT independent:** same as B1; two separate opinions must still be written | same | DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO | no | — | separate opinion from B1 | see `29-…` §3: does not satisfy the independent P0 review required for AI-08 (A-08-01 §2) |
+| C | `13-review-requests/13c-hermes-copy.md` · `07-packet-hermes-copy.md` · ai-02-copy-diff-for-hermes | **Hermes agent run on the local repository** — route designated by Toni 2026-10-12 | Hermes Copy Curator (required by `AGENTS.md`) | Hermes — availability/behaviour to be confirmed when it runs | none known (Hermes did not implement) | same | DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO | no | — | approval/changes per string | Hermes is not available in this environment; Toni runs it; output must be returned as a document and linked to the reviewed version; copy already on development/staging |
 | D | `13-review-requests/13d-legal-l1-l8.md` · `08-packet-legal.md` | — | human legal reviewer | to confirm: privacy/data protection, consumer law, pilot terms | pending | same | LISTO PARA ASIGNACIÓN | no | — | opinion on L1–L8 only | no reviewer designated |
 
 Prepared engagements (copy/deliver from here): `14-assignments/14A-professional-ai03.md`, `14B1-security-ai06-ac10.md`,
@@ -83,3 +83,14 @@ The AI reviews targeted `ed4bb64`. An integration run on a tree identity equal t
 ### Note 2026-10-12 — correction increment
 NF-1/F-1/F-2/F-3 were corrected locally (uncommitted) after B1-IA/B2-IA; see `16-correction-nf1-f1-f2-f3.md`. The supplementary AI
 engagements keep the state ANÁLISIS IA RECIBIDO; the corrected tree has NOT been reviewed by any reviewer, human or AI.
+
+## Designaciones expresas de Toni (2026-10-12)
+Recorded from Toni's message of 2026-10-12; no engagement was sent, accepted or started by anyone.
+| ID | Decision of Toni | Register state |
+|---|---|---|
+| A | deferred | LISTO PARA ASIGNACIÓN (unchanged) |
+| B1 | Toni himself | DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO |
+| B2 | Toni himself | DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO |
+| C | Hermes agent on the local repository | DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO |
+| D | deferred | LISTO PARA ASIGNACIÓN (unchanged) |
+Independence consequences of B1/B2/C: see `29-decisions-record-2026-10-12.md` §3.
