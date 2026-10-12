@@ -13,9 +13,11 @@
 | 11 | `11-execution-coverage-and-provenance.md` | every execution → scope → tree hash → result → artifact; console-only results; bundle chain; provenance gaps |
 | 12 | `12-summary-for-toni.md` | one page, minimum decisions |
 | 13 | `13-review-requests/` | four independent requests (A professional, B security + AI-08 technical, C Hermes, D legal) — **LISTO PARA ASIGNACIÓN**, none sent |
+| 14 | `14-review-assignment-register.md` + `14-assignments/` | single assignment register (A, B1, B2, C, D) and five prepared engagements — all **LISTO PARA ASIGNACIÓN**, nothing sent |
 Superseded details of the original index (still true as history): the "valid evidence" list (three runs) is extended by `11-…`;
 test totals are now backend integration 23 suites / 141 tests, 5 migrations, frontend Jest 17 / 123 (console), Playwright 14/14.
 Status by task and gate is unchanged from the table below.
+> **Update (assignment step):** the working tree described here has since been committed and pushed (`origin/development` and `origin/staging` at `944eb67`); the only code difference to the consolidated ZIP is the typing fix in `components/workout-generator.tsx` (see `14-review-assignment-register.md`). Task/gate statuses and the review states are unchanged.
 
 ---
 

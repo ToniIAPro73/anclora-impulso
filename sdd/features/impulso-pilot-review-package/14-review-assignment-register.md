@@ -1,0 +1,59 @@
+# Review assignment register (single record)
+
+Created 2026-10-12. Nothing was sent to anyone; no review was run; no reviewer accepted anything. This register records
+designations **only when Toni makes them expressly**; a suggestion or a name mentioned elsewhere does not count.
+
+## Package and version to review
+| Item | Value |
+|---|---|
+| ZIP | `artifacts/review-bundles/anclora-impulso-review-consolidated-20261012T064901Z.zip` |
+| SHA-256 | `ae3e55758673d18214250c40e27641f3f9ca1f199f88719cea662d86a3294c75` |
+| Base | `77f852aa3a1c67b8d1f58bb8852d408b0a8c0523` |
+| Code identity of the package | `sourceTreeSha256 dee09279107148dddf28e075a29577cd64692b480d5e1f6db64b6c28ea07efb6` (E2E 14/14 `20261012T063117Z-c38e75c8`) |
+| Entry point | `sdd/features/impulso-pilot-review-package/INDEX.md` |
+| Update after the package was built | The working tree was later **committed** (`977c861 … ebfc707`) and one more commit `944eb67` was added; `origin/development` and `origin/staging` are at `944eb67` (code identity `5a5cf68d21767b72ac7eba2e04f7c1b549d4bb2e3f95ca619b5581e1e5221034`). The package statement "uncommitted" is therefore historical. **Exactly one file differs** between the package and `944eb67`: `components/workout-generator.tsx` (4 lines: `onValueChange` callbacks typed as `string` and narrowed by cast, to satisfy the CI typecheck; no user-facing string changed). |
+
+## Assignments
+| ID | request / dossier | designated person or agent | reviewer type | competence declared / pending | relation to the implementation | package / hash | state | engagement accepted | agreed target date | expected return | blocker |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | `13-review-requests/13a-professional-ai03.md` · `05-packet-professional-exercise.md` · ai-03-reviewer-dossier | — | human professional | to confirm: exercise professional, adults 40+ | pending | pkg `ae3e5575…` · code `dee09279…` | LISTO PARA ASIGNACIÓN | no | — | opinion on A scope only | no reviewer designated |
+| B1 | `13-review-requests/13b-…` §B1 · `06-packet-security.md` · session-security spec/dossier | — | human or AI pre-assessment (to be labelled) | to confirm: application security, auth/sessions, isolation | pending | same | LISTO PARA ASIGNACIÓN | no | — | opinion on AI-06-AC10 only | no reviewer designated |
+| B2 | `13-review-requests/13b-…` §B2 · ai-08-acceptance-analysis · data-integrity dossiers | — | human or AI pre-assessment (to be labelled) | to confirm: PostgreSQL transactions, concurrency, idempotency, quotas, migrations | pending; independence limits to record (same person as B1 allowed only by Toni's designation) | same | LISTO PARA ASIGNACIÓN | no | — | separate opinion from B1 | no reviewer designated |
+| C | `13-review-requests/13c-hermes-copy.md` · `07-packet-hermes-copy.md` · ai-02-copy-diff-for-hermes | — | Hermes Copy Curator (required by `AGENTS.md`) | Hermes — availability unconfirmed | pending | same | LISTO PARA ASIGNACIÓN | no | — | approval/changes per string | Hermes not available in this environment; gate pending; copy already on development/staging |
+| D | `13-review-requests/13d-legal-l1-l8.md` · `08-packet-legal.md` | — | human legal reviewer | to confirm: privacy/data protection, consumer law, pilot terms | pending | same | LISTO PARA ASIGNACIÓN | no | — | opinion on L1–L8 only | no reviewer designated |
+
+Prepared engagements (copy/deliver from here): `14-assignments/14A-professional-ai03.md`, `14B1-security-ai06-ac10.md`,
+`14B2-ai08-technical.md`, `14C-hermes-copy.md`, `14D-legal-l1-l8.md`.
+
+## State rules
+| State | Meaning | Evidence required |
+|---|---|---|
+| LISTO PARA ASIGNACIÓN | no designation | — |
+| DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO | Toni named the person/agent | Toni's express designation |
+| EN REVISIÓN | the reviewer accepted and started | evidence of acceptance and start |
+| DICTAMEN RECIBIDO | the real opinion is back | the returned document, kept and linked to the version reviewed |
+A draft or a prepared engagement never advances a state. An AI review is labelled as AI, may contribute findings, and cannot
+stand in for a human signature or for a requirement that demands another kind of reviewer. Final acceptance of tasks and gates stays separate.
+
+## Hermes gate (C)
+Rule in `AGENTS.md` §Hermes gate: a change that affects public copy needs the Hermes Copy Curator before merge. Hermes is **not**
+available here. Pending route: Toni confirms where/who runs the Hermes gate. An alternative reviewer requires Toni's explicit
+decision and a recorded effect on the gate. **Observed fact:** the copy changes are already in `origin/development` and `origin/staging`
+(`944eb67`); the gate is open and must close before `production`/`main`.
+
+## Independence (B1 / B2)
+The implementation was produced by an AI agent working with Toni. No reviewer is designated, so no independence statement is possible yet.
+If the same person covers B1 and B2, record competence for both and any participation in the implementation; keep two opinions.
+
+## Independent review reports (attachments)
+| Report | Local availability | Note |
+|---|---|---|
+| `ANCLORA-IMPULSO-REVISION-DELTA-R1-R6-2026-10-12.md` | **not found** | |
+| `ANCLORA-IMPULSO-REVISION-FINAL-R7-R8-R5-2026-10-12.md` | **not found** | |
+| `ANCLORA-IMPULSO-REVISION-R8AB-2026-10-12.md` | found at `/Users/toni/Downloads/` (SHA-256 `eae4b36489a16932ac51ce2ec16d80281c225f86beb0c7de7b3f6bca82284406`) | listed only; to be attached as a separate file **if Toni authorizes**; the ZIP is not altered |
+| Review of R8-C | **not found** | |
+No report was reconstructed. Their absence does not block the engagements.
+
+## Notes for the record
+- The packaged ZIP was not rebuilt and is unchanged (hash verified at registration).
+- Decisions that stay in their own records and are not needed to assign reviewers: addendum A-08-01, staging, quotas, secrets.
