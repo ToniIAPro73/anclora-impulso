@@ -38,6 +38,12 @@ Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos
 *Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
 nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
 
+### Actualización (2026-10-13): B1-F1/B1-F7 desplegados y dictámenes B1/B2 adoptados por delegación
+- **Producción (Render `0606586`, desplegado y verificado):** B1-F1 (CORS sin comodines por prefijo) y B1-F7 (`userId` en logs). Los
+  orígenes exactos siguen aceptados; los previews por hash dejan de poder llamar a la API hasta configurar su sufijo.
+- **Dictámenes B1 y B2:** adoptados por Toni por delegación expresa (`37-…`, `38-…`). **No independientes**; no aceptan AI-06 AC10 ni
+  AI-08 ni mueven ningún gate.
+
 ### Decisión (2026-10-13): P2 de la CSP aplazado
 Toni aplaza P2 (renderizado dinámico + *nonces*) hasta que haya usuarios. B1-F2 queda **parcialmente mitigado** (P0 + medición P1).
 Riesgo residual aceptado temporalmente: un XSS podría robar los tokens de `localStorage`. Antes de abrir tráfico real conviene

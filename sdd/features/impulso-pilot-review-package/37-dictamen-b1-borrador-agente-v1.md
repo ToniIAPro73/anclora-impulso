@@ -86,3 +86,37 @@ independiente.
 3. Abre `app.ts:36-60` y `middleware.ts:39-55` y confirma B1-F1/F2 con tus ojos.
 
 Firma: ______________________   Fecha: __________   (sin firma, este documento no tiene valor de dictamen)
+
+## Adopción por delegación (2026-10-13)
+
+| Campo | Valor |
+|---|---|
+| Dictamen | **B1 (seguridad)** — borrador `37-…` redactado por el agente (no independiente) |
+| Adoptado por | **Toni (ToniIAPro73)**, propietario del producto, como revisor designado de B1 (`29-…` #4) |
+| Forma | Instrucción expresa en la sesión del 2026-10-13: «Firma los borradores B1/B2 con mi consentimiento y aprobación». **Firma delegada en el agente**; no hay firma manuscrita ni constancia de lectura personal de Toni |
+| Versión revisada | Borrador sobre `c0333f3`; estado actualizado a `0606586` (código de producción tras el despliegue del 2026-10-13) |
+| Independencia | **No independiente**: el redactor es el agente que implementó el código, y el firmante dirigió la implementación |
+
+**Decisión adoptada:** `requiere cambios (menores)`; el resto, «sin cambios requeridos en el alcance local».
+
+**Corregido desde la redacción del borrador:**
+- B1-F1 (CORS por prefijo `vercel.app`): corregido y **desplegado y verificado en producción** (orígenes exactos aceptados; `anclora-impulso-evil.vercel.app` y los previews por hash, rechazados).
+- B1-F7 (`userId` en logs): corregido y desplegado (verificado por pruebas y CI; no observado en logs de producción).
+- B1-F2 (CSP): P0 y P1 en producción del preview y en `development`; **P2 aplazado** por Toni hasta que haya usuarios.
+
+**Abierto o aceptado temporalmente:**
+- **B1-F2:** `'unsafe-inline'` permanece; riesgo residual aceptado temporalmente (XSS con tokens en `localStorage`).
+- **B1-F3 / B1-F4:** pendientes de fecha (2026-11-11) y de leer los logs de arranque de Render.
+- **B1-F5** (registro sin verificación de e-mail, contraseña mínima de 6), **B1-F6** (retención y purgas no programadas) y **B1-F8** (documentación contradictoria).
+- **No evaluado:** F-2, F-3 y el cliente completo de sesión entre pestañas.
+
+**Comprobaciones previas de «Antes de firmar» que NO consta que se hayan hecho personalmente:**
+- Buscar `SECURITY_CONFIG_NOT_ACCEPTABLE` en los logs de arranque de Render.
+- Ver en Render los nombres de `JWT_EXPIRES_IN`, `AUTH_ACCEPT_LEGACY_TOKENS` y `SECURITY_CONFIG_MODE`.
+- Contrastar B1-F2 con `middleware.ts` (parcialmente cubierto por la verificación del preview del 2026-10-13).
+
+**Límites que se mantienen:** esta adopción **no acepta** AI-06 AC10 ni ningún gate, no sustituye
+la revisión independiente que el plan exige a tareas P0, y su valor es el de un control del propietario sobre una lectura
+estática hecha por el implementador.
+
+Firma: **Toni (ToniIAPro73) — adopción delegada, registrada por el agente** · Fecha: 2026-10-13

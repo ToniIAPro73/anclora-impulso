@@ -45,3 +45,7 @@
 3. Preparar staging (ver documento de plan cuando se redacte): entorno desplegado no productivo con BD aislada.
 4. Revisión del técnico (N7) y, si procede, aceptación expresa de AI-01.
 5. A y D siguen diferidos: sin ellos, AI-03/04/05 y AI-07 siguen bloqueadas.
+
+## Adenda (2026-10-13): firma delegada de B1 y B2
+Toni ordenó firmar los borradores B1/B2 «con mi consentimiento y aprobación». Registrado en `37-…` y `38-…` («Adopción por
+delegación») y en `14-…`. **No es una revisión independiente, no acredita lectura personal y no acepta AI-06 AC10 ni AI-08.**

@@ -67,3 +67,35 @@ verificado parcialmente en producción». **No aceptes AI-08** con este document
 3. Decide si el coach seguirá desactivado hasta tener D2.
 
 Firma: ______________________   Fecha: __________   (sin firma, este documento no tiene valor de dictamen)
+
+## Adopción por delegación (2026-10-13)
+
+| Campo | Valor |
+|---|---|
+| Dictamen | **B2 (integridad, AI-08)** — borrador `38-…` redactado por el agente (no independiente) |
+| Adoptado por | **Toni (ToniIAPro73)**, propietario del producto, como revisor designado de B2 (`29-…` #4) |
+| Forma | Instrucción expresa en la sesión del 2026-10-13: «Firma los borradores B1/B2 con mi consentimiento y aprobación». **Firma delegada en el agente**; no hay firma manuscrita ni constancia de lectura personal de Toni |
+| Versión revisada | Borrador sobre `c0333f3`; estado actualizado a `0606586` (código de producción tras el despliegue del 2026-10-13) |
+| Independencia | **No independiente**: el redactor es el agente que implementó el código, y el firmante dirigió la implementación |
+
+**Decisión adoptada:** `requiere cambios (menores)`; el resto, «sin cambios requeridos en el alcance local».
+
+**Corregido desde la redacción del borrador:**
+- B2-F1 (generación de rutinas sin cuota): corregido (`4eb8e1b`), **desplegado y verificado en producción** con la sonda D8 (10 aceptadas y la undécima `429 quota_exhausted`).
+
+**Abierto o aceptado temporalmente:**
+- **B2-F2:** purgas de idempotencia, sesiones y *handoffs* sin programar.
+- **B2-F3 / B2-F4 / B2-F5:** coste duplicado ante un dueño lento, autodenegación por tope de fallos, contador de tokens antiguos por proceso (aceptables).
+- **D2 (cuota del coach bajo concurrencia):** sin evidencia de Stage D, porque el coach está desactivado.
+- **I3 (orden de bloqueos):** conclusión débil, solo por lectura.
+
+**Comprobaciones previas de «Antes de firmar» que NO consta que se hayan hecho personalmente:**
+- Confirmar con `grep` que `rateLimit` solo aparece en `app.ts` (la sonda D8 confirmó el efecto en producción).
+- Decidir el valor del tope por usuario (10/hora es una propuesta de ingeniería, no un límite comercial aprobado).
+- Decidir si el coach seguirá desactivado hasta tener D2.
+
+**Límites que se mantienen:** esta adopción **no acepta** AI-08 ni ningún gate, no sustituye
+la revisión independiente que el plan exige a tareas P0, y su valor es el de un control del propietario sobre una lectura
+estática hecha por el implementador.
+
+Firma: **Toni (ToniIAPro73) — adopción delegada, registrada por el agente** · Fecha: 2026-10-13
