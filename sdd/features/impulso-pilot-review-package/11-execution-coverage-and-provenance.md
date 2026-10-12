@@ -1,5 +1,12 @@
 # Execution coverage and provenance (2026-10-12)
 
+> **Actualización 2026-10-12 (posterior a este documento; el texto de abajo se conserva como historia).**
+> «D10 no ejecutado» y «sin commit» ya no describen el estado actual: el código está commiteado y publicado en `development`
+> (último commit de código `c0333f3`), las seis migraciones `20261012*` se aplicaron en producción (run #1 del workflow protegido,
+> modelo P1; ledger re-leído por Toni), el backend se desplegó manualmente en Render en `c0333f3` y Toni verificó tres casos
+> funcionales (usuario QA OK, admin 200, usuario normal 403). Esto **no** acepta ninguna tarea AI-xx ni ningún gate ni cierra
+> ninguna revisión. Estado de gates y revisiones: `28-gates-evidence-checklist-v1.md`.
+
 Companion of `10-consolidated-matrix-r1-r8c.md`. It says **what was run, on which code, with what result, and what
 artifact exists**. The results below are *not* one suite executed on the final tree: they are separate executions on
 successive trees, listed with the hash recorded in each run's own `identity.json` (the authority; transcriptions in

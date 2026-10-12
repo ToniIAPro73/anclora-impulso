@@ -1,5 +1,12 @@
 # Summary for Toni — consolidation R1–R8-C (2026-10-12)
 
+> **Actualización 2026-10-12 (posterior a este documento; el texto de abajo se conserva como historia).**
+> «D10 no ejecutado» y «sin commit» ya no describen el estado actual: el código está commiteado y publicado en `development`
+> (último commit de código `c0333f3`), las seis migraciones `20261012*` se aplicaron en producción (run #1 del workflow protegido,
+> modelo P1; ledger re-leído por Toni), el backend se desplegó manualmente en Render en `c0333f3` y Toni verificó tres casos
+> funcionales (usuario QA OK, admin 200, usuario normal 403). Esto **no** acepta ninguna tarea AI-xx ni ningún gate ni cierra
+> ninguna revisión. Estado de gates y revisiones: `28-gates-evidence-checklist-v1.md`.
+
 One page. Nothing here is an approval, and no communication was sent to anyone.
 
 ## Where things stand
