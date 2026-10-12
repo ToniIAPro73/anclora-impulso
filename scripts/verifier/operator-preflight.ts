@@ -38,7 +38,11 @@ const migrationsDir = join(root, "backend", "prisma", "migrations");
 const candidates = readdirSync(migrationsDir)
   .filter((n) => /^[0-9]{14}_[a-z0-9_]+$/.test(n) && statSync(join(migrationsDir, n)).isDirectory())
   .sort()
-  .map((name) => ({ name, checksum: computeMigrationChecksum(readFileSync(join(migrationsDir, name, "migration.sql"), "utf8")) }));
+  .map((name) => {
+    const content = readFileSync(join(migrationsDir, name, "migration.sql"), "utf8");
+    const crlf = content.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+    return { name, checksum: computeMigrationChecksum(content), alternateChecksums: [computeMigrationChecksum(crlf)] };
+  });
 
 const git = (...a: string[]) => execFileSync("git", a, { encoding: "utf8" }).trim();
 const candidateSha = git("rev-parse", "HEAD");

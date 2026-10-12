@@ -162,6 +162,40 @@ const mockRolledBackLedger: LedgerEntry[] = [
 const l4 = evaluatePrismaLedger(mockRolledBackLedger, mockCandidates);
 assert("Rolled back migration in ledger fails", !l4.valid && (l4.reason?.includes("rolled back") ?? false));
 
+// Legacy baseline shapes (production history of 2026-03-28)
+const entry = (name: string, checksum: string, finished: string | null, rolledBack: string | null = null): LedgerEntry => ({
+  id: name + checksum + String(finished), migration_name: name, checksum, finished_at: finished, rolled_back_at: rolledBack,
+  started_at: "2026-03-28T10:00:00Z", applied_steps_count: finished ? 1 : 0, logs: null
+});
+const legacyCandidates: CandidateMigration[] = [
+  { name: "20251120020551_init", checksum: "aaa111", alternateChecksums: ["aaa111crlf"] },
+  { name: "20261012050000_add_idempotency_quota_reservation", checksum: KNOWN_MIGRATION_5_CHECKSUM, alternateChecksums: ["mig5crlf"] },
+  { name: "20261012090000_add_oauth_handoffs", checksum: "ccc333" }
+];
+const l6 = evaluatePrismaLedger([
+  entry("20251120020551_init", "aaa111crlf", null, "2026-03-28T10:56:21Z"),
+  entry("20251120020551_init", "aaa111crlf", "2026-03-28T10:56:22Z")
+], legacyCandidates);
+assert("Rolled back unfinished row is ignored; CRLF variant accepted and reported",
+  l6.valid && l6.ignoredRolledBackRows === 1 && (l6.lineEndingEquivalents ?? []).includes("20251120020551_init"));
+const l7 = evaluatePrismaLedger([
+  entry("20251120020551_init", "aaa111", "2026-03-28T10:56:22Z"),
+  entry("20261012050000_add_idempotency_quota_reservation", "mig5crlf", "2026-10-10T10:00:00Z")
+], legacyCandidates);
+assert("Line-ending variant is NOT accepted for migration 5", !l7.valid && (l7.reason?.includes("migration 5") ?? false));
+const l8 = evaluatePrismaLedger([
+  entry("20251120020551_init", "aaa111", null),
+  entry("20251120020551_init", "aaa111", "2026-03-28T10:56:22Z")
+], legacyCandidates);
+assert("Unfinished row that is NOT rolled back still fails", !l8.valid && (l8.reason?.includes("unfinished") ?? false));
+const l9 = evaluatePrismaLedger([
+  entry("20251120020551_init", "aaa111", "2026-03-28T10:56:22Z"),
+  entry("20251120020551_init", "aaa111", "2026-03-28T10:57:00Z")
+], legacyCandidates);
+assert("Two finished rows for one migration are ambiguous and fail", !l9.valid && (l9.reason?.includes("ambiguous") ?? false));
+const l10 = evaluatePrismaLedger([entry("20251120020551_init", "zzz999", "2026-03-28T10:56:22Z")], legacyCandidates);
+assert("Unrelated checksum still fails", !l10.valid && (l10.reason?.includes("checksum mismatch") ?? false));
+
 // 5. Backup Verification
 console.log("\n--- 5. Backup Verification ---");
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000; // test fixture only: the real threshold is the open decision OD-03
