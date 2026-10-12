@@ -107,3 +107,7 @@ Independence consequences of B1/B2/C: see `29-decisions-record-2026-10-12.md` §
 Toni adoptó por delegación expresa los borradores `37-…` (B1) y `38-…` (B2): firma registrada por el agente, **sin constancia de lectura
 personal** y con las comprobaciones previas pendientes listadas en cada documento. Siguen **no independientes** y no aceptan AI-06 ni AI-08.
 Las filas B1 y B2 pasan a «DICTAMEN RECIBIDO» con esa etiqueta; A y D siguen diferidos y C tiene dictamen con reservas (`36-…`).
+
+## Nota (2026-10-13): encargo C, rondas 2 y 3
+Segunda ronda (`42-…`): cadenas 9 y 10 con cambios; Toni aplicó la 9 literal y una variante de la 10. Tercera ronda: Hermes aprobó «tal
+cual» las cadenas 8 y 10. Estado del encargo C: **DICTAMEN RECIBIDO**, con las reservas de `36-…`/`42-…`. No acepta AI-02 ni gate alguno.

@@ -38,6 +38,11 @@ Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos
 *Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
 nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
 
+### Actualización (2026-10-13): gate Hermes, tercera ronda — cadenas 8 y 10 aprobadas
+Hermes aprobó «tal cual» la cadena 8 (aviso del modo IA) y la 10 (tope de generaciones, variante de Toni): `42-…` §6. El gate de copy
+queda **cumplido para el generador de rutinas y el aviso de tope**. **AI-02 sigue sin aceptarse**: falta la matriz promesa → función →
+prueba (H4), y hay copy sin revisar fuera de ese ámbito («Onboarding inteligente», `429` sin hora en inglés).
+
 ### Actualización (2026-10-13): gate Hermes, segunda ronda
 Aplicadas las cadenas 9 (fallback) y 10 (tope de generaciones) con E2E 13/13 (`42-…`). La 10 es una variante de Toni, no la propuesta
 literal de Hermes: **debe reenviarse**. Sigue pendiente la cadena 8 (aviso del modo IA), que Hermes no llegó a revisar. AI-02 sigue sin

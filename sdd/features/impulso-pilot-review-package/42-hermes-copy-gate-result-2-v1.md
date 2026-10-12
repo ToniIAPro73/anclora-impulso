@@ -108,3 +108,32 @@ HECHOS que debes usar:
 Devuelve, para las cadenas 8 y 10: veredicto (aprobada / cambios propuestos / no evaluable), texto propuesto ES y EN si procede y
 justificación. Si apruebas tal cual, dilo explícitamente. No modifiques ficheros. Indica quién eres, la fecha y el commit revisado.
 ```
+
+## 6. Tercera ronda: respuesta de Hermes sobre las cadenas 8 y 10 (2026-10-13)
+
+> Resumen fiel de la respuesta recibida; el texto íntegro lo pegó Toni en la conversación. Revisor: «Hermes Copy Curator», fecha
+> 2026-10-13, commit `2139921` (`development`).
+
+| Cadena | Veredicto de Hermes | Justificación (resumen) |
+|---|---|---|
+| **8** aviso modo IA | **Aprobada tal cual** | Declara el modo real tras conocer el resultado; describe solo lo que el producto hace hoy; ES/EN equivalentes; la insignia «Generado con IA» refuerza la declaración |
+| **10** tope de generaciones | **Aprobada tal cual** | Sin cifra fija (el tope es configurable); «Podrás generar otra» refleja la ventana deslizante; ES/EN equivalentes |
+
+Hermes confirma además no haber modificado ficheros y que ambas cadenas «cumplen los criterios en su redacción actual».
+
+**Estado del gate de copy tras esta ronda**
+
+| Cadena | Veredicto | Ronda |
+|---|---|---|
+| 2–7, 11 y 12 (título y descripciones, botón, insignias, aviso `manual`, etc.) | Aprobadas o aplicadas según `36-…` | 1 |
+| 9 (fallback) | Aplicada tal como la propuso | 2 |
+| 8 (modo IA) | **Aprobada tal cual** | 3 |
+| 10 (tope) | **Aprobada tal cual** (variante de Toni) | 3 |
+
+**Lo que NO cierra esta ronda**
+- **H4:** la matriz promesa → función → prueba de AI-02 sigue sin existir y el criterio del plan exige «matriz aprobada». El gate de
+  copy no sustituye esa matriz. **AI-02 no queda aceptada.**
+- **Cadenas no revisadas todavía:** los `429` sin `windowResetsAt` (límite de peticiones simultáneas, intentos agotados) muestran el
+  mensaje del servidor **en inglés**; y el título del modal de onboarding del dashboard, «Onboarding inteligente» (observado en la
+  verificación del preview), usa «inteligente», el mismo adjetivo que se retiró del título de la landing. Ninguna estaba en el paquete.
+- El gate se ha cumplido **para el generador de rutinas y el aviso de tope**; no es una revisión de toda la copy de la aplicación.
