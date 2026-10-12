@@ -94,6 +94,7 @@ Declaración de adopción AOS para `anclora-impulso`.
 | 2026-09-25 | v2.0 | Adopción de política canónica de QA proporcional, cadencia de puertas por lotes (BATCHED) y modelo de overrides explícitos. | ToniIAPro73 |
 | 2026-09-25 | v2.1 | Adopción de economía adaptativa (CAVEMAN_MODE=AUTO) y endurecimiento FAST QA (sin suites completas por defecto, mínimo suficiente, detención ante evidencia suficiente). | ToniIAPro73 |
 | 2026-10-12 | decisión | Arquitectura de producción Vercel + Render/Express + Neon + Prisma Migrate; runner manual protegido aprobado como diseño, no ejecutado (`IMPULSO-ARCH-RUNNER-2026-10-12`). | ToniIAPro73 |
+| 2026-10-12 | ejecución | Migración de producción ejecutada (run #1, P1) y backend desplegado manualmente en `c0333f3`; rama del servicio Render permanece en `development` (`IMPULSO-PRODUCTION-MIGRATION-EXECUTED-2026-10-12`). | ToniIAPro73 |
 | 2026-10-12 | decisión | Verificador automatizado independiente autorizado y diseñado (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) para `production-migrations`. Toni mantiene el trigger manual; estado: local implementado, remoto no configurado. | ToniIAPro73 |
 
 ## Decisión de verificador automatizado de migraciones (2026-10-12)
@@ -121,3 +122,16 @@ Declaración de adopción AOS para `anclora-impulso`.
   `sha`. Manifiesto de release en el propio commit (`scripts/release/release-manifest.json`).
 - NO_VERIFICADO=entorno y revisores en GitHub, secreto, runner remoto, backup, ledger remoto. Nada ejecutado.
 - LIMITES=no autoriza migrar, desplegar, promover ni crear credenciales de producción.
+
+## Ejecución de la migración de producción y despliegue del backend (2026-10-12)
+
+- DECISION_ID=IMPULSO-PRODUCTION-MIGRATION-EXECUTED-2026-10-12
+- EXECUTED_BY=Toni (ToniIAPro73), lanzamiento y aprobación manuales bajo el modelo P1
+- RUN=GitHub Actions `Production migrations (manual, protected)` #1, SHA `c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d`, rama `development`, entorno `production-migrations` aprobado por Toni
+- RESULTADO=Seis migraciones `20261012*` aplicadas con `prisma migrate deploy`; ledger re-leído por Toni (seis filas terminadas, ninguna revertida).
+- BACKUP=Rama Neon `backup-pre-migration-20261012` (`br-shy-cloud-agi9o4kv`, 2026-10-12T19:48:08Z, padre `main`); conservada, sin auto-borrado.
+- PREFLIGHT=`operator-preflight.ts` READY_FOR_HUMAN_AUTHORIZATION (umbral de antigüedad del backup 60 min, baseline 20); informe sha256 `9b8581cf08febd4ff2192b7940c2fad6dc3cfdfa0539751c8e04286011bfca68`.
+- DESPLIEGUE_BACKEND=Render `Anclora-Impulso` desplegado manualmente en `c0333f3` (mecanismo Q2 opción A: rama del servicio cambiada a `development`, Auto-Deploy Off). `main` y Vercel no se tocaron. Decisión de Toni: el servicio permanece en `development`.
+- VERIFICACION_FUNCIONAL=Toni: usuario QA OK, admin 200, usuario normal 403. Cobertura limitada a esos tres casos.
+- BASELINE_LEGADO=8 filas sin terminar con `rolled_back_at` y checksums de variante CRLF en 9 migraciones: aceptadas por el evaluador (commit c0333f3) y reportadas; el ledger no se modifica a mano.
+- NO_CAMBIA=gates G1–G4, revisiones profesional, de seguridad, legal y Hermes siguen sin aceptarse; no autoriza promoción a staging/main. `.anclora/global` (eliminación sin explicar) sin tocar.

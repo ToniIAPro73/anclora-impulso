@@ -87,7 +87,7 @@ report `ANCLORA_AUTHORITY_CONFLICT` with details and stop the affected action.
 ## 4. Core Project Contracts
 
 - **PRODUCTION_RUNTIME**: [`.anclora/PRODUCTION_RUNTIME.md`](PRODUCTION_RUNTIME.md)
-  - Governs real runtime architecture (Vercel frontend, Render/Express backend, Neon/Postgres), Prisma Migrate strategy and its manual protected GitHub Actions runner (design approved 2026-10-12, not executed), auth, and production-backed local model.
+  - Governs real runtime architecture (Vercel frontend, Render/Express backend, Neon/Postgres), Prisma Migrate strategy and its manual protected GitHub Actions runner (design approved and executed once on 2026-10-12, P1 model; see PRODUCTION_RUNTIME section 12), auth, and production-backed local model.
 - **AOS_ADOPTION**: [`.anclora/AOS_ADOPTION.md`](AOS_ADOPTION.md)
   - Governs AOS alignment, governance level, standards, and referenced authoritative knowledge.
 

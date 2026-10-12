@@ -50,7 +50,7 @@ MIGRATION_SYSTEM=Prisma Migrate (PostgreSQL on Neon)
 MIGRATION_STRATEGY=VERSIONED_PRISMA_MIGRATIONS
 MIGRATION_DIRECTORY=backend/prisma/migrations
 MIGRATION_RUNNER=GITHUB_ACTIONS_MANUAL_AUTOMATED_RULE_PROTECTED
-MIGRATION_RUNNER_STATUS=DESIGN_APPROVED_LOCAL_IMPLEMENTED_REMOTE_NOT_CONFIGURED
+MIGRATION_RUNNER_STATUS=EXECUTED_ONCE_2026-10-12_P1_MODEL (run #1, commit c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d; see section 12)
 MIGRATION_RUNNER_WORKFLOW=.github/workflows/production-migrations.yml
 MIGRATIONS_PRECEDE_BACKEND_DEPLOY=true
 
@@ -62,10 +62,13 @@ GitHub Environment `production-migrations` (protected by an independent automate
 evaluating SHA, migration tree, read-only ledger and Neon snapshot; secrets exposed ONLY after rule approval; secret scoped to that environment),
 running `prisma migrate deploy` for one full immutable commit SHA, serialized, minimum token permissions, no application deploy.
 Toni triggers each run manually. The automated verifier cannot start migrations, execute product code or bypass checks.
-Not executed. The environment, protection rule, GitHub App and secret are NOT verified by this contract (status: LOCAL IMPLEMENTED / REMOTE NOT CONFIGURED).
+Executed once on 2026-10-12 under the P1 model (environment with required reviewers + offline operator preflight; the GitHub App rule is deferred, P2).
+Run #1 applied the six `20261012*` migrations at commit `c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d`; the ledger was re-verified afterwards (section 12).
+Environment, reviewers and secret existed at that run; this contract does not re-verify them for future runs.
 
-Coupling: branch `main` is the production branch of Vercel and is followed by the Render service (auto-deploy reported).
-A move of `main` can therefore deploy frontend and backend. Migrations MUST be applied and verified BEFORE the backend that
+Coupling: branch `main` is the production branch of Vercel. The Render service `Anclora-Impulso` has Auto-Deploy Off and, since 2026-10-12,
+its configured branch is `development` (decision of Toni; deploys are manual from the dashboard). Moving `main` still deploys the frontend.
+Before 2026-10-12 the service followed `main`; confirm the branch setting before relying on either assumption. Migrations MUST be applied and verified BEFORE the backend that
 needs them is deployed (see `sdd/features/impulso-pilot-review-package/21-d10-production-migration-runbook-v2.md`).
 
 ## 5. Storage Contract
@@ -141,4 +144,5 @@ PROMOTION_POLICY=Default development-only operation; no automatic promotion. Exp
 | --- | --- | --- | --- |
 | 2026-10-12 | Production architecture declared as Next.js on Vercel + Express on Render + PostgreSQL on Neon + Prisma Migrate (`backend/prisma/migrations`). The earlier declaration (v2.0: backend on Vercel Serverless Functions; `MIGRATION_SYSTEM=Supabase PostgreSQL`, `SUPABASE_DASHBOARD_OR_CLI`, `MANUAL_OR_CONSOLE`) is OBSOLETE; its text is preserved in `AOS_ADOPTION.md` (decision `IMPULSO-ARCH-RUNNER-2026-10-12`) and in Git history. Motive: the contract contradicted the implemented and deployed system. | Toni (ToniIAPro73) | Documentary decision. Does not verify the effective local configuration, the production ledger, secrets, GitHub Environment protections or connectivity. `LOCAL_RUNTIME_MODEL=PRODUCTION_BACKED` is unchanged; Docker PostgreSQL databases used while Neon access was interrupted were a reported temporary fallback, not the current model. |
 | 2026-10-12 | Production migration runner approved as DESIGN: manual, protected GitHub Actions workflow (section 4). | Toni (ToniIAPro73) | Not executed. Execution still requires ledger review (Q1), a verified backup, direct-connection compatibility, review of migration 5, a verified GitHub Environment with required reviewers and a separate explicit authorization. |
+| 2026-10-12 | Production migration EXECUTED (run #1 of `production-migrations.yml`, P1 model) and backend deployed manually. Migrations `20261012030000`, `030100`, `030200`, `040000`, `050000`, `090000` applied by `prisma migrate deploy` at `c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d`; ledger re-read by Toni: six rows finished, none rolled back. Render service deployed manually at the same commit (Q2 option A: service branch switched to `development`, Auto-Deploy Off, `main` not moved, Vercel untouched). Backup: Neon branch `backup-pre-migration-20261012` (`br-shy-cloud-agi9o4kv`, 2026-10-12T19:48:08Z, parent `main`), kept; deletion only by Toni. | Toni (ToniIAPro73) | Functional check by Toni: QA user OK, admin 200, normal user 403. Does NOT accept gates G1–G4, professional/security/legal/Hermes reviews, nor authorize promotion to `staging`/`main`. Legacy baseline anomalies (8 rolled-back rows, CRLF-variant checksums) accepted by the evaluator and reported, never edited in the ledger. |
 | 2026-10-12 | Independent automated verifier authorized and designed (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) on Environment `production-migrations`. | Toni (ToniIAPro73) | Implemented locally, remote not configured. Replaces routine human reviewer in environment with automated gate. Toni still triggers manually via `workflow_dispatch`. Does not execute migrations or bypass gates. Status: NOT DEPLOYED / NOT CONFIGURED / NOT VERIFIED. |
