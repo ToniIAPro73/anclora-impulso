@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import logger, { logError } from '../config/logger';
+import { redactSensitive, redactText, stripQueryString } from '../utils/redact';
 
 /**
  * Clase de error personalizado
@@ -9,7 +10,8 @@ export class AppError extends Error {
   constructor(
     public statusCode: number,
     public message: string,
-    public isOperational = true
+    public isOperational = true,
+    public details?: Record<string, unknown>
   ) {
     super(message);
     Object.setPrototypeOf(this, AppError.prototype);
@@ -28,13 +30,13 @@ export function errorHandler(
   // Contexto del error
   const errorContext = {
     method: req.method,
-    url: req.url,
+    url: stripQueryString(req.url),
     ip: req.ip,
     userAgent: req.get('user-agent'),
     userId: (req as any).user?.id,
-    body: req.body,
-    params: req.params,
-    query: req.query,
+    body: redactSensitive(req.body),
+    params: redactSensitive(req.params),
+    query: redactSensitive(req.query),
   };
 
   // Loguear el error
@@ -42,8 +44,13 @@ export function errorHandler(
 
   // Error personalizado de la aplicación
   if (err instanceof AppError) {
+    const retryAfter = err.details?.retryAfterSeconds;
+    if (typeof retryAfter === 'number') {
+      res.setHeader('Retry-After', String(retryAfter));
+    }
     res.status(err.statusCode).json({
       error: err.message,
+      ...(err.details ?? {}),
     });
     return;
   }
@@ -97,7 +104,7 @@ export function errorHandler(
 export function notFoundHandler(req: Request, res: Response): void {
   logger.warn('Route not found', {
     method: req.method,
-    url: req.originalUrl,
+    url: stripQueryString(req.originalUrl),
     ip: req.ip,
   });
   

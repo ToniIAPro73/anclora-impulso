@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
+import { issueSession } from './session.service';
 import { isAdminEmail } from '../middleware/admin';
 import type { AuthResponse } from './auth.service';
 
@@ -57,9 +57,11 @@ export async function findOrCreateOAuthUser(profile: OAuthProfile): Promise<Auth
   return buildAuthResponse(user);
 }
 
-function buildAuthResponse(user: { id: string; email: string; fullName: string }): AuthResponse {
-  const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-  const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
+async function buildAuthResponse(user: { id: string; email: string; fullName: string; disabledAt?: Date | null }): Promise<AuthResponse> {
+  if (user.disabledAt) {
+    throw new Error('Account disabled');
+  }
+  const { accessToken, refreshToken } = await issueSession({ id: user.id, email: user.email });
 
   return {
     user: {

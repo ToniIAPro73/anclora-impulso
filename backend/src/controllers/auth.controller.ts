@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/auth.service';
-import { verifyRefreshToken, generateAccessToken } from '../utils/jwt';
+import { verifyAccessTokenIgnoringExpiry } from '../utils/jwt';
+import { revokeByRefreshToken, revokeSession, rotateRefreshToken } from '../services/session.service';
 import type { RegisterInput, LoginInput } from '../utils/validators';
+import logger from '../config/logger';
 
 /**
  * POST /api/auth/register
@@ -75,16 +77,15 @@ export async function refreshToken(
       return;
     }
 
-    // Verificar refresh token
-    const payload = verifyRefreshToken(refreshToken);
+    if (typeof refreshToken !== 'string' || refreshToken.length > 4096) {
+      res.status(400).json({ error: 'Refresh token requerido' });
+      return;
+    }
 
-    // Generar nuevo access token
-    const newAccessToken = generateAccessToken({
-      userId: payload.userId,
-      email: payload.email,
-    });
+    // Rotación: el refresh presentado queda consumido y se entrega uno nuevo.
+    const rotated = await rotateRefreshToken(refreshToken);
 
-    res.json({ accessToken: newAccessToken });
+    res.json({ accessToken: rotated.accessToken, refreshToken: rotated.refreshToken });
   } catch (error) {
     next(error);
   }
@@ -97,7 +98,31 @@ export async function logout(
   req: Request,
   res: Response
 ): Promise<void> {
-  // En una implementación con tokens en cookies, aquí se limpiarían
-  // Como usamos tokens en el cliente, solo enviamos confirmación
+  // Idempotent: always 200. Revokes the server-side session identified by the refresh token
+  // and/or the access token's session id (an expired access token is still honoured here).
+  try {
+    // Attribution only (no token material): which client path asked for this logout.
+    const reason = ['user_action', 'session_invalid', 'unspecified'].includes(req.body?.reason) ? req.body.reason : 'unspecified';
+    const origin = typeof req.body?.origin === 'string' && /^[A-Za-z0-9._:-]{1,64}$/.test(req.body.origin) ? req.body.origin : 'unspecified';
+    logger.info('auth.logout', { reason, origin });
+
+    const refreshToken = req.body?.refreshToken;
+    if (typeof refreshToken === 'string' && refreshToken.length <= 4096) {
+      await revokeByRefreshToken(refreshToken, 'logout');
+    }
+
+    const header = req.headers.authorization;
+    if (header?.startsWith('Bearer ')) {
+      try {
+        const claims = verifyAccessTokenIgnoringExpiry(header.substring(7));
+        if (claims.sid) await revokeSession(claims.sid, 'logout');
+      } catch {
+        // invalid token: nothing to revoke
+      }
+    }
+  } catch {
+    // Never leak internals from logout.
+  }
+
   res.json({ message: 'Sesión cerrada exitosamente' });
 }

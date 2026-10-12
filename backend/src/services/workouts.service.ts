@@ -5,6 +5,19 @@ import type {
   GenerateWorkoutInput,
 } from "../utils/validators";
 import { env } from "../config/env";
+import type { Prisma } from "@prisma/client";
+import {
+  IdempotencyOwnershipLostError,
+  assertValidIdempotencyKey,
+  beginIdempotent,
+  completeIdempotent,
+  failIdempotent,
+  hashRequest,
+} from "./idempotency.service";
+import logger from "../config/logger";
+import { validateWorkoutPlan } from "./workouts/plan-validator";
+import { buildDeterministicFallbackPlan } from "./workouts/deterministic-fallback";
+import { FALLBACK_VERSION } from "./workouts/plan-limits";
 import { buildWorkoutPersonalizationGuidance } from "./forty-plus-guidance";
 import {
   getPersonalizationSnapshot,
@@ -89,6 +102,24 @@ function buildWorkoutExplanation(
   };
 }
 
+export type GenerationProvenance =
+  | { mode: "ai"; version: string }
+  | { mode: "fallback"; version: string; reason: string }
+  | { mode: "manual" };
+
+/** Public shape of a workout's origin. Rows that predate the column report mode "unknown". */
+export function toGeneration(row: {
+  generationMode?: string | null;
+  generationVersion?: string | null;
+  generationReason?: string | null;
+}) {
+  return {
+    mode: row.generationMode ?? "unknown",
+    version: row.generationVersion ?? null,
+    reason: row.generationReason ?? null,
+  };
+}
+
 function decorateWorkout<T extends { exercises: Array<{ exercise: { muscleGroup: string; trainingEnvironments?: string[] }; rest: number }> }>(
   workout: T,
   snapshot: PersonalizationSnapshot
@@ -96,6 +127,7 @@ function decorateWorkout<T extends { exercises: Array<{ exercise: { muscleGroup:
   const explanation = buildWorkoutExplanation(snapshot, workout);
   return {
     ...workout,
+    generation: toGeneration(workout as Parameters<typeof toGeneration>[0]),
     explanation: {
       ...explanation,
       nextBestAction: 'id' in workout
@@ -160,11 +192,19 @@ export async function getWorkoutById(id: string, userId: string) {
 /**
  * Crear un nuevo entrenamiento
  */
-export async function createWorkout(userId: string, data: CreateWorkoutInput) {
-  const workout = await prisma.workout.create({
+function createWorkoutRow(
+  client: Pick<typeof prisma, "workout">,
+  userId: string,
+  data: CreateWorkoutInput,
+  provenance: GenerationProvenance,
+) {
+  return client.workout.create({
     data: {
       userId,
       name: data.name,
+      generationMode: provenance.mode,
+      generationVersion: "version" in provenance ? provenance.version : null,
+      generationReason: "reason" in provenance ? provenance.reason : null,
       exercises: {
         create: data.exercises,
       },
@@ -177,9 +217,41 @@ export async function createWorkout(userId: string, data: CreateWorkoutInput) {
       },
     },
   });
+}
 
+export async function createWorkout(
+  userId: string,
+  data: CreateWorkoutInput,
+  provenance: GenerationProvenance = { mode: "manual" },
+) {
+  const workout = await createWorkoutRow(prisma, userId, data, provenance);
   const snapshot = await getPersonalizationSnapshot(userId);
   return decorateWorkout(workout, snapshot);
+}
+
+/** Runs inside the transaction that creates a generated routine; returns false if the idempotent owner was superseded. */
+export type GenerationFinalize = (tx: Prisma.TransactionClient, response: unknown) => Promise<boolean>;
+
+async function createGeneratedWorkout(
+  userId: string,
+  data: CreateWorkoutInput,
+  provenance: GenerationProvenance,
+  snapshot: PersonalizationSnapshot,
+  finalize?: GenerationFinalize,
+) {
+  if (!finalize) {
+    return createWorkout(userId, data, provenance);
+  }
+
+  // Routine creation and idempotency completion commit together; a superseded owner rolls everything back.
+  return prisma.$transaction(async (tx) => {
+    const workout = await createWorkoutRow(tx, userId, data, provenance);
+    const response = decorateWorkout(workout, snapshot);
+    if (!(await finalize(tx, JSON.parse(JSON.stringify(response))))) {
+      throw new IdempotencyOwnershipLostError();
+    }
+    return response;
+  });
 }
 
 /**
@@ -199,30 +271,33 @@ export async function updateWorkout(
     throw new AppError(404, "Entrenamiento no encontrado");
   }
 
-  // Si se actualizan los ejercicios, eliminar los existentes y crear los nuevos
-  if (data.exercises) {
-    await prisma.workoutExercise.deleteMany({
-      where: { workoutId: id },
-    });
-  }
+  // Replace exercises and update the workout in one transaction so a failure
+  // after the delete cannot leave the routine without exercises (AI-08).
+  const workout = await prisma.$transaction(async (tx) => {
+    if (data.exercises) {
+      await tx.workoutExercise.deleteMany({
+        where: { workoutId: id },
+      });
+    }
 
-  const workout = await prisma.workout.update({
-    where: { id },
-    data: {
-      name: data.name,
-      ...(data.exercises && {
+    return tx.workout.update({
+      where: { id },
+      data: {
+        name: data.name,
+        ...(data.exercises && {
+          exercises: {
+            create: data.exercises,
+          },
+        }),
+      },
+      include: {
         exercises: {
-          create: data.exercises,
-        },
-      }),
-    },
-    include: {
-      exercises: {
-        include: {
-          exercise: true,
+          include: {
+            exercise: true,
+          },
         },
       },
-    },
+    });
   });
 
   const snapshot = await getPersonalizationSnapshot(userId);
@@ -252,6 +327,7 @@ export async function deleteWorkout(id: string, userId: string) {
 export async function generateWorkout(
   userId: string,
   params: GenerateWorkoutInput,
+  finalize?: GenerationFinalize,
 ) {
   const snapshot = await getPersonalizationSnapshot(userId);
   const effectiveAge = params.age ?? snapshot.profile.age ?? undefined;
@@ -315,7 +391,17 @@ export async function generateWorkout(
     );
   }
 
-  // Intentar generar con IA (Groq/Llama)
+  const catalog = availableExercises.map((exercise) => ({
+    id: exercise.id,
+    equipment: exercise.equipment,
+    difficulty: exercise.difficulty,
+    trainingEnvironments: exercise.trainingEnvironments,
+  }));
+
+  // Try AI generation; its output is untrusted and must pass semantic validation
+  // before anything is persisted (AI-04).
+  let fallbackReason: string = "ai_unavailable";
+
   if (env.groqApiKey) {
     try {
       const { generateJSON, SYSTEM_PROMPT_ES } = await import("./llm");
@@ -359,47 +445,151 @@ Devuelve un JSON con este formato exacto:
 
 IMPORTANTE: Usa SOLO los IDs de ejercicios de la lista proporcionada.`;
 
-      const workoutData = await generateJSON<CreateWorkoutInput>({
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT_ES },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.7,
-        maxTokens: 4000,
+      let timer: NodeJS.Timeout | undefined;
+      const candidate = await Promise.race([
+        generateJSON<unknown>({
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT_ES },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.7,
+          maxTokens: 4000,
+        }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("ai_timeout")), env.llmWorkoutTimeoutMs);
+        }),
+      ]).finally(() => timer && clearTimeout(timer));
+
+      const validation = validateWorkoutPlan(candidate, {
+        catalog,
+        difficulty: effectiveDifficulty,
+        trainingEnvironment: effectiveEnvironment,
+        equipment: params.equipment,
+        age: effectiveAge,
       });
 
-      return await createWorkout(userId, workoutData);
+      if (validation.ok) {
+        return await createGeneratedWorkout(
+          userId,
+          validation.plan,
+          { mode: "ai", version: validation.validatorVersion },
+          snapshot,
+          finalize,
+        );
+      }
+
+      fallbackReason = "ai_output_rejected";
+      logger.warn("AI workout plan rejected by validator", {
+        userId,
+        violationCodes: validation.violations.map((violation) => violation.code),
+      });
     } catch (error) {
-      console.error("Error al generar con IA:", error);
-      // Continuar con generación básica
+      fallbackReason = error instanceof Error && error.message === "ai_timeout" ? "ai_timeout" : "ai_error";
+      logger.warn("AI workout generation failed; using deterministic fallback", {
+        userId,
+        error: error instanceof Error ? error.message : "unknown",
+      });
     }
   }
 
-  // Generación básica sin IA
-  const selectedExercises = availableExercises
-    .sort(() => Math.random() - 0.5)
-    .slice(0, Math.min(effectiveAge && effectiveAge >= 40 ? 5 : 6, availableExercises.length));
+  // Deterministic fallback: same input and version always yield the same plan (AI-05).
+  const fallbackPlan = buildDeterministicFallbackPlan({
+    userId,
+    candidates: availableExercises.map((exercise) => ({ id: exercise.id, muscleGroup: exercise.muscleGroup })),
+    workoutType: params.workoutType,
+    difficulty: effectiveDifficulty,
+    age: effectiveAge,
+    reduceLoad: snapshot.workoutAdjustment === "reduce",
+  });
 
-  const workoutData: CreateWorkoutInput = {
-    name: `Entrenamiento de ${params.workoutType} - ${effectiveDifficulty}`,
-    exercises: selectedExercises.map((exercise, index) => ({
-      exerciseId: exercise.id,
-      sets:
-        effectiveDifficulty === "beginner"
-          ? 3
-          : effectiveDifficulty === "intermediate"
-            ? 4
-            : 5,
-      reps:
-        effectiveDifficulty === "beginner"
-          ? 10
-          : effectiveDifficulty === "intermediate"
-            ? 12
-            : 15,
-      rest: effectiveAge && effectiveAge >= 40 ? 75 : snapshot.workoutAdjustment === "reduce" ? 75 : 60,
-      order: index,
-    })),
+  return await createGeneratedWorkout(
+    userId,
+    fallbackPlan,
+    { mode: "fallback", version: FALLBACK_VERSION, reason: fallbackReason },
+    snapshot,
+    finalize,
+  );
+}
+
+export const WORKOUT_GENERATE_OPERATION = "workouts.generate";
+
+/** Normalized content the idempotency key is bound to (order-insensitive lists). */
+export function normalizeGenerateParams(params: GenerateWorkoutInput) {
+  return {
+    workoutType: params.workoutType,
+    duration: params.duration,
+    difficulty: params.difficulty,
+    trainingEnvironment: params.trainingEnvironment,
+    targetMuscles: [...(params.targetMuscles ?? [])].sort(),
+    equipment: [...(params.equipment ?? [])].sort(),
+    age: params.age ?? null,
+    sex: params.sex ?? null,
   };
+}
 
-  return await createWorkout(userId, workoutData);
+/**
+ * Idempotent POST /workouts/generate: one logical operation creates at most one routine, regardless of
+ * double taps, network retries, lost responses or process restarts. Creation commits atomically with the
+ * idempotency completion and is owner-checked, so a superseded execution leaves no routine behind.
+ */
+export async function generateWorkoutIdempotent(
+  userId: string,
+  params: GenerateWorkoutInput,
+  idempotencyKey: string,
+) {
+  assertValidIdempotencyKey(idempotencyKey);
+  const gate = await beginIdempotent({
+    userId,
+    operation: WORKOUT_GENERATE_OPERATION,
+    key: idempotencyKey,
+    requestHash: hashRequest(normalizeGenerateParams(params)),
+    lockSeconds: Math.ceil(env.llmWorkoutTimeoutMs / 1000) + 15,
+    retentionSeconds: env.idempotencyRetentionHours * 3600,
+    maxAttempts: env.idempotencyMaxAttempts,
+    maxConcurrent: env.llmCoachMaxConcurrent,
+  });
+
+  if (gate.kind === "replay") {
+    return { workout: gate.response, replayed: true };
+  }
+  if (gate.kind === "conflict") {
+    throw new AppError(422, "Idempotency-Key was already used with a different request");
+  }
+  if (gate.kind === "in_progress") {
+    throw new AppError(409, `A request with this Idempotency-Key is still in progress; retry in ${gate.retryAfterSeconds}s`, true, {
+      retryAfterSeconds: gate.retryAfterSeconds,
+    });
+  }
+  if (gate.kind === "exhausted") {
+    throw new AppError(429, "Too many attempts for this Idempotency-Key; start a new request later", true, {
+      reason: "idempotency_attempts_exhausted",
+      attempts: gate.attempts,
+    });
+  }
+
+  if (gate.kind === "concurrency_limited") {
+    throw new AppError(429, "Too many generation requests in flight; retry shortly", true, {
+      reason: "concurrency_limit",
+      retryAfterSeconds: gate.retryAfterSeconds,
+    });
+  }
+
+  try {
+    const workout = await generateWorkout(userId, params, (tx, response) =>
+      completeIdempotent(tx, gate.recordId, gate.ownerToken, 201, response, env.idempotencyRetentionHours * 3600),
+    );
+    return { workout, replayed: false };
+  } catch (error) {
+    await failIdempotent(
+      gate.recordId,
+      gate.ownerToken,
+      error instanceof IdempotencyOwnershipLostError ? "ownership_lost" : error instanceof AppError ? `http_${error.statusCode}` : "error",
+    );
+    if (error instanceof IdempotencyOwnershipLostError) {
+      throw new AppError(409, "This operation was taken over by another attempt; retry with the same Idempotency-Key", true, {
+        retryAfterSeconds: 1,
+      });
+    }
+    throw error;
+  }
 }

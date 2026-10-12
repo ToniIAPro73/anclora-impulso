@@ -48,6 +48,8 @@ export const createWorkoutSchema = z.object({
   ),
 });
 
+export const updateWorkoutSchema = createWorkoutSchema.partial();
+
 // Validadores de sesiones
 export const createSessionSchema = z.object({
   workoutId: z.string().uuid('ID de entrenamiento inválido'),

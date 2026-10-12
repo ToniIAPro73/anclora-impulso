@@ -8,6 +8,8 @@ export interface CoachChatMessage {
 export interface CoachProviderRequest {
   messages: CoachChatMessage[];
   maxOutputTokens: number;
+  /** Fires at the deadline; providers should abort the remote call when it does. */
+  signal?: AbortSignal;
 }
 
 export interface CoachProviderResponse {
@@ -35,11 +37,15 @@ export interface CoachResponse {
   provider: string;
   model: string;
   cached: boolean;
+  /** True when this response is the stored result of an earlier request with the same Idempotency-Key. */
+  idempotentReplay?: boolean;
   safety: CoachSafetyResult;
   usage: {
     estimatedInputTokens: number;
     estimatedOutputTokens: number;
     estimatedTotalTokens: number;
     remainingWindowRequests: number;
+    /** ISO instant at which the fixed quota window resets. */
+    windowResetsAt: string;
   };
 }

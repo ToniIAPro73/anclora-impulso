@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { env } from '../config/env';
 import logger from '../config/logger';
+import { redactText } from '../utils/redact';
 import { createOAuthTransaction, oauthStatesMatch, type OAuthTransaction } from '../utils/pkce';
 import {
   readGoogleOAuthConfig,
@@ -75,10 +76,10 @@ export async function googleCallback(req: Request, res: Response) {
     const profile = await fetchGoogleProfile(config, code, transaction.codeVerifier);
     const auth = await findOrCreateOAuthUser({ provider: 'google', ...profile });
     res.redirect(
-      `${frontendUrl()}/auth/callback?accessToken=${encodeURIComponent(auth.accessToken)}&refreshToken=${encodeURIComponent(auth.refreshToken)}`
+      `${frontendUrl()}/auth/callback#accessToken=${encodeURIComponent(auth.accessToken)}&refreshToken=${encodeURIComponent(auth.refreshToken)}`
     );
   } catch (error) {
-    logger.error('Google OAuth callback failed', { error: (error as Error).message });
+    logger.error('Google OAuth callback failed', { error: redactText((error as Error).message) });
     res.redirect(`${frontendUrl()}/auth/error?provider=google`);
   }
 }
@@ -117,10 +118,10 @@ export async function githubCallback(req: Request, res: Response) {
     const profile = await fetchGitHubProfile(config, code, transaction.codeVerifier);
     const auth = await findOrCreateOAuthUser({ provider: 'github', ...profile });
     res.redirect(
-      `${frontendUrl()}/auth/callback?accessToken=${encodeURIComponent(auth.accessToken)}&refreshToken=${encodeURIComponent(auth.refreshToken)}`
+      `${frontendUrl()}/auth/callback#accessToken=${encodeURIComponent(auth.accessToken)}&refreshToken=${encodeURIComponent(auth.refreshToken)}`
     );
   } catch (error) {
-    logger.error('GitHub OAuth callback failed', { error: (error as Error).message });
+    logger.error('GitHub OAuth callback failed', { error: redactText((error as Error).message) });
     res.redirect(`${frontendUrl()}/auth/error?provider=github`);
   }
 }

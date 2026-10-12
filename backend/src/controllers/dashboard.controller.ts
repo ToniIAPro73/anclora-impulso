@@ -7,6 +7,12 @@ import {
   getMetricsSummary,
 } from '../services/metrics.service';
 import logger from '../config/logger';
+import { env } from '../config/env';
+import { getLegacyTokenUsage } from '../services/session.service';
+import { applySecurityPolicy } from '../utils/security-config';
+
+const MAX_LOG_LIMIT = 500;
+const LOG_LEVELS = ['error', 'warn', 'info', 'http', 'debug'];
 
 // Obtener métricas del sistema
 export const getMetrics = async (req: Request, res: Response) => {
@@ -44,9 +50,15 @@ export const getLogsStats = async (req: Request, res: Response) => {
 // Obtener logs recientes
 export const getLogs = async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 100;
+    const requested = parseInt(req.query.limit as string, 10);
+    const limit = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), MAX_LOG_LIMIT) : 100;
     const level = req.query.level as string | undefined;
-    
+
+    if (level !== undefined && !LOG_LEVELS.includes(level)) {
+      res.status(400).json({ error: 'Invalid log level' });
+      return;
+    }
+
     const logs = await getRecentLogs(limit, level);
     res.json(logs);
   } catch (error: any) {
@@ -59,7 +71,17 @@ export const getLogs = async (req: Request, res: Response) => {
 export const getSummary = async (req: Request, res: Response) => {
   try {
     const summary = await getMetricsSummary();
-    res.json(summary);
+    const security = applySecurityPolicy('off', env);
+    res.json({
+      ...summary,
+      // Codes only, never values. `acceptable=false` means the configuration must not be accepted as secure.
+      security: {
+        mode: env.securityConfigMode,
+        acceptable: security.acceptable,
+        findings: security.findings,
+        legacyTokenUsage: getLegacyTokenUsage(),
+      },
+    });
   } catch (error: any) {
     logger.error('Error getting metrics summary', { error: error.message });
     res.status(500).json({ error: 'Failed to get metrics summary' });

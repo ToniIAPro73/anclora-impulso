@@ -20,7 +20,7 @@ export class GroqCoachProvider implements CoachProvider {
         role: message.role,
         content: message.content,
       })),
-    });
+    }, request.signal ? { signal: request.signal } : undefined);
 
     const answer = completion.choices[0]?.message?.content?.trim();
     if (!answer) {

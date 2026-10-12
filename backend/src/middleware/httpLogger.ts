@@ -1,5 +1,6 @@
 import morgan from 'morgan';
 import logger from '../config/logger';
+import { stripQueryString } from '../utils/redact';
 
 // Stream personalizado para enviar logs de Morgan a Winston
 const stream = {
@@ -9,8 +10,10 @@ const stream = {
 };
 
 // Formato personalizado de Morgan
+morgan.token('safe-url', (req: any) => stripQueryString(req.originalUrl || req.url));
+
 morgan.token('user-id', (req: any) => {
-  return req.user?.id || 'anonymous';
+  return req.user?.userId || req.user?.id || 'anonymous';
 });
 
 morgan.token('response-time-ms', (req: any, res: any) => {
@@ -19,12 +22,12 @@ morgan.token('response-time-ms', (req: any, res: any) => {
 });
 
 // Formato detallado para desarrollo
-const devFormat = ':method :url :status :response-time ms - :res[content-length] - user: :user-id';
+const devFormat = ':method :safe-url :status :response-time ms - :res[content-length] - user: :user-id';
 
 // Formato JSON para producción
 const prodFormat = JSON.stringify({
   method: ':method',
-  url: ':url',
+  url: ':safe-url',
   status: ':status',
   responseTime: ':response-time',
   contentLength: ':res[content-length]',
@@ -57,7 +60,7 @@ export const responseTimeLogger = (req: any, res: any, next: any) => {
     if (responseTime > 1000) {
       logger.warn('Slow request detected', {
         method: req.method,
-        url: req.url,
+        url: stripQueryString(req.url),
         responseTime: `${responseTime}ms`,
         userId: req.user?.id,
       });

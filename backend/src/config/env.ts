@@ -41,6 +41,13 @@ export const env = {
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'default-refresh-secret-change-in-production',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
 
+  // Sessions (AI-06)
+  authRefreshSessionDays: parseInt(process.env.AUTH_REFRESH_SESSION_DAYS || '30', 10),
+  authRefreshReuseGraceSeconds: parseInt(process.env.AUTH_REFRESH_REUSE_GRACE_SECONDS || '10', 10),
+  // Transition: accept pre-session JWTs (no `sid`). Set to 'false' once existing sessions have rotated.
+  authAcceptLegacyTokens: process.env.AUTH_ACCEPT_LEGACY_TOKENS !== 'false',
+  securityConfigMode: (process.env.SECURITY_CONFIG_MODE || 'warn') as 'off' | 'warn' | 'enforce',
+
   // Server
   port: parseInt(process.env.PORT || '3001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -73,6 +80,20 @@ export const env = {
   llmCoachCacheTtlSeconds: parseInt(process.env.LLM_COACH_CACHE_TTL_SECONDS || '300', 10),
   llmCoachWindowMinutes: parseInt(process.env.LLM_COACH_WINDOW_MINUTES || '60', 10),
   llmCoachWindowLimit: parseInt(process.env.LLM_COACH_WINDOW_LIMIT || '20', 10),
+  llmCoachProviderTimeoutMs: parseInt(process.env.LLM_COACH_PROVIDER_TIMEOUT_MS || '25000', 10),
+  // Operational protections for the coach (engineering defaults; NOT approved commercial or economic limits).
+  llmCoachMaxConcurrent: parseInt(process.env.LLM_COACH_MAX_CONCURRENT || '2', 10),
+  llmCoachMaxFailedAttempts: parseInt(process.env.LLM_COACH_MAX_FAILED_ATTEMPTS_PER_WINDOW || '5', 10),
+  llmWorkoutTimeoutMs: parseInt(process.env.LLM_WORKOUT_TIMEOUT_MS || '30000', 10),
+  idempotencyMaxAttempts: parseInt(process.env.IDEMPOTENCY_MAX_ATTEMPTS || '3', 10),
+  // 'warn': clients without Idempotency-Key get a server-derived short-window key and a Deprecation header.
+  // 'require': 428 without the header. A sunset date in the past forces 'require'.
+  idempotencyKeyEnforcement: (process.env.IDEMPOTENCY_KEY_ENFORCEMENT || 'warn') as 'warn' | 'require',
+  idempotencyLegacySunsetAt: process.env.IDEMPOTENCY_LEGACY_SUNSET_AT || '',
+  // Physical deletion happens only this long AFTER logical expiry (replay guarantee ends at expiresAt).
+  retentionPurgeGraceSeconds: parseInt(process.env.RETENTION_PURGE_GRACE_SECONDS || '3600', 10),
+  retentionPurgeBatchSize: parseInt(process.env.RETENTION_PURGE_BATCH_SIZE || '500', 10),
+  idempotencyRetentionHours: parseInt(process.env.IDEMPOTENCY_RETENTION_HOURS || '24', 10),
   healthDataImportEnabled: process.env.HEALTH_DATA_IMPORT_ENABLED === 'true',
   wearableSyncEnabled: process.env.WEARABLE_SYNC_ENABLED === 'true',
   wearableReadinessEnabled: process.env.WEARABLE_READINESS_ENABLED === 'true',

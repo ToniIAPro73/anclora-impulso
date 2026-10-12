@@ -2,9 +2,19 @@ import app from './app';
 import { env } from './config/env';
 import { prisma, testDatabaseConnection } from './config/database';
 import { dispatchDueNotifications } from './services/notification.service';
+import { applySecurityPolicy } from './utils/security-config';
 
 async function startServer() {
   try {
+    // Security configuration policy. `warn` (default) logs finding CODES only; `enforce` refuses to start.
+    const security = applySecurityPolicy(env.securityConfigMode, env);
+    if (security.mode !== 'off') {
+      const codes = security.findings.map((finding) => `${finding.severity}:${finding.code}`);
+      if (!security.acceptable) {
+        console.warn(`⚠️ SECURITY_CONFIG_NOT_ACCEPTABLE mode=${security.mode} findings=${codes.join(',')}`);
+      }
+    }
+
     // Iniciar servidor primero
     const server = app.listen(env.port, '0.0.0.0', () => {
       console.log('🚀 Servidor iniciado');

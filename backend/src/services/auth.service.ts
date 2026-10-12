@@ -1,6 +1,6 @@
 import { prisma } from '../config/database';
 import { hashPassword, comparePassword } from '../utils/password';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
+import { issueSession } from './session.service';
 import { AppError } from '../middleware/errorHandler';
 import type { RegisterInput, LoginInput } from '../utils/validators';
 import { isAdminEmail } from '../middleware/admin';
@@ -41,16 +41,8 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
     },
   });
 
-  // Generar tokens
-  const accessToken = generateAccessToken({
-    userId: user.id,
-    email: user.email,
-  });
-
-  const refreshToken = generateRefreshToken({
-    userId: user.id,
-    email: user.email,
-  });
+  // Crear sesión de servidor y tokens
+  const { accessToken, refreshToken } = await issueSession({ id: user.id, email: user.email });
 
   return {
     user: {
@@ -73,7 +65,7 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
     where: { email: data.email },
   });
 
-  if (!user || !user.passwordHash) {
+  if (!user || !user.passwordHash || user.disabledAt) {
     throw new AppError(401, 'Email o contraseña incorrectos');
   }
 
@@ -84,16 +76,8 @@ export async function login(data: LoginInput): Promise<AuthResponse> {
     throw new AppError(401, 'Email o contraseña incorrectos');
   }
 
-  // Generar tokens
-  const accessToken = generateAccessToken({
-    userId: user.id,
-    email: user.email,
-  });
-
-  const refreshToken = generateRefreshToken({
-    userId: user.id,
-    email: user.email,
-  });
+  // Crear sesión de servidor y tokens
+  const { accessToken, refreshToken } = await issueSession({ id: user.id, email: user.email });
 
   return {
     user: {

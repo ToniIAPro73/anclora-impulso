@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { resolveIdempotencyKey } from '../middleware/idempotency';
+import { hashRequest } from '../services/idempotency.service';
 import * as workoutsService from '../services/workouts.service';
 import type { CreateWorkoutInput, GenerateWorkoutInput } from '../utils/validators';
 
@@ -126,9 +128,23 @@ export async function generateWorkout(
       return;
     }
 
-    const workout = await workoutsService.generateWorkout(req.user.userId, req.body);
-    
-    res.status(201).json(workout);
+    const { key } = resolveIdempotencyKey(
+      req,
+      res,
+      req.user.userId,
+      workoutsService.WORKOUT_GENERATE_OPERATION,
+      hashRequest(workoutsService.normalizeGenerateParams(req.body)),
+    );
+
+    const result = await workoutsService.generateWorkoutIdempotent(req.user.userId, req.body, key);
+
+    if (result.replayed) {
+      res.setHeader('Idempotent-Replayed', 'true');
+      res.status(200).json(result.workout);
+      return;
+    }
+
+    res.status(201).json(result.workout);
   } catch (error) {
     next(error);
   }

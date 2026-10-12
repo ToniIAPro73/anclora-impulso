@@ -1,6 +1,7 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import path from 'path';
+import { redactText } from '../utils/redact';
 
 // Definir niveles de log personalizados
 const levels = {
@@ -120,8 +121,9 @@ export const logWithContext = (level: string, message: string, context?: any) =>
 
 // Función helper para loguear errores con stack trace
 export const logError = (error: Error, context?: any) => {
-  logger.error(error.message, {
-    stack: error.stack,
+  // Error text may embed URLs/tokens (provider errors, DB errors): redact free text as well as context.
+  logger.error(redactText(error.message), {
+    stack: redactText(error.stack),
     ...context,
   });
 };

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JwtPayload } from '../utils/jwt';
+import { isSessionActive } from '../services/session.service';
 
 // Extender el tipo Request para incluir el usuario
 declare global {
@@ -11,53 +12,57 @@ declare global {
 }
 
 /**
- * Middleware para verificar autenticación
+ * Middleware para verificar autenticación: firma + expiración del JWT y sesión del servidor activa.
  */
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
+export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Token no proporcionado' });
+    return;
+  }
+
+  let payload: JwtPayload;
   try {
-    // Obtener token del header Authorization
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Token no proporcionado' });
-      return;
-    }
-
-    const token = authHeader.substring(7); // Remover "Bearer "
-
-    // Verificar token
-    const payload = verifyAccessToken(token);
-    
-    // Agregar usuario al request
-    req.user = payload;
-    
-    next();
+    payload = verifyAccessToken(authHeader.substring(7));
   } catch (error) {
     if (error instanceof Error && error.name === 'TokenExpiredError') {
       res.status(401).json({ error: 'Token expirado' });
       return;
     }
-    
     res.status(401).json({ error: 'Token inválido' });
+    return;
   }
+
+  try {
+    if (!(await isSessionActive(payload))) {
+      res.status(401).json({ error: 'Sesión no válida' });
+      return;
+    }
+  } catch (error) {
+    next(error);
+    return;
+  }
+
+  req.user = payload;
+  next();
 }
 
 /**
  * Middleware opcional de autenticación (no falla si no hay token)
  */
-export function optionalAuthenticate(req: Request, res: Response, next: NextFunction): void {
+export async function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const payload = verifyAccessToken(token);
-      req.user = payload;
+      const payload = verifyAccessToken(authHeader.substring(7));
+      if (await isSessionActive(payload)) {
+        req.user = payload;
+      }
     }
-    
-    next();
-  } catch (error) {
+  } catch {
     // Ignorar errores y continuar sin usuario
-    next();
   }
+  next();
 }

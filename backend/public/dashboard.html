@@ -307,7 +307,17 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="loginPanel" style="max-width:360px;margin:80px auto;padding:24px;background:#fff;border-radius:8px;font-family:sans-serif">
+        <h2 style="margin-top:0">Operations dashboard</h2>
+        <p style="color:#6b7280">Administrator sign-in required. The session token is kept in memory only.</p>
+        <form id="loginForm">
+            <label>Email<br><input id="loginEmail" type="email" autocomplete="username" required style="width:100%;margin-bottom:12px"></label>
+            <label>Password<br><input id="loginPassword" type="password" autocomplete="current-password" required style="width:100%;margin-bottom:12px"></label>
+            <button type="submit">Sign in</button>
+            <p id="loginError" role="alert" style="color:#b91c1c"></p>
+        </form>
+    </div>
+    <div class="container" id="dashboardRoot" style="display:none">
         <header>
             <h1>
                 <div class="logo">⚡</div>
@@ -465,6 +475,31 @@
 
     <script>
         const API_BASE = window.location.origin;
+        // Access token lives only in this closure: not in localStorage, not in the HTML.
+        let accessToken = null;
+        let refreshTimer = null;
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+
+        function showLogin(message) {
+            accessToken = null;
+            clearInterval(refreshTimer);
+            document.getElementById('dashboardRoot').style.display = 'none';
+            document.getElementById('loginPanel').style.display = 'block';
+            document.getElementById('loginError').textContent = message || '';
+        }
+
+        async function authFetch(path) {
+            if (!accessToken) { showLogin(); throw new Error('not authenticated'); }
+            const response = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+            if (response.status === 401 || response.status === 403) {
+                showLogin(response.status === 403 ? 'This account is not an administrator.' : 'Session expired.');
+                throw new Error('unauthorized');
+            }
+            return response;
+        }
         let currentLogLevel = 'all';
         
         // Datos para gráficos
@@ -566,7 +601,7 @@
         // Actualizar métricas
         async function updateMetrics() {
             try {
-                const response = await fetch(`${API_BASE}/api/dashboard/summary`);
+                const response = await authFetch('/api/dashboard/summary');
                 const data = await response.json();
 
                 // System metrics
@@ -654,7 +689,7 @@
         async function updateLogs() {
             try {
                 const level = currentLogLevel === 'all' ? '' : currentLogLevel;
-                const response = await fetch(`${API_BASE}/api/dashboard/logs?limit=50&level=${level}`);
+                const response = await authFetch(`/api/dashboard/logs?limit=50&level=${encodeURIComponent(level)}`);
                 const logs = await response.json();
 
                 const container = document.getElementById('logsContainer');
@@ -667,10 +702,10 @@
                 container.innerHTML = logs.map(log => `
                     <div class="log-entry ${log.level}">
                         <div>
-                            <span class="log-timestamp">${log.timestamp}</span>
+                            <span class="log-timestamp">${escapeHtml(log.timestamp)}</span>
                             <span class="log-level ${log.level}">${log.level.toUpperCase()}</span>
                         </div>
-                        <div class="log-message">${log.message}</div>
+                        <div class="log-message">${escapeHtml(log.message)}</div>
                     </div>
                 `).join('');
 
@@ -690,10 +725,37 @@
         });
 
         // Inicializar y actualizar cada 5 segundos
-        updateMetrics();
-        updateLogs();
-        setInterval(updateMetrics, 5000);
-        setInterval(updateLogs, 5000);
+        function startPolling() {
+            document.getElementById('loginPanel').style.display = 'none';
+            document.getElementById('dashboardRoot').style.display = '';
+            updateMetrics();
+            updateLogs();
+            clearInterval(refreshTimer);
+            refreshTimer = setInterval(() => { updateMetrics(); updateLogs(); }, 5000);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                const body = await response.json().catch(() => ({}));
+                document.getElementById('loginPassword').value = '';
+                if (!response.ok || !body.accessToken) { showLogin('Sign-in failed.'); return; }
+                if (!body.user || body.user.isAdmin !== true) { showLogin('This account is not an administrator.'); return; }
+                accessToken = body.accessToken;
+                startPolling();
+            } catch (error) {
+                showLogin('Sign-in failed.');
+            }
+        });
+
+        showLogin();
     </script>
 </body>
 </html>
