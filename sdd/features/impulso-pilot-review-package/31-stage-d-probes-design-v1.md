@@ -33,18 +33,21 @@
 ## 3. Cómo se ejecuta (lo hace Toni)
 
 1. **Elegir y anunciar la ventana** (p. ej. 15 minutos con poco tráfico) y un identificador, p. ej. `win-20261013a`.
-2. **Una sola vez**, en tu terminal, sin guardar la contraseña en ningún fichero ni pegarla en el chat:
+2. **Identidad QA:** creada el 2026-10-12 por el agente conforme al contrato (`QA_CREATE_IF_MISSING=true`); estado **CREATED**.
+   Sus credenciales están en `.env.local` (0600, ignorado por git) como `STAGE_D_QA_EMAIL` y `STAGE_D_QA_PASSWORD`; **los valores no
+   se imprimen ni se registran**. El script las lee del entorno, no del fichero.
+3. **En tu terminal**, cargando solo esas dos variables (la contraseña no aparece en pantalla ni en el historial):
    ```bash
    cd anclora-impulso
    export STAGE_D_WINDOW_ID=win-20261013a
    export STAGE_D_CONFIRM=I-AUTHORIZE-win-20261013a
-   export STAGE_D_QA_EMAIL=qa.impulso@anclora.local
-   read -s STAGE_D_QA_PASSWORD && export STAGE_D_QA_PASSWORD
+   export STAGE_D_QA_EMAIL="$(grep '^STAGE_D_QA_EMAIL=' .env.local | tail -1 | cut -d= -f2-)"
+   export STAGE_D_QA_PASSWORD="$(grep '^STAGE_D_QA_PASSWORD=' .env.local | tail -1 | cut -d= -f2-)"
    node scripts/stage-d/stage-d-probes.mjs            # primero el dry-run
    node scripts/stage-d/stage-d-probes.mjs --execute
    ```
-3. Pegarme aquí la **salida de consola** (líneas PASS/FAIL y la ruta de evidencia). No contiene credenciales.
-4. Ejecutar las consultas D7 (§4) y pasármelas.
+4. Pegarme aquí la **salida de consola** (líneas PASS/FAIL y la ruta de evidencia). No contiene credenciales.
+5. Ejecutar las consultas D7 (§4) y pasármelas.
 
 ## 4. D7 — consultas de solo lectura (Neon, rama `main`)
 
