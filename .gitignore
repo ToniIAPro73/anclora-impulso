@@ -87,3 +87,10 @@ __pycache__/
 # Auto-synced by memanto agent memory system
 MEMORY.md
 .env*
+
+# QA evidence (screenshots/snapshots), temporary
+artifacts/
+
+# Playwright default outputs (the isolated runner writes under artifacts/qa/runs/<id>/)
+/test-results/
+/playwright-report/

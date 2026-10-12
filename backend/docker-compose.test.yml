@@ -1,0 +1,28 @@
+# Ephemeral PostgreSQL 16 for Anclora Impulso integration tests ONLY.
+# Scoped exception to PRODUCTION_BACKED runtime: see .anclora/AOS_ADOPTION.md ("Test-environment exception").
+# Never point operational env files at this database, and never point tests at anything else.
+name: anclora-impulso-test
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: anclora-impulso-test-postgres
+    restart: "no"
+    environment:
+      POSTGRES_DB: ${TEST_DB_NAME:?run scripts/test-db.sh init-env}
+      POSTGRES_USER: ${TEST_DB_USER:?}
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD:?}
+    ports:
+      - "127.0.0.1:${TEST_DB_PORT:?}:5432"
+    volumes:
+      - anclora_impulso_test_pgdata:/var/lib/postgresql/data
+      - ./docker/test-db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  anclora_impulso_test_pgdata:
+    name: anclora_impulso_test_pgdata

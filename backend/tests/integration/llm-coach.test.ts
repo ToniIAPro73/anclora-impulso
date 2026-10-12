@@ -111,7 +111,7 @@ describe('llm coach endpoint', () => {
     expect(messages.map((message) => message.role)).toEqual(['user', 'assistant']);
   });
 
-  it('caches repeated prompts without creating extra persisted assistant turns', async () => {
+  it('dedupes repeated prompts (persistent idempotent replay replaces the per-process cache) without extra turns', async () => {
     const { accessToken, userId } = await registerUser('coach-cache');
     const payload = { message: 'How can I improve workout adherence this week?' };
 
@@ -126,7 +126,11 @@ describe('llm coach endpoint', () => {
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
-    expect(second.body.cached).toBe(true);
+    // Behaviour change: legacy clients (no Idempotency-Key) get a server-derived short-window key, so the
+    // repeat is a persistent replay (flagged) instead of an in-process cache hit.
+    expect(second.body.idempotentReplay).toBe(true);
+    expect(second.headers['idempotent-replayed']).toBe('true');
+    expect(second.headers['deprecation']).toBe('true');
 
     const messages = await prisma.coachMessage.findMany({
       where: { conversation: { userId } },

@@ -55,6 +55,18 @@ Declaración de adopción AOS para `anclora-impulso`.
 
 
 
+## Test-environment exception (limited)
+
+- EXCEPTION_ID=IMPULSO-TEST-DB-2026-10-12
+- GRANTED_BY=Toni (explicit instruction, mission of 2026-10-12)
+- SCOPE=Integration tests of this repository only. Does NOT change `LOCAL_RUNTIME_MODEL=PRODUCTION_BACKED`, the production database contract, or the production migration path.
+- ALLOWED=One ephemeral PostgreSQL 16 container `anclora-impulso-test-postgres` (project `anclora-impulso-test`, volume `anclora_impulso_test_pgdata`, published on `127.0.0.1` only), synthetic data, existing Prisma migrations applied to that database only.
+- FORBIDDEN=Reusing other projects' containers/volumes, loading operational env files in tests, any access to production.
+- GUARDS=`backend/tests/support/*` (loopback + port + name + live `anclora.test_marker`), default jest config blocks integration tests outside the script or CI.
+- OPERATION=`backend/docs/TEST_DATABASE.md`.
+- LOCAL_MIGRATIONS=Prisma migrations may be created and applied to `anclora_impulso_test` only (authorized 2026-10-12). Production application is NOT covered.
+- OPEN_DISCREPANCY=`PRODUCTION_RUNTIME.md` declares Supabase migrations and Vercel serverless backend; the repository uses Prisma on Neon with an Express server. Decision pending for production; the contract is intentionally not rewritten here.
+
 ## Historial de adopción
 
 | Fecha | Versión | Cambio | Owner |
