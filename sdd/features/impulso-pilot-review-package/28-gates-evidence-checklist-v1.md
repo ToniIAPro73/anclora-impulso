@@ -38,6 +38,11 @@ Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos
 *Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
 nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
 
+### Decisión (2026-10-13): P2 de la CSP aplazado
+Toni aplaza P2 (renderizado dinámico + *nonces*) hasta que haya usuarios. B1-F2 queda **parcialmente mitigado** (P0 + medición P1).
+Riesgo residual aceptado temporalmente: un XSS podría robar los tokens de `localStorage`. Antes de abrir tráfico real conviene
+retomarlo (`41-…`) y decidir la mitigación de fondo (cookie `httpOnly`, S1/P3).
+
 ### Actualización (2026-10-13): B1-F1 (CORS)
 Corregido en código y verificado en local (9 + 4 tests): sin comodines de Vercel salvo sufijo de equipo configurado. **Sin
 desplegar.** Cambio operativo: los previews por hash no podrán llamar al backend de producción hasta configurar

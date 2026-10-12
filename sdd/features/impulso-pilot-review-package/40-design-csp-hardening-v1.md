@@ -9,6 +9,10 @@
 > verde con el *middleware* compilado (27,2 kB). **P2 sigue sin decidir.** Los datos de P1 saldrán de los logs de funciones de
 > Vercel (línea `[csp-report]`) tras desplegar.
 
+> **Decisión de Toni (2026-10-13): P2 aplazado hasta que haya usuarios.** Quedan en vigor **P0 y P1** (política aplicada sin CDNs públicos
+> y con `base-uri`/`object-src`; política estricta en *Report-Only*). Ver `41-…` para retomarlo. B1-F2 permanece **parcialmente
+> mitigado**, con `'unsafe-inline'` en la política aplicada: es un riesgo aceptado conscientemente mientras no haya usuarios reales.
+
 ## 1. Estado actual (verificado en `middleware.ts` y en el repo)
 
 | Aspecto | Hoy | Lectura |

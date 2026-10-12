@@ -21,6 +21,9 @@
 > `strict-dynamic`) en modo *Report-Only* con `report-uri /api/csp-report`. **`'unsafe-inline'` sigue en la política que se aplica:**
 > B1-F2 queda **parcialmente mitigado y medible**, no cerrado (P2 pendiente).
 
+> **Decisión (2026-10-13, B1-F2):** P2 (eliminar `unsafe-inline` con *nonces* y renderizado dinámico) **aplazado por Toni hasta que
+> haya usuarios**; P0 y P1 permanecen. El riesgo residual (XSS con tokens en `localStorage`) queda aceptado de forma temporal.
+
 ## 0. Alcance real de esta lectura
 
 | Aspecto | Valor |
