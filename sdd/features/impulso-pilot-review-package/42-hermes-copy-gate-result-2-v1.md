@@ -80,3 +80,31 @@ Hermes** para quedar dentro del gate. La cadena 9 sí coincide literalmente con 
 solo la del texto del aviso antes del cambio): el aviso contiene «no pudo completarse/could not complete» y no «no estaba
 disponible», y el mensaje de tope contiene «Podrás generar otra/You can generate another» y no «restablece/resets». Los cuatro casos
 de ventana y tema (móvil/escritorio, claro/oscuro) siguen cabiendo en pantalla. Jest frontend sin cambios.
+
+## 5. Reenvío pendiente a Hermes (cadenas 8 y 10) — mensaje preparado
+
+> El agente **no tiene canal con Hermes**: el mensaje lo envía Toni. Se conserva aquí para que la ronda sea trazable.
+
+```
+Actúa como Hermes Copy Curator del repositorio local anclora-impulso (rama development, commit 3651abd o posterior).
+
+ACLARACIÓN DE NUMERACIÓN (en tu respuesta anterior se confundió):
+- CADENA 8 = el AVISO DEL MODO IA que se muestra cuando la rutina SÍ se generó con IA. Texto actual:
+  ES: "Generado con IA a partir de tu perfil y las preferencias que acabas de revisar. Puedes regenerarlo o descartarlo antes de empezar."
+  EN: "Generated with AI from your profile and the preferences you just reviewed. You can regenerate or discard it before starting."
+  (components/workout-generator.tsx, rama mode === "ai"). NO es la pregunta sobre fallo por validación; esa ya la respondiste en la cadena 9.
+- CADENA 10 = mensaje de tope de generaciones (429). NUEVA REDACCIÓN, distinta de la que propusiste:
+  ES: "Has alcanzado el límite de generaciones de este periodo. Podrás generar otra a las {hora}."
+  EN: "You have reached the generation limit for this period. You can generate another at {hora}."
+  Motivos: (1) el tope es configurable (variable de entorno), un número escrito en el texto quedaría falso al cambiarlo;
+  (2) la ventana es móvil: a la hora indicada se libera UNA generación, no todo el cupo, por lo que "se restablece" era inexacto.
+
+HECHOS que debes usar:
+- GROQ_API_KEY existe en producción: el modo `ai` es alcanzable.
+- El backend SÍ expone generation.reason con los valores ai_unavailable, ai_output_rejected, ai_timeout y ai_error
+  (no hace falta un campo nuevo; corrige tu afirmación anterior).
+- Cadena 9 ya aplicada tal como la propusiste.
+
+Devuelve, para las cadenas 8 y 10: veredicto (aprobada / cambios propuestos / no evaluable), texto propuesto ES y EN si procede y
+justificación. Si apruebas tal cual, dilo explícitamente. No modifiques ficheros. Indica quién eres, la fecha y el commit revisado.
+```
