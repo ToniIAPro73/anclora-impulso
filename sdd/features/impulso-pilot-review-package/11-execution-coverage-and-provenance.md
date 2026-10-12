@@ -83,3 +83,11 @@ equal the tree there. The tree is the authority.
 - Bundles 1–3 carry sanitized **summaries**, not the raw `jest.log`/`api.log`; raw logs stay only in the git-ignored `artifacts/` and are not packaged.
 - Evidence of runs E-01…E-11 of the first day (invalidated for isolation) is gone or provisional; see `04-artifact-inventory.md` §B–C and `evidence-validity-register-v1.md`.
 - `evidence-manifest-v1.sha256` refers to the three original valid runs; its listed files are not all packaged.
+
+---
+## Addendum 2026-10-12 — executions not listed above (historical text unchanged)
+| Run | Scope | Tree | Result |
+|---|---|---|---|
+| `backend/artifacts/test-runs/20261012T073824Z-846d1e27` | backend integration, isolated PostgreSQL | `a15ad0e3…7583` = code of `ed4bb64` (verified from git objects) | 23 suites / 141 tests, exit 0; manifest verified |
+| NF-1/F-1/F-2/F-3 increment | see `16-correction-nf1-f1-f2-f3.md` §5 | `53b14939…5bf7` (uncommitted) | integration 26/167 (one failed run, one passed run), unit 71, typecheck, build, verify-migrations pass, guards 68/0 |
+Accidental red-phase executions are listed in doc 16 §6 and are not evidence.

@@ -80,3 +80,24 @@ ad-hoc Playwright screenshots are timestamped. The logic lives in `scripts/suppo
 **Tested** with synthetic files only (`scripts/support/test-evidence-preservation.sh`: 13/13 — existing directory
 refused, evidence preserved across two runs, manifest detects modification/addition/removal). The three runner
 scripts that source the helper were **syntax-checked only**; they were not executed (no suite repetition).
+
+---
+## Addendum (2026-10-12, AI pre-assessments) — new folder `15-ai-pre-assessments/`
+| # | Document | Purpose |
+|---|---|---|
+| 15-00 | `15-ai-pre-assessments/15-00-executive-summary.md` | consolidated new findings, known risks vs defects, what advanced, next-increment recommendation |
+| 15-B1 | `15-ai-pre-assessments/15-B1-IA-security-ai06.md` | B1-IA: AI-06 security pre-assessment (not an AC10 sign-off) |
+| 15-B2 | `15-ai-pre-assessments/15-B2-IA-integrity-ai08.md` | B2-IA: AI-08 technical pre-assessment (does not accept AI-08) |
+| 15-A | `15-ai-pre-assessments/15-A-IA-exercise-ai03.md` | A-IA: decision table and questions for the exercise professional (no clinical endorsement) |
+| 15-D | `15-ai-pre-assessments/15-D-IA-legal-l1-l8.md` | D-IA: L1–L8 facts and questions for the legal professional (not legal advice) |
+Registered as supplementary engagements B1-IA/B2-IA/A-IA/D-IA in `14-review-assignment-register.md` (state ANÁLISIS IA RECIBIDO).
+No task or gate status changed; no reviewer, approval or signature exists; Hermes (C) untouched. Target revision of these reviews:
+`ed4bb64` (not `944eb67`; see the correction in the register).
+
+## Addendum (2026-10-12, correction increment)
+| # | Document | Purpose |
+|---|---|---|
+| 16 | `16-correction-nf1-f1-f2-f3.md` | local correction of NF-1, F-1, F-2, F-3 (uncommitted): mechanism, red/green, coverage on the final tree, deployment preconditions, historical-evidence addendum |
+Delta bundle: `artifacts/review-bundles/anclora-impulso-review-delta-NF1-F1-F2-F3-*.zip` (see doc 16 / its STATUS). No task or gate status changed.
+Addendum to doc 16 §9 (F-1-A, F-1-B) + small delta `anclora-impulso-review-delta-F1AB-*.zip`. No task or gate status changed.
+| 17 | `17-oauth-f4-handoff-and-linking.md` | OAuth increment: F-4 (one-time handoff bound to the browser) and e-mail linking policy; local, uncommitted, simulated providers |

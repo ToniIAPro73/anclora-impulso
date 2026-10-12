@@ -201,3 +201,14 @@ production smoke with the dedicated QA identity · scheduler/monitoring · G1–
 | E2E 14/14 | `f3ad414f…` (R8AB) | R8-C client/context files and tests |
 | E2E 14/14 + Jest client/context 11 / 82 | `dee09279…` | none (final) |
 The complete integration suite and `verify-migrations` were **not** repeated on the final tree; the backend files they exercise did not change.
+
+---
+## Addendum 2026-10-12 (after the AI pre-assessments) — historical text above is unchanged
+- **R6 (guards) reopened by NF-1 and re-covered**, and **new rows NF-1 / F-1 / F-2 / F-3** (mechanism, red/green, limits):
+  see `16-correction-nf1-f1-f2-f3.md`. Status: implemented locally, uncommitted; nothing accepted.
+- Integration run `backend/artifacts/test-runs/20261012T073824Z-846d1e27` (23 suites / 141 tests) has the code identity of `ed4bb64`;
+  see §7 of doc 16. The statement in §D/§G that backend integration ran only on tree `bc7c2dc7…` is incomplete.
+
+## Addendum 2026-10-12 (OAuth increment) — see `17-oauth-f4-handoff-and-linking.md`
+F-4 reproduced in an isolated browser and corrected in the local scope; e-mail linking triaged (demonstrated) and closed by policy.
+Nothing accepted; real-provider interoperability not evaluated.
