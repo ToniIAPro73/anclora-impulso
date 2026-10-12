@@ -75,7 +75,7 @@
   },
   "home": {
     "title": "Transforma Tu Cuerpo con",
-    "subtitle": "Entrenamientos personalizados, seguimiento inteligente de progreso y análisis completo de fitness. Tu compañero completo de fitness que combina lo mejor del entrenamiento de fuerza y ejercicios corporales.",
+    "subtitle": "Entrenamientos personalizados, seguimiento de tu progreso y análisis de tus resultados. Tu compañero de fitness que combina lo mejor del entrenamiento de fuerza y ejercicios corporales.",
     "startJourney": "Comienza Tu Viaje",
     "signIn": "Iniciar Sesión",
     "featuresTitle": "Todo Lo Que Necesitas Para Triunfar",
@@ -136,7 +136,7 @@
     "stepFourDesc": "Genera un plan semanal o registra tus comidas del día",
     "generateFirstWorkout": "Generar Mi Primer Entrenamiento",
     "generateFirstMealPlan": "Crear Mi Primer Plan Nutricional",
-    "remindersTitle": "Recordatorios inteligentes",
+    "remindersTitle": "Recordatorios",
     "remindersDesc": "Configura qué reactivar y a qué hora, sin salir del panel.",
     "remindersActive": "Activos",
     "remindersPaused": "Pausados",

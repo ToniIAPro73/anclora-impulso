@@ -75,7 +75,7 @@
   },
   "home": {
     "title": "Transform Your Body with",
-    "subtitle": "Personalized workouts, intelligent progression tracking, and comprehensive fitness analytics. Your complete fitness companion combining the best of strength training and bodyweight exercises.",
+    "subtitle": "Personalized workouts, progress tracking, and analytics of your results. Your fitness companion combining the best of strength training and bodyweight exercises.",
     "startJourney": "Start Your Journey",
     "signIn": "Sign In",
     "featuresTitle": "Everything You Need to Succeed",
@@ -136,7 +136,7 @@
     "stepFourDesc": "Generate a weekly plan or log today's meals",
     "generateFirstWorkout": "Generate My First Workout",
     "generateFirstMealPlan": "Create My First Meal Plan",
-    "remindersTitle": "Smart reminders",
+    "remindersTitle": "Reminders",
     "remindersDesc": "Choose what should reactivate you and at what time without leaving the dashboard.",
     "remindersActive": "Active",
     "remindersPaused": "Paused",

@@ -137,3 +137,31 @@ Hermes confirma además no haber modificado ficheros y que ambas cadenas «cumpl
   mensaje del servidor **en inglés**; y el título del modal de onboarding del dashboard, «Onboarding inteligente» (observado en la
   verificación del preview), usa «inteligente», el mismo adjetivo que se retiró del título de la landing. Ninguna estaba en el paquete.
 - El gate se ha cumplido **para el generador de rutinas y el aviso de tope**; no es una revisión de toda la copy de la aplicación.
+
+## 7. Cuarta ronda preparada: cadenas derivadas de la matriz H4 (M1, M7, M12) — mensaje para Hermes
+
+> Aplicadas en `development` el 2026-10-13 (ver `43-…` §6) y **sin pasar aún por el gate**. El agente no puede enviarlo.
+
+```
+Actúa como Hermes Copy Curator del repositorio local anclora-impulso (rama development, último commit).
+Revisa SOLO estas tres cadenas y devuelve, para cada una, veredicto (aprobada / cambios propuestos / no evaluable), texto propuesto
+ES y EN si procede y justificación. Si apruebas tal cual, dilo explícitamente. No modifiques ficheros.
+
+Criterios: (1) no se promete IA ni capacidad antes de conocer el resultado; (2) tras el resultado se declara el modo real;
+(3) equivalencia ES/EN, tono de marca, sin afirmaciones clínicas ni de superioridad; (4) los textos describen solo lo que el
+producto hace hoy. Contexto: se retiraron adjetivos como "inteligente"/"completo" por no ser verificables.
+
+M1 — Subtítulo de la landing (home.subtitle):
+  ES: "Entrenamientos personalizados, seguimiento de tu progreso y análisis de tus resultados. Tu compañero de fitness que combina lo mejor del entrenamiento de fuerza y ejercicios corporales."
+  EN: "Personalized workouts, progress tracking, and analytics of your results. Your fitness companion combining the best of strength training and bodyweight exercises."
+M7 — Título de la sección de recordatorios del dashboard (dashboard.remindersTitle):
+  ES: "Recordatorios"   EN: "Reminders"
+  (Dato: los recordatorios por correo dependen de SMTP, no verificado en producción; no se afirma "inteligentes".)
+M12 — Título del diálogo de onboarding (components/onboarding-dialog.tsx):
+  ES: "Configura tu perfil"   EN: "Set up your profile"
+
+Pregunta adicional: la descripción global del sitio (lib/impulso-brand.ts) dice hoy
+"Aplicación premium de fitness con IA, progreso y seguimiento inteligente." ¿Qué redacción propones, honesta con
+"IA cuando está disponible" y sin "inteligente"?
+Indica quién eres, la fecha y el commit revisado.
+```

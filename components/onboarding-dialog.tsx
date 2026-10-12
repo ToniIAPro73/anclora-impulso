@@ -306,7 +306,7 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
           <div className="border-b border-orange-100/70 bg-[radial-gradient(circle_at_top,_rgba(251,146,60,0.2),_transparent_52%),linear-gradient(180deg,_rgba(255,247,237,0.95),_rgba(255,237,213,0.7))] p-4 dark:border-orange-400/10 dark:bg-[radial-gradient(circle_at_top,_rgba(251,146,60,0.14),_transparent_48%),linear-gradient(180deg,_rgba(15,23,42,0.96),_rgba(15,23,42,0.88))] sm:p-6 lg:min-h-0 lg:border-b-0 lg:border-r lg:overflow-y-auto">
             <DialogHeader className="text-left">
               <DialogTitle className="text-2xl text-slate-900 dark:text-white">
-                {isSpanish ? "Onboarding inteligente" : "Smart onboarding"}
+                {isSpanish ? "Configura tu perfil" : "Set up your profile"}
               </DialogTitle>
               <DialogDescription className="text-slate-600 dark:text-slate-400">
                 {isSpanish ? "Completa tu base para desbloquear recomendaciones más precisas, mejor adherencia y un dashboard realmente útil." : "Complete your base profile to unlock better recommendations, adherence guidance and a more useful dashboard."}

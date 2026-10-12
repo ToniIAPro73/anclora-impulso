@@ -61,3 +61,18 @@ no construyendo funciones nuevas.
 - Es una muestra de 12 promesas, no el inventario completo de la copy.
 - Las pruebas citadas son locales sobre PostgreSQL 16; en producción solo están verificados M10 y M11 (Stage D, D8).
 - «Cubierta» no equivale a «correcta para el usuario»: no se ha evaluado la calidad de las rutinas ni de las pautas.
+
+## 6. Cambios aplicados a partir de este borrador (2026-10-13) — pendientes del gate Hermes
+
+| # | Antes | Ahora (ES · EN) |
+|---|---|---|
+| M1 `home.subtitle` | «…seguimiento **inteligente** de progreso y análisis **completo** de fitness. Tu compañero **completo**…» | ES «Entrenamientos personalizados, seguimiento de tu progreso y análisis de tus resultados. Tu compañero de fitness que combina lo mejor del entrenamiento de fuerza y ejercicios corporales.» · EN «Personalized workouts, progress tracking, and analytics of your results. Your fitness companion combining the best of strength training and bodyweight exercises.» |
+| M7 `dashboard.remindersTitle` | «Recordatorios inteligentes» / «Smart reminders» | «Recordatorios» / «Reminders» |
+| M12 título del diálogo de onboarding | «Onboarding inteligente» / «Smart onboarding» | «Configura tu perfil» / «Set up your profile» |
+
+Verificación: Jest frontend 21/149 (el test que fijaba el nombre del diálogo se actualizó) y `tsc` limpio. **Estas tres cadenas aún no han
+pasado por Hermes.** Los veredictos M1, M7 y M12 de la tabla §2 describen el estado **anterior** al cambio.
+
+**Candidata adicional (no aplicada):** `lib/impulso-brand.ts` → descripción global de la página (metadato que ven buscadores y redes):
+«Aplicación premium de fitness con **IA**, progreso y seguimiento **inteligente**.» Afirma «con IA» sin condicionarlo y repite
+«inteligente». Requiere decisión de Toni y pasar por Hermes.

@@ -105,7 +105,7 @@ describe("modal scrolling, close behavior, and workout localization", () => {
   it("renders onboarding with a named dialog, scrollable step body, and stable actions", () => {
     render(<OnboardingDialog open onOpenChange={jest.fn()} />)
 
-    expect(screen.getByRole("dialog", { name: /onboarding inteligente/i })).toBeInTheDocument()
+    expect(screen.getByRole("dialog", { name: /configura tu perfil/i })).toBeInTheDocument()
     expect(screen.getByTestId("onboarding-step-scroll-body")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /más tarde/i })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /continuar/i })).toBeInTheDocument()
