@@ -95,3 +95,29 @@ desplegar el endurecimiento, este origen (`…-pmi140979-6354s-projects.vercel.a
 
 **Límites:** un solo navegador y una sola cuenta; pantallas con el modal de onboarding encima; sin generar rutinas ni escribir
 datos; los informes llegaron al endpoint pero **no se leyeron en los logs de Vercel**; no se probó móvil ni claro/oscuro.
+
+## 9. Lectura de los informes en los logs de Vercel (2026-10-13)
+
+> Fuente: `get_runtime_logs` del proyecto `anclora-impulso`, ventana de 3 h, filtro `csp-report`, entorno `preview`, rama
+> `development`, despliegue `dpl_HZtnkJi8c3zdAWC1UG1SkPVeTkDS`. La herramienta devuelve como máximo **100 entradas**: es una muestra
+> (la recorrida generó ≥ 131 POST). El tráfico es el de la verificación del agente (una cuenta QA, 9 cargas).
+
+| Dato | Valor |
+|---|---|
+| Informes leídos | 100 (todos con `disposition: report`, ninguno `enforce`) |
+| Directiva efectiva | 100 × `script-src-elem` |
+| Recurso bloqueado por la política **estricta** | 93 × scripts propios de Next (`/_next/static/chunks/*`), 7 × `inline` |
+| Recursos de **terceros** | **0** |
+| Otras directivas (`style-src`, `connect-src`, `img-src`, `font-src`) | 0 informes |
+| Por página | `/achievements` 17 · `/progress` 16 · `/nutrition` 16 · `/workouts/generate` 16 · `/health-plans` 15 · `/legal` 10 · `/exercises` 10 |
+| Errores (`error/function`) | 0 |
+
+**Lectura para P2:**
+- La tubería funciona: los informes llegan al log con el formato saneado (sin query strings).
+- Las violaciones son **todas propias**: las etiquetas `<script src>` de las páginas estáticas y sus scripts en línea no llevan
+  *nonce*. No aparece ningún recurso externo que P2 fuera a romper.
+- Por tanto, **la viabilidad técnica de P2 depende de una sola cosa**: que Next.js reciba el *nonce* en cada render, lo que exige
+  renderizado dinámico del layout raíz (decisión 2 de §6; coste en caché y latencia sin medir).
+
+**Límites:** muestra de 100 de ≥ 131; solo rutas autenticadas recorridas por una cuenta; no incluye navegadores distintos de
+Chromium, ni extensiones, ni rutas no visitadas (p. ej. `/workouts/[id]`, `/auth/signup`).
