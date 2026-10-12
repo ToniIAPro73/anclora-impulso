@@ -23,6 +23,7 @@ import {
   getPersonalizationSnapshot,
   type PersonalizationSnapshot,
 } from "./personalization.service";
+import { generateJSON, SYSTEM_PROMPT_ES } from "./llm";
 
 function buildWorkoutExplanation(
   snapshot: PersonalizationSnapshot,
@@ -404,8 +405,6 @@ export async function generateWorkout(
 
   if (env.groqApiKey) {
     try {
-      const { generateJSON, SYSTEM_PROMPT_ES } = await import("./llm");
-
       const prompt = `Genera un entrenamiento de fitness con las siguientes características:
 - Tipo: ${params.workoutType}
 - Duración: ${effectiveDuration} minutos
