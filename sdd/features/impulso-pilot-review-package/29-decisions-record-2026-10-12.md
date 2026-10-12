@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | 1 | AI-01 | Acepta `B-D6` (sin persona asignada a las tareas, como estado válido). El «técnico» es Toni. | Cumple el criterio «responsables» de AI-01 sin inventar nombres. Técnico nombrado. | **AI-01 no pasa a ACEPTADA**: falta la revisión del técnico (N7) y la declaración expresa de aceptación de AI-01. N1–N4 siguen explícitos. |
 | 2 | A-08-01 | Aprobado tal cual | Aprobado por el propietario en `02-…` §7. Stage L acepta la evidencia local para Accept 1–3; Stage D obligatorio antes de lanzar; revisión independiente separada. | **AI-08 no queda aceptada**: requiere revisión independiente, AI-01 aceptada y Stage D. |
-| 3 | Staging | Sí, debe existir | Decisión registrada. Aún **no se ha creado ni configurado** nada. | Ningún entorno staging existe por esta decisión. |
+| 3 | Staging | Inicialmente «sí, debe existir»; **corregida el mismo día a opción C** (Stage D en producción con identidad QA, sin crear staging), con coste adicional «no» y staging «solo mientras dure Stage D» (sin objeto) | Ver `30-…` §11. No se crea ningún recurso. D4 por construcción (pooler declarado); D5/D6 pendientes de conocer instancias. | Ningún entorno staging existe ni se crea por esta decisión. |
 | 4 | Revisores | A y D: diferidos. B1 y B2: Toni. | B1 y B2 pasan a «DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO». A y D siguen sin designar. | No hay dictamen. Ver §3 sobre independencia. |
 | 5 | Hermes (C) | El propio agente Hermes sobre el repositorio local | C pasa a «DESIGNADO, PENDIENTE DE ACEPTAR EL ENCARGO» (ruta designada). | Hermes no se ha ejecutado; no hay aprobación de copy. |
 

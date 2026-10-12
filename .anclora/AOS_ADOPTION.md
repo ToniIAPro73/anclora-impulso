@@ -95,6 +95,7 @@ Declaración de adopción AOS para `anclora-impulso`.
 | 2026-09-25 | v2.1 | Adopción de economía adaptativa (CAVEMAN_MODE=AUTO) y endurecimiento FAST QA (sin suites completas por defecto, mínimo suficiente, detención ante evidencia suficiente). | ToniIAPro73 |
 | 2026-10-12 | decisión | Arquitectura de producción Vercel + Render/Express + Neon + Prisma Migrate; runner manual protegido aprobado como diseño, no ejecutado (`IMPULSO-ARCH-RUNNER-2026-10-12`). | ToniIAPro73 |
 | 2026-10-12 | ejecución | Migración de producción ejecutada (run #1, P1) y backend desplegado manualmente en `c0333f3`; rama del servicio Render permanece en `development` (`IMPULSO-PRODUCTION-MIGRATION-EXECUTED-2026-10-12`). | ToniIAPro73 |
+| 2026-10-12 | decisión | Stage D de A-08-01 en producción con identidad QA, sin crear staging (`IMPULSO-STAGE-D-ON-PRODUCTION-2026-10-12`); procedimiento definido, no ejecutado. | ToniIAPro73 |
 | 2026-10-12 | decisión | Verificador automatizado independiente autorizado y diseñado (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) para `production-migrations`. Toni mantiene el trigger manual; estado: local implementado, remoto no configurado. | ToniIAPro73 |
 
 ## Decisión de verificador automatizado de migraciones (2026-10-12)
@@ -134,4 +135,19 @@ Declaración de adopción AOS para `anclora-impulso`.
 - DESPLIEGUE_BACKEND=Render `Anclora-Impulso` desplegado manualmente en `c0333f3` (mecanismo Q2 opción A: rama del servicio cambiada a `development`, Auto-Deploy Off). `main` y Vercel no se tocaron. Decisión de Toni: el servicio permanece en `development`.
 - VERIFICACION_FUNCIONAL=Toni: usuario QA OK, admin 200, usuario normal 403. Cobertura limitada a esos tres casos.
 - BASELINE_LEGADO=8 filas sin terminar con `rolled_back_at` y checksums de variante CRLF en 9 migraciones: aceptadas por el evaluador (commit c0333f3) y reportadas; el ledger no se modifica a mano.
-- NO_CAMBIA=gates G1–G4, revisiones profesional, de seguridad, legal y Hermes siguen sin aceptarse; no autoriza promoción a staging/main. `.anclora/global` (eliminación sin explicar) sin tocar.
+- NO_CAMBIA=gates G1–G4, revisiones profesional, de seguridad, legal y Hermes siguen sin aceptarse; no autoriza promoción a staging/main. `.anclora/global` fue un enlace simbólico roto, eliminado por Toni en `bc29075`.
+
+## Decisión de Stage D en producción con identidad QA (2026-10-12)
+
+- DECISION_ID=IMPULSO-STAGE-D-ON-PRODUCTION-2026-10-12
+- DECIDED_BY=Toni (ToniIAPro73), mensaje del 2026-10-12 (opción C del plan `30-staging-plan-stage-d-v1.md`)
+- DECISION=Las comprobaciones de Stage D de A-08-01 (D1–D7) se ejecutan sobre el entorno de producción con la identidad QA dedicada
+  (`qa.impulso@anclora.local`). **No se crea** staging, ni proyecto Neon, ni servicio Render nuevos.
+- EXCEPCION_DE_CONTRATO=Ninguna: no se crea ninguna BD de desarrollo/preview/staging, por lo que no hay excepción a
+  `DO_NOT_CREATE_DEVELOPMENT_DATABASE`. La excepción `IMPULSO-STAGING-2026-10-12` que se planteó para la opción A **no se registra**
+  (quedaría sin objeto); puede registrarse más adelante si Toni elige crear staging.
+- REGLAS=Solo identidad QA; sin datos personales reales; ráfagas de 5–10 peticiones; ventana acotada y registrada; sin cambiar
+  configuración de producción; parada ante 5xx inesperado; evidencia con manifiesto; el uso de IA consume coste real (`30-…` §11.2).
+- ENTRADAS=Producción usa pooler (declarado por Toni, no verificado por el agente). Backend Render en plan Free, una instancia (observado en captura de Toni, 2026-10-12): D5/D6 no aplican a la topología actual.
+- ESTADO=Procedimiento definido, **no ejecutado**. Las sondas HTTP de Stage D aún no existen.
+- LIMITES=No acepta AI-08 ni ningún gate. No sustituye la revisión independiente. No autoriza promoción.
