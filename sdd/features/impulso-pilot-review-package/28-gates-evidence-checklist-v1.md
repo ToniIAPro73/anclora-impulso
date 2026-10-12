@@ -33,6 +33,13 @@ PostgreSQL 17.11; 26 migraciones aplicadas, 0 fallidas) con resultado favorable;
 desactivado; D5/D6 no aplican (una instancia). Mejora la evidencia de AI-08 (Stage D parcial), pero **no la acepta**: siguen
 faltando la revisión independiente (B2), AI-01 aceptada y D2. No cambia ningún gate.
 
+### Actualización posterior (2026-10-13, B2-F1)
+Hallazgo B2-F1 (generación de rutinas sin cuota por usuario; ver `38-…`): **corregido en código** en `development` (`4eb8e1b`):
+tope por usuario y ventana, exacto bajo concurrencia, 9 tests nuevos, control negativo, CI en verde. **Producción sin cambiar**
+(`c0333f3`): hasta el despliegue manual y una sonda con la cuenta QA, el hallazgo sigue abierto allí. Mejora la evidencia de
+Accept 2 de AI-08 para la generación de rutinas, **sin aceptar AI-08**. Quedan las 3 suites de logs que fallan por hora del día
+(hipótesis sin demostrar, ver conversación) y la comprobación del mensaje de cliente ante el nuevo 429.
+
 ## 2. Gate G1 (AI-10) — dependencias AI-02, 04, 05, 06, 07, 08, 09
 
 | Dependencia | Estado documentado | Evidencia que existe | Qué falta | Quién | Veredicto |
