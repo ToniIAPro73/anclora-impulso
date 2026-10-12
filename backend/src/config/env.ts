@@ -62,6 +62,12 @@ export const env = {
   // CORS
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   frontendUrls: expandFrontendAliases(configuredFrontendUrls),
+  // B1-F1: optional Vercel team suffixes (e.g. "-myteam-projects.vercel.app") under which previews of a configured
+  // *.vercel.app frontend are trusted with credentials. Empty by default: no wildcards.
+  frontendPreviewHostSuffixes: (process.env.FRONTEND_PREVIEW_HOST_SUFFIXES || '')
+    .split(',')
+    .map((suffix) => suffix.trim().toLowerCase())
+    .filter(Boolean),
 
   // F-1: administrative privileges are granted to USER IDS designated out of band (ADMIN_USER_IDS), never to an
   // e-mail address: an address is free text that anyone can register, an id is assigned by the database.

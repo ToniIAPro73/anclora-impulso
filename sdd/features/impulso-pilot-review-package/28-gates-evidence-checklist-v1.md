@@ -33,6 +33,11 @@ PostgreSQL 17.11; 26 migraciones aplicadas, 0 fallidas) con resultado favorable;
 desactivado; D5/D6 no aplican (una instancia). Mejora la evidencia de AI-08 (Stage D parcial), pero **no la acepta**: siguen
 faltando la revisión independiente (B2), AI-01 aceptada y D2. No cambia ningún gate.
 
+### Actualización (2026-10-13): B1-F1 (CORS)
+Corregido en código y verificado en local (9 + 4 tests): sin comodines de Vercel salvo sufijo de equipo configurado. **Sin
+desplegar.** Cambio operativo: los previews por hash no podrán llamar al backend de producción hasta configurar
+`FRONTEND_PREVIEW_HOST_SUFFIXES` o listar sus alias en `FRONTEND_URL`.
+
 ### Actualización (2026-10-13): cliente ante el 429 y B1-F7
 - **Cliente:** el generador ya trata el `429` con `windowResetsAt` y existe un E2E (`e2e/session-and-fallback.spec.ts`, caso
   «quota exhaustion») con la misma forma de respuesta que emite el backend. Queda anotado que **esa cadena no pasó por Hermes** y que

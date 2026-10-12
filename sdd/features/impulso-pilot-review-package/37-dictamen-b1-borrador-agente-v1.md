@@ -9,6 +9,13 @@
 > se eliminó el auxiliar sin uso `logHttpRequest` (`config/logger.ts`), que además tenía el mismo defecto y registraba `req.url` con su
 > *query string*. Test nuevo `tests/unit/log-user-attribution-b1f7.test.ts` (fase roja observada: fallaban los 2 casos del defecto).
 
+> **Actualización (2026-10-13, B1-F1):** `FRONTEND_URL` en producción es `https://anclora-impulso.vercel.app,https://impulso.anclora.com`
+> (declarado por Toni), por lo que la condición explotable **se cumplía**: cualquier `anclora-impulso-*.vercel.app` era aceptado con
+> credenciales. Corregido en código (sin desplegar): política extraída a `utils/cors-origin.ts`, **sin comodines por defecto**;
+> los previews solo se aceptan con `FRONTEND_PREVIEW_HOST_SUFFIXES` (sufijo de equipo). Tests: 9 unitarios (fase roja observada) y
+> 4 de cableado HTTP. **Efecto operativo:** los previews por hash dejan de poder llamar al backend de producción hasta que se
+> configure esa variable o se listen sus alias exactos en `FRONTEND_URL`.
+
 ## 0. Alcance real de esta lectura
 
 | Aspecto | Valor |
