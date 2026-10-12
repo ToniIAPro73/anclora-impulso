@@ -27,6 +27,12 @@
 
 **Esto es evidencia operativa de despliegue (Stage D parcial).** No es evidencia de aceptación de ninguna tarea AI-xx.
 
+### Actualización posterior (2026-10-12, Stage D en producción)
+Ejecutado el Stage D con la identidad QA (`32-stage-d-production-results-v1.md`): D1 atomicidad, D3 idempotencia y D7 (motor
+PostgreSQL 17.11; 26 migraciones aplicadas, 0 fallidas) con resultado favorable; D2 (coach) **no evaluable** por estar el coach
+desactivado; D5/D6 no aplican (una instancia). Mejora la evidencia de AI-08 (Stage D parcial), pero **no la acepta**: siguen
+faltando la revisión independiente (B2), AI-01 aceptada y D2. No cambia ningún gate.
+
 ## 2. Gate G1 (AI-10) — dependencias AI-02, 04, 05, 06, 07, 08, 09
 
 | Dependencia | Estado documentado | Evidencia que existe | Qué falta | Quién | Veredicto |

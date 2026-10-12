@@ -100,7 +100,7 @@ async function call(label, method, path, { body, headers = {}, auth = true, expe
     // body is reduced to its shape + well-known non-sensitive fields; tokens and passwords are never recorded
     bodyKeys: json && typeof json === "object" ? Object.keys(json).slice(0, 12) : null,
     reason: json?.reason ?? json?.error?.reason ?? null,
-    message: typeof json?.message === "string" ? redact(json.message).slice(0, 160) : null,
+    message: typeof (json?.message ?? json?.error) === "string" ? redact(json.message ?? json.error).slice(0, 160) : null,
     windowResetsAt: json?.windowResetsAt ?? json?.usage?.windowResetsAt ?? null,
   };
   transcript.push(entry);
@@ -110,9 +110,10 @@ async function call(label, method, path, { body, headers = {}, auth = true, expe
 }
 
 const results = [];
+// pass: true | false | null (null = NOT EVALUABLE in this environment; never counted as a pass)
 const record = (id, pass, detail) => {
   results.push({ id, pass, detail });
-  console.log(`${pass ? "PASS" : "FAIL"}  ${id}  ${detail}`);
+  console.log(`${pass === null ? "N/E " : pass ? "PASS" : "FAIL"}  ${id}  ${detail}`);
 };
 
 async function warmUp() {
@@ -179,11 +180,16 @@ async function main() {
         expectedStatuses: [503],
       }).catch((e) => ({ status: -2, error: e })));
     const out = await Promise.all(reqs);
+    if (out.every((r) => r.status === 503)) {
+      // 503 "LLM coach is disabled" (coach.service.ts): the feature flag is off, so admission cannot be observed
+      record("D2a", null, "NOT EVALUABLE: every request answered 503 (coach disabled by configuration); no admission behaviour observed");
+    } else {
     const ok = out.filter((r) => r.status >= 200 && r.status < 300).length;
     const limited = out.filter((r) => r.status === 429).length;
     const reasons = out.filter((r) => r.status === 429).map((r) => r.json?.reason ?? r.json?.error?.reason ?? "?");
     record("D2a", ok <= EXPECTED_MAX_CONCURRENT && ok + limited === out.length,
       `2xx=${ok} (cap ${EXPECTED_MAX_CONCURRENT}), 429=${limited} reasons=[${reasons.join(",")}], other=${out.length - ok - limited}`);
+    }
   }
 
   // D3 idempotency
@@ -235,4 +241,4 @@ const lines = readdirSync(runDir).sort().filter((f) => statSync(join(runDir, f))
   .map((f) => `${createHash("sha256").update(readFileSync(join(runDir, f))).digest("hex")}  ${f}`);
 writeFileSync(join(runDir, "MANIFEST.sha256"), `${lines.join("\n")}\n`);
 console.log(`evidence: ${runDir}`);
-process.exit(stopped || results.some((r) => !r.pass) ? 1 : 0);
+process.exit(stopped || results.some((r) => r.pass === false) ? 1 : 0);
