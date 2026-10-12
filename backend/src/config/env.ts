@@ -101,6 +101,10 @@ export const env = {
   llmCoachMaxFailedAttempts: parseInt(process.env.LLM_COACH_MAX_FAILED_ATTEMPTS_PER_WINDOW || '5', 10),
   llmWorkoutTimeoutMs: parseInt(process.env.LLM_WORKOUT_TIMEOUT_MS || '30000', 10),
   idempotencyMaxAttempts: parseInt(process.env.IDEMPOTENCY_MAX_ATTEMPTS || '3', 10),
+  // Per-user rolling quota of workout generations (B2-F1). Engineering default, NOT an approved commercial limit.
+  // 0 disables the quota. The window is clamped to the idempotency retention (records older than that are gone).
+  workoutGenerateWindowMinutes: parseInt(process.env.WORKOUT_GENERATE_WINDOW_MINUTES || '60', 10),
+  workoutGenerateWindowLimit: parseInt(process.env.WORKOUT_GENERATE_WINDOW_LIMIT || '10', 10),
   // 'warn': clients without Idempotency-Key get a server-derived short-window key and a Deprecation header.
   // 'require': 428 without the header. A sunset date in the past forces 'require'.
   idempotencyKeyEnforcement: (process.env.IDEMPOTENCY_KEY_ENFORCEMENT || 'warn') as 'warn' | 'require',

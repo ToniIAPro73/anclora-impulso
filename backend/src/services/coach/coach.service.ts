@@ -579,6 +579,15 @@ export async function sendCoachMessage(
     });
   }
 
+  if (gate.kind === 'quota_exhausted') {
+    // The coach has its own usage window and passes no `windowLimit`; kept for exhaustiveness of the gate result.
+    throw new AppError(429, 'LLM coach rate limit exceeded', true, {
+      reason: 'quota_exhausted',
+      windowResetsAt: gate.windowResetsAt.toISOString(),
+      retryAfterSeconds: gate.retryAfterSeconds,
+    });
+  }
+
   try {
     // Completion runs inside the transaction that persists the exchange (atomic; owner-checked).
     return await executeCoachMessage(userId, input, (tx, response) =>

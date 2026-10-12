@@ -11,7 +11,8 @@ export type IdempotencyBegin =
   | { kind: 'in_progress'; retryAfterSeconds: number }
   | { kind: 'conflict' }
   | { kind: 'exhausted'; attempts: number }
-  | { kind: 'concurrency_limited'; retryAfterSeconds: number };
+  | { kind: 'concurrency_limited'; retryAfterSeconds: number }
+  | { kind: 'quota_exhausted'; retryAfterSeconds: number; windowResetsAt: Date };
 
 export interface IdempotencyScope {
   userId: string;
@@ -66,6 +67,13 @@ interface BeginOptions extends IdempotencyScope {
    * at that moment, so an old key cannot jump the queue and nothing already running is ever evicted.
    */
   maxConcurrent?: number;
+  /**
+   * Rolling per-user quota of EXECUTIONS of this operation. Counted from the ledger under the same advisory lock as
+   * the admission, so it is exact (no overshoot). Only `completed` and `in_progress` records consume a unit; replays
+   * (no new row), `failed` records and refused requests do not. Applied whenever a record would become `in_progress`
+   * (new key, retry of a failed key, takeover of an expired lock). Must not exceed the retention of the records.
+   */
+  windowLimit?: { seconds: number; max: number };
   now?: Date;
   /**
    * Test seam (no production caller): invoked after a record state was read and a takeover was decided, and
@@ -109,6 +117,30 @@ export async function beginIdempotent(options: BeginOptions): Promise<Idempotenc
     };
     const busy: IdempotencyBegin = { kind: 'concurrency_limited', retryAfterSeconds: 2 };
 
+    // Quota gate: refuses when the number of units already consumed in the rolling window (excluding the record being
+    // taken over, which would not add a second unit) has reached the limit.
+    const overQuota = async (excludeId?: string): Promise<IdempotencyBegin | null> => {
+      const limit = options.windowLimit;
+      if (!limit || limit.max <= 0) return null;
+      const since = new Date(now.getTime() - limit.seconds * 1000);
+      const consumed = {
+        userId: options.userId,
+        operation: options.operation,
+        createdAt: { gte: since },
+        status: { in: ['completed', 'in_progress'] },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      };
+      const used = await tx.idempotencyRecord.count({ where: consumed });
+      if (used < limit.max) return null;
+      const oldest = await tx.idempotencyRecord.findFirst({ where: consumed, orderBy: { createdAt: 'asc' }, select: { createdAt: true } });
+      const windowResetsAt = new Date((oldest?.createdAt ?? now).getTime() + limit.seconds * 1000);
+      return {
+        kind: 'quota_exhausted',
+        windowResetsAt,
+        retryAfterSeconds: Math.max(1, Math.ceil((windowResetsAt.getTime() - now.getTime()) / 1000)),
+      };
+    };
+
     // Optimistic re-evaluation: completion/failure of a record is NOT serialized by the advisory lock (it commits
     // inside the effect's own transaction), so any state read here can be stale by the time we act on it. Every
     // transition out of a read state is therefore a compare-and-set on exactly that state; when it loses, the row
@@ -117,6 +149,8 @@ export async function beginIdempotent(options: BeginOptions): Promise<Idempotenc
       const existing = await tx.idempotencyRecord.findUnique({ where });
 
       if (!existing) {
+        const quota = await overQuota();
+        if (quota) return quota;
         if (await limited()) return busy;
         const row = await tx.idempotencyRecord.create({
           data: {
@@ -161,6 +195,8 @@ export async function beginIdempotent(options: BeginOptions): Promise<Idempotenc
 
       if (existing.expiresAt <= now && existing.status !== 'completed') {
         // Retention elapsed on a non-completed record: the key is reusable, even with different content.
+        const quota = await overQuota(existing.id);
+        if (quota) return quota;
         if (await limited(existing.id)) return busy;
         const taken = await takeover({ requestHash: options.requestHash, expiresAt, response: Prisma.DbNull }, 1);
         if (taken) return taken;
@@ -169,6 +205,8 @@ export async function beginIdempotent(options: BeginOptions): Promise<Idempotenc
 
       if (existing.expiresAt <= now) {
         // Completed and past retention: reusable. Guarded by the same CAS (a concurrent re-completion loses).
+        const quota = await overQuota(existing.id);
+        if (quota) return quota;
         if (await limited(existing.id)) return busy;
         const taken = await takeover({ requestHash: options.requestHash, expiresAt, response: Prisma.DbNull, reservedWindowId: null, reservedOwnerToken: null, reservedTokens: 0, reservedAt: null }, 1);
         if (taken) return taken;
@@ -184,6 +222,8 @@ export async function beginIdempotent(options: BeginOptions): Promise<Idempotenc
       // failed, or in_progress with an expired lock: retry, bounded and only with a free permit
       const mayRetry = options.maxAttempts === undefined || existing.attempts < options.maxAttempts;
       if (!mayRetry) return { kind: 'exhausted', attempts: existing.attempts };
+      const quota = await overQuota(existing.id);
+      if (quota) return quota;
       if (await limited(existing.id)) return busy;
       const taken = await takeover({}, existing.attempts + 1);
       if (taken) return taken;

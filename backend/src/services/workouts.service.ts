@@ -531,6 +531,17 @@ export function normalizeGenerateParams(params: GenerateWorkoutInput) {
  * double taps, network retries, lost responses or process restarts. Creation commits atomically with the
  * idempotency completion and is owner-checked, so a superseded execution leaves no routine behind.
  */
+/** Rolling per-user quota of generations; undefined when disabled. The window never exceeds the record retention. */
+function workoutGenerateWindowLimit() {
+  const max = env.workoutGenerateWindowLimit;
+  if (!Number.isFinite(max) || max <= 0) return undefined;
+  const minutes = Math.min(
+    Math.max(1, env.workoutGenerateWindowMinutes || 60),
+    Math.max(1, env.idempotencyRetentionHours) * 60,
+  );
+  return { seconds: minutes * 60, max };
+}
+
 export async function generateWorkoutIdempotent(
   userId: string,
   params: GenerateWorkoutInput,
@@ -546,6 +557,7 @@ export async function generateWorkoutIdempotent(
     retentionSeconds: env.idempotencyRetentionHours * 3600,
     maxAttempts: env.idempotencyMaxAttempts,
     maxConcurrent: env.llmCoachMaxConcurrent,
+    windowLimit: workoutGenerateWindowLimit(),
   });
 
   if (gate.kind === "replay") {
@@ -563,6 +575,14 @@ export async function generateWorkoutIdempotent(
     throw new AppError(429, "Too many attempts for this Idempotency-Key; start a new request later", true, {
       reason: "idempotency_attempts_exhausted",
       attempts: gate.attempts,
+    });
+  }
+
+  if (gate.kind === "quota_exhausted") {
+    throw new AppError(429, "Workout generation limit reached for this period", true, {
+      reason: "quota_exhausted",
+      windowResetsAt: gate.windowResetsAt.toISOString(),
+      retryAfterSeconds: gate.retryAfterSeconds,
     });
   }
 
