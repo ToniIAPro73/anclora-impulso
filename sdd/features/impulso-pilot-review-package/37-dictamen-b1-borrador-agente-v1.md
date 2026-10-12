@@ -16,6 +16,11 @@
 > 4 de cableado HTTP. **Efecto operativo:** los previews por hash dejan de poder llamar al backend de producción hasta que se
 > configure esa variable o se listen sus alias exactos en `FRONTEND_URL`.
 
+> **Actualización (2026-10-13, B1-F2):** P0 y P1 del diseño `40-…` implementados (sin desplegar): se quitan `jsdelivr`/`unpkg` de
+> `script-src`, se añaden `base-uri 'self'` y `object-src 'none'`, y se emite en paralelo la política estricta (nonce +
+> `strict-dynamic`) en modo *Report-Only* con `report-uri /api/csp-report`. **`'unsafe-inline'` sigue en la política que se aplica:**
+> B1-F2 queda **parcialmente mitigado y medible**, no cerrado (P2 pendiente).
+
 ## 0. Alcance real de esta lectura
 
 | Aspecto | Valor |

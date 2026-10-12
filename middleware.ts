@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { buildEnforcedCsp, buildStrictReportOnlyCsp } from '@/lib/security/csp';
 
 function getApiOrigin() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -20,45 +21,23 @@ function getApiOrigin() {
  * Implements Content Security Policy (CSP) and other security headers
  */
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-
-  // Content Security Policy
-  // Prevents inline scripts and restricts script sources
-  // Note: In development mode, we allow unsafe-eval for Next.js hot reload
   const isDevelopment = process.env.NODE_ENV === 'development';
   const apiOrigin = getApiOrigin();
-  const connectSrc = [
-    "'self'",
-    'https://va.vercel-scripts.com',
-    ...(isDevelopment ? ['http://localhost:3001'] : []),
-    ...(apiOrigin ? [apiOrigin] : []),
-  ].join(' ');
 
-  const cspHeader = [
-    // Default policy
-    "default-src 'self'",
-    // Scripts - allow same origin, unsafe-inline for dev, and trusted CDNs
-    isDevelopment
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://r2cdn.perplexity.ai https://va.vercel-scripts.com"
-      : "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com",
-    // Styles - allow same origin and unsafe-inline (for Tailwind CSS and styled-components)
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    // Fonts - allow from multiple sources
-    "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
-    // Images - allow http/https and data URIs
-    "img-src 'self' data: https: http:",
-    // Connect - allow API calls to backend and Vercel analytics
-    `connect-src ${connectSrc}`,
-    // Form submissions
-    "form-action 'self'",
-    // Framing
-    "frame-ancestors 'none'",
-    // Upgrade insecure requests
-    "upgrade-insecure-requests",
-  ].join('; ');
+  // P1 (B1-F2): fresh nonce per request for the strict policy, which is only REPORTED. Handing the policy and the nonce to
+  // Next.js through the request headers is the documented way for it to stamp its own inline scripts on dynamic renders.
+  const nonce = btoa(crypto.randomUUID());
+  const strictPolicy = buildStrictReportOnlyCsp({ isDevelopment, apiOrigin, nonce });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', strictPolicy);
 
-  // Set CSP header
-  response.headers.set('Content-Security-Policy', cspHeader);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // P0: the policy that is ENFORCED (no public package CDNs; base-uri and object-src restricted).
+  response.headers.set('Content-Security-Policy', buildEnforcedCsp({ isDevelopment, apiOrigin }));
+  // P1: the target policy, measured only. Violations are POSTed to /api/csp-report and logged there.
+  response.headers.set('Content-Security-Policy-Report-Only', strictPolicy);
 
   // Additional security headers
   // X-Content-Type-Options prevents MIME type sniffing

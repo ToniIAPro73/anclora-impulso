@@ -33,6 +33,11 @@ PostgreSQL 17.11; 26 migraciones aplicadas, 0 fallidas) con resultado favorable;
 desactivado; D5/D6 no aplican (una instancia). Mejora la evidencia de AI-08 (Stage D parcial), pero **no la acepta**: siguen
 faltando la revisión independiente (B2), AI-01 aceptada y D2. No cambia ningún gate.
 
+### Actualización (2026-10-13): B1-F2 (CSP) — P0 y P1
+Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos y con `base-uri`/`object-src`; política estricta en
+*Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
+nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
+
 ### Actualización (2026-10-13): B1-F1 (CORS)
 Corregido en código y verificado en local (9 + 4 tests): sin comodines de Vercel salvo sufijo de equipo configurado. **Sin
 desplegar.** Cambio operativo: los previews por hash no podrán llamar al backend de producción hasta configurar

@@ -3,6 +3,12 @@
 > **Propuesta de diseño. No se ha modificado código ni producción.** Responde a B1-F2 de `37-…`. Las decisiones y el alcance son de
 > Toni. No acepta AI-06 ni gate. Estimaciones de esfuerzo orientativas, no medidas.
 
+> **Estado (2026-10-13): P0 y P1 aprobados por Toni e implementados en local (sin desplegar).** `lib/security/csp.ts`,
+> `lib/security/csp-report.ts`, `middleware.ts` y `app/api/csp-report/route.ts`. Verificación: 17 tests nuevos (12 de política y
+> sanitizador con fase roja observada; 5 del *middleware* real), suite frontend 21/149, `tsc` limpio y `next build` aislado en
+> verde con el *middleware* compilado (27,2 kB). **P2 sigue sin decidir.** Los datos de P1 saldrán de los logs de funciones de
+> Vercel (línea `[csp-report]`) tras desplegar.
+
 ## 1. Estado actual (verificado en `middleware.ts` y en el repo)
 
 | Aspecto | Hoy | Lectura |
