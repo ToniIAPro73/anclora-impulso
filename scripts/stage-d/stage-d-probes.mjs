@@ -20,11 +20,12 @@ const ALLOWED_HOSTS = new Set(["anclora-impulso.onrender.com", "127.0.0.1", "loc
 const REQUEST_BUDGET = 40; // hard cap; the global production limiter is 100 requests / 15 min per IP
 const BURST = { coach: 4, idempotency: 5 }; // intentionally small
 const EXPECTED_MAX_CONCURRENT = Number(process.env.STAGE_D_EXPECTED_MAX_CONCURRENT ?? 2);
+const WORKOUT_LIMIT = Number(process.env.STAGE_D_EXPECTED_WORKOUT_LIMIT ?? 10); // WORKOUT_GENERATE_WINDOW_LIMIT of the target
 
 const args = new Set(process.argv.slice(2));
 const execute = args.has("--execute");
 const only = (process.argv.find((a) => a.startsWith("--only=")) ?? "").slice(7).split(",").filter(Boolean);
-const wants = (name) => only.length === 0 || only.includes(name);
+const wants = (name) => (only.length === 0 ? name !== "D8" : only.includes(name));
 const baseUrl = (process.env.STAGE_D_BASE_URL ?? "https://anclora-impulso.onrender.com").replace(/\/+$/, "");
 const windowId = process.env.STAGE_D_WINDOW_ID ?? "";
 
@@ -41,12 +42,16 @@ const plan = [
   { id: "D1", name: "atomicity: forced failure after the delete on a QA routine", requests: 6 },
   { id: "D2a", name: `coach admission under a burst of ${BURST.coach} simultaneous requests (provider calls: up to the concurrency cap)`, requests: BURST.coach },
   { id: "D3", name: `idempotency: same key x${BURST.idempotency} in parallel, then sequential, then different body`, requests: BURST.idempotency + 6 },
+  // D8 is opt-in (--only=D8): it spends up to WORKOUT_LIMIT real generations (provider calls if GROQ_API_KEY is set).
+  { id: "D8", name: `workout-generation quota (B2-F1): ${WORKOUT_LIMIT + 1} sequential requests with distinct keys, expects ${WORKOUT_LIMIT} accepted then 429 quota_exhausted`, requests: 2 * WORKOUT_LIMIT + 1, optIn: true },
 ];
-const total = plan.reduce((n, p) => n + p.requests, 0);
+const selected = plan.filter((p) => p.id === "D0" || (p.optIn ? only.includes(p.id) : wants(p.id)));
+const total = selected.reduce((n, p) => n + p.requests, 0);
 
 if (!execute) {
   console.log("DRY RUN (no network). Plan:");
-  for (const p of plan) console.log(`  ${p.id}  ${p.name}  [~${p.requests} requests]`);
+  for (const p of selected) console.log(`  ${p.id}  ${p.name}  [~${p.requests} requests]`);
+  if (plan.some((p) => p.optIn && !only.includes(p.id))) console.log("  (opt-in probes not selected: run with --only=D8 to include the workout quota probe)");
   console.log(`  total ≈ ${total} requests (budget ${REQUEST_BUDGET}); target ${baseUrl}`);
   console.log("  D2b (quota exhaustion) is NOT executed in production: it would require ≥ the window limit of provider calls.");
   console.log("  D4 pooler: by construction (declared by Toni). D5/D6: not applicable (single instance). D7: read-only SQL by Toni (see design doc).");
@@ -216,6 +221,24 @@ async function main() {
     if (createdId) created.push(createdId);
     record("D3", executed === 1 && seq.status === 200 && seq.headers?.["idempotent-replayed"] === "true" && conflict.status === 422 && delta === 1,
       `executed=${executed} replays=${replays} in-progress=${inProgress} sequential=${seq.status}/replayed=${seq.headers?.["idempotent-replayed"]} conflict=${conflict.status} routinesDelta=${delta}`);
+  }
+
+  // D8 workout-generation quota (B2-F1): sequential distinct keys; exactly LIMIT accepted, the next one refused
+  if (only.includes("D8")) {
+    const body = { workoutType: "strength", duration: 30, difficulty: "beginner", trainingEnvironment: "home" };
+    const outcomes = [];
+    for (let i = 0; i <= WORKOUT_LIMIT; i += 1) {
+      const r = await call(`quota-${i}`, "POST", "/api/workouts/generate", { headers: { "Idempotency-Key": randomUUID() }, body, expectedStatuses: [] });
+      outcomes.push(r);
+      if (r.status === 201 && r.json?.id) created.push(r.json.id);
+      if (r.status === 429) break; // refused: stop spending
+    }
+    const accepted = outcomes.filter((r) => r.status === 201).length;
+    const last = outcomes[outcomes.length - 1];
+    const resetsAt = Date.parse(last.json?.windowResetsAt ?? "");
+    const refusedAsExpected = last.status === 429 && (last.json?.reason ?? last.json?.error?.reason) === "quota_exhausted" && resetsAt > Date.now();
+    record("D8", accepted === WORKOUT_LIMIT && refusedAsExpected,
+      `accepted=${accepted} (expected ${WORKOUT_LIMIT}) last=${last.status} reason=${last.json?.reason ?? "-"} windowResetsAt=${last.json?.windowResetsAt ?? "-"}`);
   }
 
   // cleanup of the routines created by the probes (the QA user itself is never deleted)
