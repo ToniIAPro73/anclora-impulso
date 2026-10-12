@@ -67,3 +67,31 @@ baja por la búsqueda, pero **no verificada con un build real** (el E2E aislado 
 - Esta propuesta no se ha probado con un *build* real ni en navegador.
 - Una CSP estricta no sustituye revisar el único `dangerouslySetInnerHTML` ni el saneado de entradas.
 - P0 por sí solo **no cierra** B1-F2: lo deja parcialmente mitigado y medible.
+
+## 8. Verificación del preview por el agente (2026-10-13)
+
+> Ejecutada con `agent-browser` (sesión propia) por orden de Toni, sobre el preview de `development` (`2e2d251`):
+> `anclora-impulso-amvus4wk1-pmi140979-6354s-projects.vercel.app`. Acceso a la protección de despliegues con un token OIDC de
+> corta duración de la CLI de Vercel de Toni (vía prevista, sin desactivar la protección ni usar secretos estáticos; el token no
+> se imprimió ni se guardó). Identidad QA dedicada; sin tocar la cuenta personal de Toni. Solo lectura de pantallas.
+
+| Comprobación | Resultado |
+|---|---|
+| Cabecera `Content-Security-Policy` en producción de preview | **P0 presente:** `script-src 'self' 'unsafe-inline'` (sin `jsdelivr`/`unpkg`), `base-uri 'self'`, `object-src 'none'` |
+| Cabecera `Content-Security-Policy-Report-Only` | **P1 presente:** nonce por petición + `strict-dynamic`, `report-uri /api/csp-report` |
+| Recorrido: login, dashboard, ejercicios, generar rutina (solo vista), nutrición, progreso, planes de salud, logros, legal | Todas cargan; **0 mensajes de consola y 0 errores de página** |
+| Aspecto visual (captura del dashboard) | Renderiza con estilos y fuentes correctos (modal de onboarding de la cuenta QA) |
+| Peticiones | ≈ 550: sin ninguna bloqueada salvo `vercel.live/_next-live/feedback/feedback.js` (barra de **comentarios del propio preview de Vercel**; no es de la aplicación, no existe en producción y ya estaba fuera de la política anterior) |
+| API (`anclora-impulso.onrender.com`) | 31 × `200` y 23 × `204` (preflights): **CORS correcto** con el origen del preview contra el backend actual |
+| Informes de violación | **131** `POST /api/csp-report` → `204` en 9 cargas (≈ 14 por página): la tubería P1 funciona y confirma que la política estricta bloquearía los scripts en línea de hidratación de las páginas estáticas |
+
+**Lectura:** P0 no rompe nada observable; P1 mide. **P2 queda confirmado como no trivial**: ≈ 14 violaciones por página en la
+política estricta, todas esperables por ser páginas estáticas sin nonce.
+
+**Aviso sobre B1-F1 (CORS):** el preview funciona hoy porque el backend desplegado aún tiene la regla antigua por prefijo. Tras
+desplegar el endurecimiento, este origen (`…-pmi140979-6354s-projects.vercel.app`) se rechazará salvo que se configure
+`FRONTEND_PREVIEW_HOST_SUFFIXES=-pmi140979-6354s-projects.vercel.app` o se liste el alias. El sufijo de equipo
+`pmi140979-6354s-projects` queda **confirmado** por este despliegue.
+
+**Límites:** un solo navegador y una sola cuenta; pantallas con el modal de onboarding encima; sin generar rutinas ni escribir
+datos; los informes llegaron al endpoint pero **no se leyeron en los logs de Vercel**; no se probó móvil ni claro/oscuro.
