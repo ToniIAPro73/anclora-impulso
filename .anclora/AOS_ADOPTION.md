@@ -9,7 +9,7 @@ Declaración de adopción AOS para `anclora-impulso`.
 - Adoption Status: Adopted
 - AOS Version: v0.2.0
 - Adoption Date: 2026-09-16
-- Last Reviewed: 2026-09-16
+- Last Reviewed: 2026-10-12
 - Governance Level: GL-1
 
 ## Propósito del repositorio
@@ -67,6 +67,25 @@ Declaración de adopción AOS para `anclora-impulso`.
 - LOCAL_MIGRATIONS=Prisma migrations may be created and applied to `anclora_impulso_test` only (authorized 2026-10-12). Production application is NOT covered.
 - OPEN_DISCREPANCY=`PRODUCTION_RUNTIME.md` declares Supabase migrations and Vercel serverless backend; the repository uses Prisma on Neon with an Express server. Decision pending for production; the contract is intentionally not rewritten here.
 
+## Decisión de arquitectura de producción y runner de migraciones (2026-10-12)
+
+- DECISION_ID=IMPULSO-ARCH-RUNNER-2026-10-12
+- DECIDED_BY=Toni (ToniIAPro73), instrucción explícita de la misión del 2026-10-12
+- ARCHITECTURE=Frontend Next.js en Vercel; backend Express en Render; PostgreSQL gestionado en Neon; migraciones con Prisma Migrate
+  (`backend/prisma/migrations/`).
+- SUPERSEDES=declaración previa de `PRODUCTION_RUNTIME.md` v2.0 (backend «Vercel Serverless Functions»; `MIGRATION_SYSTEM=Supabase
+  PostgreSQL`, `MIGRATION_STRATEGY=SUPABASE_DASHBOARD_OR_CLI`, `MIGRATION_RUNNER=MANUAL_OR_CONSOLE`). Texto previo conservado aquí y en el
+  historial Git; la discrepancia figuraba como `OPEN_DISCREPANCY` en la excepción de pruebas (más abajo), que **no** se modifica.
+- RUNNER=workflow manual `workflow_dispatch` de GitHub Actions con entorno `production-migrations` (aprobadores requeridos antes de exponer
+  el secreto), SHA completo inmutable, concurrencia serializada, permisos mínimos, sin despliegue de aplicación. **Aprobado como diseño;
+  no ejecutado.**
+- NO_VERIFICADO=configuración local efectiva (`PRODUCTION_BACKED`), existencia y protecciones del entorno de GitHub, secretos, conexión
+  directa frente a pooler, conexión del runner, ledger remoto (Q1).
+- LIMITES=no autoriza conectar a producción, configurar secretos, migrar, hacer backup, desplegar, promover, `preDeployCommand` en Render ni
+  aprobar el release. La excepción `IMPULSO-TEST-DB-2026-10-12` permanece tal como está y no se amplía.
+- LOCAL_RUNTIME_MODEL=PRODUCTION_BACKED (sin cambios). Docker PostgreSQL: fallback temporal reportado durante la interrupción de Neon, no el
+  modelo vigente.
+
 ## Historial de adopción
 
 | Fecha | Versión | Cambio | Owner |
@@ -74,4 +93,31 @@ Declaración de adopción AOS para `anclora-impulso`.
 | 2026-09-16 | v0.2.0 | Declaración inicial de adopción AOS. | ToniIAPro73 |
 | 2026-09-25 | v2.0 | Adopción de política canónica de QA proporcional, cadencia de puertas por lotes (BATCHED) y modelo de overrides explícitos. | ToniIAPro73 |
 | 2026-09-25 | v2.1 | Adopción de economía adaptativa (CAVEMAN_MODE=AUTO) y endurecimiento FAST QA (sin suites completas por defecto, mínimo suficiente, detención ante evidencia suficiente). | ToniIAPro73 |
+| 2026-10-12 | decisión | Arquitectura de producción Vercel + Render/Express + Neon + Prisma Migrate; runner manual protegido aprobado como diseño, no ejecutado (`IMPULSO-ARCH-RUNNER-2026-10-12`). | ToniIAPro73 |
+| 2026-10-12 | decisión | Verificador automatizado independiente autorizado y diseñado (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) para `production-migrations`. Toni mantiene el trigger manual; estado: local implementado, remoto no configurado. | ToniIAPro73 |
 
+## Decisión de verificador automatizado de migraciones (2026-10-12)
+
+- DECISION_ID=IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12
+- DECIDED_BY=Toni (ToniIAPro73), instrucción explícita del 2026-10-12
+- VERIFIER_TYPE=GitHub App Custom Deployment Protection Rule (`anclora-impulso-migration-verifier`)
+- ENVIRONMENT_TARGET=production-migrations
+- MECHANISM=Regla de protección automática que evalúa deterministamente firma de webhook, ancestría git de SHA, integridad de `_prisma_migrations` (solo lectura) y backup verificado de Neon.
+- STATUS=LOCAL_IMPLEMENTED_REMOTE_NOT_CONFIGURED (no desplegado, no configurado en GitHub, no verificado en sandbox).
+- AUTONOMIA=Sustituye la revisión rutinaria humana del entorno por una puerta determinista automatizada; no permite omitir gates ni iniciar migraciones sin invocación manual de Toni.
+
+
+## Decisión P1: verificación del runner con revisores y preflight local (2026-10-12)
+
+- DECISION_ID=IMPULSO-MIGRATION-VERIFICATION-P1-2026-10-12
+- DECIDED_BY=Toni (ToniIAPro73), instrucción explícita del 2026-10-12 («elijo P1»)
+- MODELO=Entorno `production-migrations` con **revisores requeridos** (la aprobación humana se mantiene) + **preflight local del operador**
+  (`scripts/verifier/operator-preflight.ts`, sin red ni BD ni secretos) sobre metadatos exportados a mano (ledger y backup). El resultado
+  es evidencia para una autorización humana, nunca una aprobación.
+- AFECTA_A=la decisión `IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`: el verificador como GitHub App (regla de protección personalizada)
+  queda **diferido (P2)**, no descartado; **no sustituye la revisión humana**. La frase «sustituye la revisión rutinaria humana» de esa
+  decisión queda sin efecto mientras P1 sea el modelo vigente.
+- MODELO_DE_SHA=SHA único: el commit validado y migrado es el commit sobre el que se despacha el workflow (`github.sha`); no hay input
+  `sha`. Manifiesto de release en el propio commit (`scripts/release/release-manifest.json`).
+- NO_VERIFICADO=entorno y revisores en GitHub, secreto, runner remoto, backup, ledger remoto. Nada ejecutado.
+- LIMITES=no autoriza migrar, desplegar, promover ni crear credenciales de producción.

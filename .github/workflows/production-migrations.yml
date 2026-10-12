@@ -1,0 +1,135 @@
+name: Production migrations (manual, protected)
+
+# DESIGN APPROVED BY TONI ON 2026-10-12 (runner) AND P1 CHOSEN FOR THE VERIFICATION MODEL — NOT EXECUTED, NOT VERIFIED ON GITHUB.
+# Applies the versioned Prisma migrations (backend/prisma/migrations) to the production database for ONE immutable commit.
+# It never deploys the application, never edits the ledger by hand and never runs: migrate dev, db push, migrate reset, migrate resolve.
+#
+# SINGLE-SHA MODEL (H2): there is NO sha input. The commit that is validated and migrated is the commit this run is dispatched
+# on (github.sha). Toni dispatches choosing the branch/tag whose commit is the candidate; reviewers see that commit in the run.
+#
+# BEFORE this workflow can be used (all of it is outside this file and is NOT verified here):
+#   1. Create the GitHub Environment `production-migrations` with REQUIRED REVIEWERS (decided: human approval is kept; P1).
+#      If the environment does not exist when a run reaches it, GitHub creates it WITHOUT protection: create it first.
+#   2. Store the secret PRODUCTION_MIGRATION_DATABASE_URL ONLY in that environment. It must be the DIRECT (non-pooler) Neon
+#      connection string; a hostname containing "-pooler" is refused (scripts/release/mask-and-check-db-url.mjs).
+#   3. The operator runs scripts/verifier/operator-preflight.ts locally (offline) on exported ledger/backup metadata and attaches
+#      its report to the authorization; its SHA-256 is given below. Q1, backup and migration 5 remain human responsibilities.
+#   4. Repository is PUBLIC: run logs are public. Host, user, password and database name are masked before Prisma prints anything.
+#
+# Triggers: manual only. No push / pull_request / schedule / workflow_run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ledger_reviewed:
+        description: "ATTESTATION by the operator: the production _prisma_migrations ledger was reviewed (operator preflight READY)"
+        required: true
+        type: boolean
+        default: false
+      backup_confirmed:
+        description: "ATTESTATION by the operator: a verifiable backup/branch exists and its identifier is given below"
+        required: true
+        type: boolean
+        default: false
+      backup_reference:
+        description: "Non-secret identifier of the backup (not a URL, not a credential)"
+        required: true
+        type: string
+      preflight_report_sha256:
+        description: "SHA-256 (64 hex) of the operator preflight report attached to the authorization"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-migrations
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate inputs and commit (no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.repository == 'ToniIAPro73/anclora-impulso'
+    steps:
+      - name: Validate inputs (format only)
+        env:
+          INPUT_LEDGER: ${{ inputs.ledger_reviewed }}
+          INPUT_BACKUP: ${{ inputs.backup_confirmed }}
+          INPUT_BACKUP_REF: ${{ inputs.backup_reference }}
+          INPUT_REPORT: ${{ inputs.preflight_report_sha256 }}
+        run: |
+          set -euo pipefail
+          [ "$INPUT_LEDGER" = "true" ] || { echo "::error::ledger_reviewed attestation is required"; exit 1; }
+          [ "$INPUT_BACKUP" = "true" ] || { echo "::error::backup_confirmed attestation is required"; exit 1; }
+          [[ "$INPUT_BACKUP_REF" =~ ^[A-Za-z0-9._:/@-]{4,120}$ ]] || { echo "::error::backup_reference must be a plain identifier (4-120 safe characters)"; exit 1; }
+          case "$INPUT_BACKUP_REF" in *://*) echo "::error::backup_reference must not be a URL"; exit 1 ;; esac
+          [[ "$INPUT_REPORT" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::preflight_report_sha256 must be 64 lowercase hex characters"; exit 1; }
+
+      - name: Checkout the dispatched commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate the candidate commit
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          # The validator is read from the DEFAULT BRANCH TIP, not from the candidate, so a candidate cannot weaken its own checks.
+          git show "origin/${DEFAULT_BRANCH}:scripts/release/validate-candidate.sh" > "$RUNNER_TEMP/validate-candidate.sh"
+          bash "$RUNNER_TEMP/validate-candidate.sh"
+
+  migrate:
+    name: Apply migrations (requires environment approval)
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Secrets of this environment are exposed to the job only after the environment's required reviewers approve.
+    environment: production-migrations
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_MIGRATION_DATABASE_URL }}
+      PRISMA_HIDE_UPDATE_MESSAGE: "1"
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - name: Checkout the dispatched commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Confirm commit and manifest, mask connection details (prints nothing sensitive)
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [ "$(git rev-parse HEAD)" = "$CANDIDATE_SHA" ] || { echo "::error::checked-out commit differs from the dispatched commit"; exit 1; }
+          node scripts/release/verify-release-manifest.mjs .
+          [ -n "${DATABASE_URL:-}" ] || { echo "::error::the environment secret is not available"; exit 1; }
+          node scripts/release/mask-and-check-db-url.mjs
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install backend dependencies (frozen lockfile)
+        working-directory: ./backend
+        run: pnpm install --frozen-lockfile --prod=false
+
+      - name: Apply versioned migrations (prisma migrate deploy)
+        working-directory: ./backend
+        run: pnpm exec prisma migrate deploy

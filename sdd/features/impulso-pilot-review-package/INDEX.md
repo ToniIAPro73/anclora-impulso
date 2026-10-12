@@ -101,3 +101,14 @@ No task or gate status changed; no reviewer, approval or signature exists; Herme
 Delta bundle: `artifacts/review-bundles/anclora-impulso-review-delta-NF1-F1-F2-F3-*.zip` (see doc 16 / its STATUS). No task or gate status changed.
 Addendum to doc 16 §9 (F-1-A, F-1-B) + small delta `anclora-impulso-review-delta-F1AB-*.zip`. No task or gate status changed.
 | 17 | `17-oauth-f4-handoff-and-linking.md` | OAuth increment: F-4 (one-time handoff bound to the browser) and e-mail linking policy; local, uncommitted, simulated providers |
+| 18 | `18-preflight-and-release-runbook-draft.md` | read-only preflight and DRAFT runbook for migrations/promotion (not an authorization; nothing executed) |
+| 19 | `19-hosting-environment-audit-readonly.md` | read-only hosting audit (Vercel control plane): branch->deployment mapping, staging is a real preview; DB/backend undetermined |
+| 20 | `20-render-vercel-preview-backend-audit-readonly.md` | read-only Render <-> Vercel preview backend investigation (indeterminate: no panel/env read; Render likely the production backend) |
+| 21 | `21-d10-production-migration-runbook-v2.md` | D10 runbook v2 (documentary draft; RELEASE NOT AUTHORIZED); supersedes outdated points of D10 v1 without editing it |
+| 22 | `22-d10-checklist-resolution-v1.md` | D10 checklist review: status of the nine questions, blockers, grouped consultation (RELEASE NOT AUTHORIZED) |
+| 22 | `22-d10-checklist-resolution-v1.md` (addendum v1.1) | D10 checklist: decisions of Toni recorded; Q1 authorized but NOT executed; ANCLORA_AUTHORITY_CONFLICT on migration; RELEASE NOT AUTHORIZED |
+| 23 | `23-d10-architecture-and-runner-decision.md` | Q3 decided documentally: Vercel + Render/Express + Neon + Prisma Migrate; manual protected runner designed (not executed); RELEASE NOT AUTHORIZED |
+| 24 | `24-production-migrations-runner-readiness-report-v1.md` | runner readiness assessment: local defenses verified, actionlint/pinning partial, remote blocked (env/secret/workflow push); RELEASE NOT AUTHORIZED |
+| 25 | `25-d10-automated-migration-verifier-report-v1.md` | automated D10 verifier (GitHub App protection rule): trust boundaries, backup limits, open decisions OD-01..04, local 20/20 PASS; RELEASE NOT AUTHORIZED |
+| 26 | `26-d10-verifier-binding-design-decision-v1.md` | verifier design: SHA binding (H2), payload corrections confirmed against GitHub docs (H1), P1/P2 decision; proposal only, RELEASE NOT AUTHORIZED |
+| 27 | `27-d10-p1-operator-preflight-procedure-v1.md` | P1 chosen by Toni: single-SHA workflow, local operator preflight, H2/H4/H8 implemented locally; P2 deferred; RELEASE NOT AUTHORIZED |

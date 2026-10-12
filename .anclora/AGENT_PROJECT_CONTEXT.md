@@ -87,7 +87,7 @@ report `ANCLORA_AUTHORITY_CONFLICT` with details and stop the affected action.
 ## 4. Core Project Contracts
 
 - **PRODUCTION_RUNTIME**: [`.anclora/PRODUCTION_RUNTIME.md`](PRODUCTION_RUNTIME.md)
-  - Governs real runtime architecture, hosting, Neon/Postgres database connection, SUPABASE_DASHBOARD_OR_CLI migration strategy, auth, and production-backed local model.
+  - Governs real runtime architecture (Vercel frontend, Render/Express backend, Neon/Postgres), Prisma Migrate strategy and its manual protected GitHub Actions runner (design approved 2026-10-12, not executed), auth, and production-backed local model.
 - **AOS_ADOPTION**: [`.anclora/AOS_ADOPTION.md`](AOS_ADOPTION.md)
   - Governs AOS alignment, governance level, standards, and referenced authoritative knowledge.
 
@@ -126,7 +126,7 @@ Repository-specific runtime minima are defined in [`PRODUCTION_RUNTIME.md`](PROD
 | Task Domain | Primary Authority to Read First | Secondary / Operational Sources |
 | :--- | :--- | :--- |
 | **Runtime / Hosting / Env** | [`.anclora/PRODUCTION_RUNTIME.md`](PRODUCTION_RUNTIME.md) | `.env.local` (mode 0600) |
-| **Database / Migrations** | [`.anclora/PRODUCTION_RUNTIME.md`](PRODUCTION_RUNTIME.md) | `MANAGED_REMOTE` |
+| **Database / Migrations** | [`.anclora/PRODUCTION_RUNTIME.md`](PRODUCTION_RUNTIME.md) | `backend/prisma/migrations/`, `.github/workflows/production-migrations.yml`, `scripts/verifier/` |
 | **AOS Governance** | [`.anclora/AOS_ADOPTION.md`](AOS_ADOPTION.md) | [`../../anclora-governance/`](../../anclora-governance/) |
 | **Design / UI Tokens** | [`../../anclora-design-system/`](../../anclora-design-system/) | [`../../anclora-vault/00-governance/contracts/`](../../anclora-vault/00-governance/contracts/) |
 | **Git Workflow** | [`.anclora/PRODUCTION_RUNTIME.md`](PRODUCTION_RUNTIME.md) | `../AGENTS.md` |

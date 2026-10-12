@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "migrations": [
+    {
+      "name": "20251120020551_init",
+      "sha256": "ffee5ff13245291713ec0d9bc2fed9e6359525e7b3dea726149f80b3dec8861b"
+    },
+    {
+      "name": "20260312215517_add_nutrition_and_gamification",
+      "sha256": "4c35425ef0a7facb9e791ae08eac79d919af884672198fc58207b12ec20d8113"
+    },
+    {
+      "name": "20260313033000_add_intermittent_fasting_tracking",
+      "sha256": "b8c1e49f7d411c407870fdb9bdf0622a591d8573d6b9266b2aa45f65ba1c0762"
+    },
+    {
+      "name": "20260315094500_add_training_environments_to_exercises",
+      "sha256": "acd7db4dcf9933d9019677d13466c9f93146296a31ea93ac7ca75f514536d6fc"
+    },
+    {
+      "name": "20260316205731_add_user_profile_fields",
+      "sha256": "0f55d6b11b0e944e33667fdbddfef452b8b55371bd97815248313e8ff369b913"
+    },
+    {
+      "name": "20260317044414_add_onboarding_personalization_fields",
+      "sha256": "32393301b96650ad5373d417818f6e70cab5e7100f272d78fd929a0cbb538bf1"
+    },
+    {
+      "name": "20260317063733_add_product_events_and_admin_ops",
+      "sha256": "023fc296b5bc5952de37391835bfe2c91cda925ffc1e96f3158097c88a5677a6"
+    },
+    {
+      "name": "20260318090000_add_reminder_preferences",
+      "sha256": "98e8cd07ddbbe07afd5a3a5bb62bf132fc6506af5e44590ee42a5d4628c66eed"
+    },
+    {
+      "name": "20260318112240_add_notification_deliveries_and_editorial_overrides",
+      "sha256": "82fe2d95f2d281e941690cf7119e344b9155cab4f6e8d4d4069ee5a22468d082"
+    },
+    {
+      "name": "20260328043000_extend_nutrition_recipe_library",
+      "sha256": "c7ad7dfb75dd031cb7e7eacacd33247857330469e13655fc95a90748b647e730"
+    },
+    {
+      "name": "20260714152000_add_advanced_strength_tracking",
+      "sha256": "4fb22180cf633ec7e352c0ecf5b6e8b7c4c5c95ff1259a2754b4e788e69d68ca"
+    },
+    {
+      "name": "20260714160000_add_exercise_progression_state",
+      "sha256": "010ac8d6937c96883587c3653b87c8af06f967aba4a5ca0351df389b9970e59f"
+    },
+    {
+      "name": "20260714172000_add_llm_coach",
+      "sha256": "2a8232189385a38a57779cfb63a39118a367d2f4f30576c2a4de2b03b38850c1"
+    },
+    {
+      "name": "20260714174500_add_social_community",
+      "sha256": "60e2175206db656ad2712523c55d540099ff62344365cdccd75f99e5fdbb39ac"
+    },
+    {
+      "name": "20260714181500_add_smart_nutrition",
+      "sha256": "bfe5b30c0037b4a18b76ad1e4475423103b9c6d9d80392ce5ee769720710db7a"
+    },
+    {
+      "name": "20260714192000_add_wearables_readiness",
+      "sha256": "6caf55db0c8994409dc16972efcf9fd02aa5ade8b5a1d3d42161aa160de1ca3c"
+    },
+    {
+      "name": "20260714200000_add_premium_form_voice",
+      "sha256": "8ff2ef72d15b91e6cbfb04bbe39d6f95a797de519b696ed0591ada5f51287958"
+    },
+    {
+      "name": "20260717090000_replace_oven_nutrition_preparations",
+      "sha256": "5e378ab65cd1af65fafc759160679c337584fbcbdddc684e3ce688a4a6e2b05b"
+    },
+    {
+      "name": "20260905093156_add_oauth_accounts",
+      "sha256": "17934a75a717dc2b703292700a348e94d92a51d0f311f3fda7c9f63d2c334ff4"
+    },
+    {
+      "name": "20260914130000_add_health_plans",
+      "sha256": "1ce3b483d56beaff6b1aab5d0a8edd9445b3d6003b62ce5839ded4e384d0f732"
+    },
+    {
+      "name": "20261012030000_add_workout_generation_provenance",
+      "sha256": "940e0cbbae4fe472f32d9e6db952a8a71f2cce6078d32295c278fe7a8801d9f9"
+    },
+    {
+      "name": "20261012030100_add_idempotency_records",
+      "sha256": "3c4df0099f2e83c0aacad8444647a25ffc28d14d146b36487558a9c0fb804584"
+    },
+    {
+      "name": "20261012030200_add_auth_sessions",
+      "sha256": "d79b1dc14ab414def77cc926237a963021a83bae60d52a4b36d99bd41b1b0c45"
+    },
+    {
+      "name": "20261012040000_add_coach_usage_operational_counters",
+      "sha256": "63f6e084eddab7de6dd4a58a3dae808f54d018bb412554ecd7be19c42b4ebb25"
+    },
+    {
+      "name": "20261012050000_add_idempotency_quota_reservation",
+      "sha256": "4becd718c9cd71fb9222ff3ea485729030abd71c20da8ea428647f1d57039ece"
+    },
+    {
+      "name": "20261012090000_add_oauth_handoffs",
+      "sha256": "cd8d9e7955ea5a9d6a7a7d729a7f42fb6c510087afb17657fbb7e0b39c8aa888"
+    }
+  ]
+}
