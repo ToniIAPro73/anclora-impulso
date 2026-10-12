@@ -3,6 +3,9 @@
 > **Borrador, no dictamen.** Redactado por el agente que implementó el código revisado: **no independiente**. Toni lo revisa,
 > lo contrasta y, solo si lo hace suyo, lo firma. No acepta AI-08 ni gate alguno. Plantilla: `33-…` §5 y §6. Pareja: `37-…`.
 
+> **Verificación en producción (2026-10-13):** B2-F1 desplegado (`41a427a`) y comprobado con la sonda D8: 10 aceptadas y la undécima
+> `429 quota_exhausted` (`32-…` §7).
+>
 > **Actualización posterior (2026-10-13):** B2-F1 está **corregido en código** (commit `4eb8e1b`, `39-design-workout-generation-quota-v1.md`):
 > tope por usuario de 10 generaciones/hora contado desde el libro de idempotencia, con 9 tests nuevos y control negativo; CI en verde.
 > **No está desplegado en producción** (Render sigue en `c0333f3`) ni verificado allí. Este borrador conserva su texto original

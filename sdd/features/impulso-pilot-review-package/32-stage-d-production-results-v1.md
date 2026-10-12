@@ -68,3 +68,36 @@
 
 Stage D **no queda completo**: falta D2, que solo es evaluable activando el coach, y no se ha hecho. Mientras el coach siga
 desactivado, el riesgo asociado no está expuesto a usuarios; si se activa, D2 es requisito previo.
+
+## 7. Sonda D8 — tope de generación de rutinas (B2-F1), ventana `win-20261013a` (2026-10-13)
+
+> Verificación en producción de la corrección `4eb8e1b` (diseño: `39-design-workout-generation-quota-v1.md`). Desplegado por Toni
+> como `41a427a` (idéntico en `backend/`, `app/`, `components/` y `lib/`; solo difiere en documentación). Script `0280da1`.
+
+| Campo | Valor |
+|---|---|
+| Ejecución | Toni, identidad QA dedicada, `--only=D8`, ≈ 22:41 UTC del 2026-10-12 (00:41 CEST del 13) |
+| Peticiones | 22 de 40; sin parada |
+| Evidencia local | `artifacts/stage-d/20261012T224154Z-a243cc39/` (no versionada) |
+| SHA-256 `results.json` | `2e355e741a0390295c2b3a0c635d2d4547396c508e0cda3b98d9224e305f140a` |
+| SHA-256 `transcript.json` | `d788a603360d0c3d93383355183568b53fe87c6409ac4e09017f2dab9a48a108` |
+| Manifiesto | verificado (`shasum -c`: ambos OK) |
+
+| Resultado | Observado |
+|---|---|
+| D0 login | PASS |
+| **D8 tope** | **PASS**: 10 × `201` (`quota-0` … `quota-9`) y la undécima `429` con `reason: quota_exhausted`, `windowResetsAt = 2026-10-12T23:41:56Z` y `Retry-After: 3596` (≈ 1 h menos 4 s: la ventana de 60 min desde el primer registro contado) |
+| Rechazo | `429` en **85 ms**: no llegó a ejecutar la generación ni a llamar al proveedor |
+| Limpieza | 10 × `DELETE` → `204`; usuario QA conservado |
+
+**Lectura:** el mecanismo del tope está activo en producción y se comporta como el diseño: exactamente el límite aceptado, la
+siguiente rechazada con el instante de reinicio. **El límite observado (10) coincide con el valor por defecto**, por lo que no hay
+una `WORKOUT_GENERATE_WINDOW_LIMIT` distinta fijada en Render.
+
+**Límites:**
+- Una sola ráfaga secuencial desde un cliente: no prueba el comportamiento exacto bajo concurrencia real en producción (sí cubierta en
+  local: 12 simultáneas con tope 3 ⇒ 3 ejecutadas y 9 rechazadas).
+- Latencias de 205–1000 ms por generación: **no permiten saber si usó el proveedor de IA o la plantilla** (el script no registra
+  `generationMode`). Por tanto, el coste real de la sonda es desconocido: entre 0 y 10 llamadas.
+- No verifica que 10/hora sea el valor correcto para el producto ni la experiencia del cliente ante el `429`.
+- **No acepta AI-08.**
