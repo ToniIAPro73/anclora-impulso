@@ -269,7 +269,7 @@ export function WorkoutGenerator() {
                 <Label>{isSpanish ? "Tipo de Entrenamiento" : "Workout Type"}</Label>
                 <Select
                   value={preferences.workoutType}
-                  onValueChange={(value: WorkoutType) => setPreferences({ ...preferences, workoutType: value })}
+                  onValueChange={(value) => setPreferences({ ...preferences, workoutType: value as WorkoutType })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -305,7 +305,7 @@ export function WorkoutGenerator() {
                 <Label>{isSpanish ? "Nivel de Dificultad" : "Difficulty Level"}</Label>
                 <Select
                   value={preferences.difficulty}
-                  onValueChange={(value: WorkoutDifficulty) => setPreferences({ ...preferences, difficulty: value })}
+                  onValueChange={(value) => setPreferences({ ...preferences, difficulty: value as WorkoutDifficulty })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -321,8 +321,8 @@ export function WorkoutGenerator() {
                 <Label>{isSpanish ? "Entorno de entrenamiento" : "Training environment"}</Label>
                 <Select
                   value={preferences.trainingEnvironment}
-                  onValueChange={(value: WorkoutPreferences["trainingEnvironment"]) =>
-                    setPreferences({ ...preferences, trainingEnvironment: value })
+                  onValueChange={(value) =>
+                    setPreferences({ ...preferences, trainingEnvironment: value as WorkoutPreferences["trainingEnvironment"] })
                   }
                 >
                   <SelectTrigger>
