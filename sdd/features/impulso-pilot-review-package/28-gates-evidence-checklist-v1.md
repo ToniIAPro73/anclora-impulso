@@ -38,6 +38,11 @@ Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos
 *Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
 nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
 
+### DECISIÓN DEL PROPIETARIO (2026-10-13): matriz H4 aprobada y G1–G4 aceptados
+Toni aceptó la matriz H4 (`43-…` §7) y los gates G1–G4 por decisión expresa. **Los veredictos técnicos de este documento no
+cambian** y se conservan como evidencia de lo que había en el momento de la decisión. Detalle y límites: `.anclora/AOS_ADOPTION.md`
+(`IMPULSO-OWNER-ACCEPTANCE-H4-G1G4-2026-10-13`). **No autoriza `main` ni acepta las tareas AI-xx por separado.**
+
 ### Actualización (2026-10-13): gate Hermes, cuarta ronda
 Aprobadas A1–A3 y aplicadas B1–B4 y C1–C2 (`42-…` §8); incluye una corrección funcional del cliente (clave de idempotencia agotada).
 Verificado en local: Jest 150, E2E 13/13. **Sin desplegar a producción.** AI-02 sigue sin aceptarse.

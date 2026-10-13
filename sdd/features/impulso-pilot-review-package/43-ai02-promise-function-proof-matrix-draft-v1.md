@@ -1,5 +1,9 @@
 # 43 — BORRADOR de la matriz promesa → función → prueba de AI-02 (H4) (v1, 2026-10-13)
 
+> **APROBADA POR EL PROPIETARIO (Toni, 2026-10-13), por decisión expresa en la sesión.** Era un borrador redactado por el agente; la
+> aprobación es del propietario del producto, **sin revisión profesional ni legal** (A y D diferidos). Estado actualizado tras los
+> cambios de copy de las rondas de Hermes: ver §7. El resto del documento conserva su texto original como historia.
+
 > **Borrador del agente, no matriz aprobada.** El criterio del plan para AI-02 es «todas las promesas de pago trazan a capacidad
 > probada» con «matriz aprobada» como evidencia (`34-…` §«Original acceptance»). Este documento prepara la matriz; **no** la aprueba
 > ni acepta AI-02. Hoy **no existe paywall** (`01-…`, AI-15 a AI-17), por lo que las «promesas» son las de la copy pública y del
@@ -76,3 +80,28 @@ pasado por Hermes.** Los veredictos M1, M7 y M12 de la tabla §2 describen el es
 **Candidata adicional (no aplicada):** `lib/impulso-brand.ts` → descripción global de la página (metadato que ven buscadores y redes):
 «Aplicación premium de fitness con **IA**, progreso y seguimiento **inteligente**.» Afirma «con IA» sin condicionarlo y repite
 «inteligente». Requiere decisión de Toni y pasar por Hermes.
+
+## 7. Aprobación y estado actualizado (2026-10-13)
+
+**Aprobación:** Toni aprueba esta matriz como la matriz promesa → función → prueba de AI-02 (H4). Forma: decisión expresa del propietario;
+no consta revisión de un tercero.
+
+**Estado de las promesas tras los cambios de copy (rondas 1–4 de Hermes):**
+
+| # | Promesa vigente | Veredicto actual | Motivo |
+|---|---|---|---|
+| M1 | «Entrenamientos personalizados, seguimiento de tu progreso y análisis de tus resultados…» | **Cubierta** | Sin «inteligente» ni «completo»; respaldada por M2 y M3 |
+| M2 | «Planes adaptados… con apoyo de IA cuando está disponible» | **Cubierta** | Sin cambios |
+| M3 | Seguimiento de fuerza, medidas y récords | **Parcial** | La promesa «análisis completo» ya no figura; el seguimiento está probado |
+| M4 | «Progresión basada en reglas que ajusta carga y repeticiones según tu rendimiento» | **Cubierta** | La copy ya describe lo que hace el motor (`progression-engine`, `progression-next-session`); sigue sin revisión profesional |
+| M5 | «La rutina no sale de un generador ciego: usa tu objetivo, adherencia y señales recientes» | **Parcial** | Sin cambio; sin prueba que fije el efecto de la adherencia en modo plantilla |
+| M6 | Pauta nutricional «usa tu objetivo, tu constancia reciente…» | **Parcial** | Sin cambio |
+| M7 | «Recordatorios» | **Cubierta como etiqueta** | Ya no promete «inteligencia»; el envío por correo sigue sin prueba y SMTP sin verificar |
+| M8 | Aviso de salud «no sustituye una valoración profesional» | **Cubierta** (aviso) | Suficiencia legal sin revisar (D diferida) |
+| M9 | «Es un plan válido» (plantilla) | **Cubierta técnicamente** | Validador de ingeniería; límites sin respaldo profesional |
+| M10 | «Generado con IA» | **Cubierta** | Aprobada por Hermes |
+| M11 | Aviso de tope de generaciones | **Cubierta** | Aprobada por Hermes; sonda D8 en producción |
+| M12 | «Configura tu perfil» | **Resuelta** | Ya no atribuye capacidad |
+
+**Lo que la aprobación no cambia:** M5 y M6 siguen parciales, M7 sigue sin prueba del envío, y M4/M9 siguen sin revisión profesional. Se
+aprueba la matriz **tal como describe el estado real**, con esas limitaciones declaradas.

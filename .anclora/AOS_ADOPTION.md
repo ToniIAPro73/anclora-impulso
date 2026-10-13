@@ -86,6 +86,24 @@ Declaración de adopción AOS para `anclora-impulso`.
 - LOCAL_RUNTIME_MODEL=PRODUCTION_BACKED (sin cambios). Docker PostgreSQL: fallback temporal reportado durante la interrupción de Neon, no el
   modelo vigente.
 
+## Aceptación por el propietario de la matriz H4 y de los gates G1–G4 (2026-10-13)
+
+- DECISION_ID=IMPULSO-OWNER-ACCEPTANCE-H4-G1G4-2026-10-13
+- DECIDED_BY=Toni (ToniIAPro73), mensaje del 2026-10-13: «acepto la matriz H4, G1-G4 aceptados»
+- ALCANCE=(1) Matriz promesa → función → prueba de AI-02 (`sdd/features/impulso-pilot-review-package/43-…`): aprobada. (2) Gates del
+  plan piloto G1 (AI-10), G2 (AI-20), G3 (AI-26) y G4 (AI-30): aceptados **por decisión del propietario**.
+- FORMA=Decisión expresa del propietario del producto. **No consta** revisión independiente, profesional, legal ni de seguridad
+  externa: los revisores A (profesional) y D (legal) están diferidos; B1 y B2 son adopciones delegadas del propietario; Hermes cubre solo
+  la copy del generador y los textos inventariados.
+- CONDICIONES_DEL_PLAN_NO_CUMPLIDAS_AL_ACEPTAR=Dependencias de G1 sin aceptar individualmente: AI-03 (revisión profesional), AI-04/05
+  (dependen de AI-03), AI-06 AC10 y AI-08 (revisión independiente), AI-07 (revisión legal), AI-09 (restauración completa no ensayada),
+  AI-01 (sin aceptación expresa). Dependencias de G2 inexistentes: AI-14 (sin UI de coach), AI-15/16/17 (no hay pagos), AI-19 (sin
+  datos de coste). Criterios de G3 y G4: no constan en el repositorio.
+- LO_QUE_NO_CAMBIA=La aceptación de un gate **no acepta por sí misma** las tareas AI-xx que lo componen, **no autoriza** la promoción
+  `production → main` ni ninguna acción sobre producción, y no sustituye las revisiones diferidas. Cualquier promoción a `main` requiere
+  orden expresa y separada.
+- TRAZABILIDAD=`28-gates-evidence-checklist-v1.md` conserva el veredicto técnico anterior a esta decisión.
+
 ## Historial de adopción
 
 | Fecha | Versión | Cambio | Owner |
@@ -95,6 +113,7 @@ Declaración de adopción AOS para `anclora-impulso`.
 | 2026-09-25 | v2.1 | Adopción de economía adaptativa (CAVEMAN_MODE=AUTO) y endurecimiento FAST QA (sin suites completas por defecto, mínimo suficiente, detención ante evidencia suficiente). | ToniIAPro73 |
 | 2026-10-12 | decisión | Arquitectura de producción Vercel + Render/Express + Neon + Prisma Migrate; runner manual protegido aprobado como diseño, no ejecutado (`IMPULSO-ARCH-RUNNER-2026-10-12`). | ToniIAPro73 |
 | 2026-10-12 | ejecución | Migración de producción ejecutada (run #1, P1) y backend desplegado manualmente en `c0333f3`; rama del servicio Render permanece en `development` (`IMPULSO-PRODUCTION-MIGRATION-EXECUTED-2026-10-12`). | ToniIAPro73 |
+| 2026-10-13 | decisión | Matriz H4 aprobada y gates G1–G4 aceptados por el propietario, sin revisiones independientes (`IMPULSO-OWNER-ACCEPTANCE-H4-G1G4-2026-10-13`). No autoriza `main`. | ToniIAPro73 |
 | 2026-10-12 | decisión | Stage D de A-08-01 en producción con identidad QA, sin crear staging (`IMPULSO-STAGE-D-ON-PRODUCTION-2026-10-12`); procedimiento definido, no ejecutado. | ToniIAPro73 |
 | 2026-10-12 | decisión | Verificador automatizado independiente autorizado y diseñado (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) para `production-migrations`. Toni mantiene el trigger manual; estado: local implementado, remoto no configurado. | ToniIAPro73 |
 
