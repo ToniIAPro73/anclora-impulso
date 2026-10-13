@@ -83,3 +83,17 @@ Toni en el formulario de login; **no procede de la aplicación** (no aparece en 
 
 **Límites:** un navegador, una cuenta nueva sin historial, sin generar rutinas ni escribir datos, no se probó móvil ni claro/oscuro. La
 descripción global del sitio (metadato) no se inspeccionó en el navegador.
+
+## 7. Promoción `production → main` y verificación de los dominios reales (2026-10-13)
+
+| Dato | Valor |
+|---|---|
+| Orden | Expresa, de Toni, en la sesión del 2026-10-13 |
+| Workflow | `promote.yml`, run `38340063885`, `success` (4 comprobaciones; avance rápido de `77f852a` a `7226c5a`) |
+| Despliegue de Vercel | Entorno **Production**, `success` (`anclora-impulso-cywx3i2mj-pmi140979-6354s-projects.vercel.app`) |
+| Dominios | `https://impulso.anclora.com` y `https://anclora-impulso.vercel.app`: `/landing` 200, copy nueva y metadato nuevo, 0 apariciones de «inteligente», CSP y CSP Report-Only presentes |
+| Sesión desde `impulso.anclora.com` | Login con la cuenta QA dedicada correcto (POST 200, preflight 204); `/dashboard`, `/nutrition`, `/progress`, `/workouts/generate` y `/health-plans`: 0 consola, 0 errores; API 30 × 200 y 15 × 204; 0 fallidas |
+
+**No verificado:** el inicio de sesión con **Google/GitHub** (los botones están habilitados en producción y requieren una cuenta real de cada
+proveedor y configuración de callbacks); móvil y modo claro/oscuro; carga sostenida. **Reversión:** no hay mecanismo automático; se
+recuperaría redesplegando el despliegue anterior de Production en Vercel o moviendo `main`.
