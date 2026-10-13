@@ -85,7 +85,7 @@
     "progressTracking": "Seguimiento de Progreso",
     "progressTrackingDesc": "Análisis completo que rastrea tus ganancias de fuerza, medidas corporales y récords personales",
     "adaptiveProgramming": "Programación Adaptativa",
-    "adaptiveProgrammingDesc": "Progresión inteligente que se adapta a tu rendimiento y ajusta automáticamente la dificultad"
+    "adaptiveProgrammingDesc": "Progresión basada en reglas que ajusta carga y repeticiones según tu rendimiento"
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",
@@ -118,7 +118,7 @@
     "nutritionToday": "Nutrición Hoy",
     "proteinLabel": "proteína",
     "noMealsLogged": "Sin comidas registradas",
-    "nutritionHub": "Nutrición Inteligente",
+    "nutritionHub": "Nutrición",
     "nutritionHubPlanDesc": "Revisa tu plan y tus macros del día",
     "nutritionHubEmptyDesc": "Activa tu nutrición con plan y registro diario",
     "viewNutrition": "Ver Nutrición",

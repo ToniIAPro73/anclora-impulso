@@ -140,7 +140,11 @@ export function WorkoutGenerator() {
         },
       })
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429 && typeof err.details.windowResetsAt === "string") {
+      if (err instanceof ApiError && err.status === 429 && err.details.reason === "concurrency_limit") {
+        setError(isSpanish ? "Demasiadas solicitudes simultáneas; inténtalo de nuevo en unos segundos." : "Too many simultaneous requests; please try again in a few seconds.")
+      } else if (err instanceof ApiError && err.status === 429 && err.details.reason === "idempotency_attempts_exhausted") {
+        setError(isSpanish ? "Demasiados intentos fallidos; vuelve a generar el entrenamiento." : "Too many failed attempts; please generate the workout again.")
+      } else if (err instanceof ApiError && err.status === 429 && typeof err.details.windowResetsAt === "string") {
         const resetAt = new Date(err.details.windowResetsAt).toLocaleTimeString(isSpanish ? "es-ES" : "en-US", { hour: "2-digit", minute: "2-digit" })
         setError(isSpanish ? `Has alcanzado el límite de generaciones de este periodo. Podrás generar otra a las ${resetAt}.` : `You have reached the generation limit for this period. You can generate another at ${resetAt}.`)
       } else {

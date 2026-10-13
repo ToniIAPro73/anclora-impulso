@@ -221,7 +221,7 @@ export function ProgressTracker() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BrainCircuit className="h-5 w-5 text-orange-400" />
-              {isSpanish ? "Lectura inteligente del progreso" : "Intelligent progress readout"}
+              {isSpanish ? "Resumen de progreso" : "Progress summary"}
             </CardTitle>
             <CardDescription className="text-slate-300">
               {isSpanish

@@ -165,3 +165,30 @@ Pregunta adicional: la descripción global del sitio (lib/impulso-brand.ts) dice
 "IA cuando está disponible" y sin "inteligente"?
 Indica quién eres, la fecha y el commit revisado.
 ```
+
+## 8. Cuarta ronda: respuesta de Hermes y aplicación (2026-10-13)
+
+> Revisor «Hermes Copy Curator», 2026-10-13, commit `5a5b05d`. Resumen fiel; el texto íntegro lo pegó Toni en la conversación.
+
+| Ítem | Veredicto de Hermes | Aplicado | Texto final (ES · EN) |
+|---|---|---|---|
+| A1 `home.subtitle` | Aprobada tal cual | — | (sin cambios) |
+| A2 `dashboard.remindersTitle` | Aprobada tal cual | — | (sin cambios) |
+| A3 título del onboarding | Aprobada tal cual | — | (sin cambios) |
+| B1 `home.adaptiveProgrammingDesc` | Cambios | **Sí, literal** | «Progresión basada en reglas que ajusta carga y repeticiones según tu rendimiento» · «Rule-based progression that adjusts load and reps based on your performance» |
+| B2 `dashboard.nutritionHub` | Cambios | **Sí, literal** | «Nutrición» · «Nutrition» |
+| B3 `progress-tracker.tsx` | Cambios | **Sí, literal** | «Resumen de progreso» · «Progress summary» |
+| B4 descripción global (`lib/impulso-brand.ts`) | Cambios | **Sí (solo ES)** | «Aplicación de fitness con generación por IA cuando está disponible, seguimiento de progreso y progresión basada en reglas.» La versión EN propuesta no se usa: el metadato solo existe en español |
+| C1 `concurrency_limit` | Cambios | **Sí, literal** | «Demasiadas solicitudes simultáneas; inténtalo de nuevo en unos segundos.» · «Too many simultaneous requests; please try again in a few seconds.» |
+| C2 `idempotency_attempts_exhausted` | Cambios | **Sí, literal, con corrección funcional** | «Demasiados intentos fallidos; vuelve a generar el entrenamiento.» · «Too many failed attempts; please generate the workout again.» |
+
+**Corrección funcional que exige C2 (hallazgo del agente, no de Hermes):** el cliente conservaba la clave de idempotencia tras ese
+`429`, de modo que «vuelve a generar» habría reutilizado la clave agotada y obtenido el mismo rechazo en bucle. `lib/idempotency.ts` ahora
+trata ese `429` como rechazo definitivo de **esa clave** (la libera) y no lo reintenta; los demás `429` (`quota_exhausted`,
+`concurrency_limit`) mantienen su comportamiento. Test nuevo con fase roja observada: la clave se conservaba.
+
+**Verificación:** Jest frontend 21 suites / **150** tests; `tsc` limpio; E2E aislado `session-and-fallback` **13/13**, con aserciones nuevas
+para C1 y C2 (texto localizado y ausencia del texto inglés del servidor). **Sin desplegar** a producción (frontend: solo al mover `main`).
+
+**Lo que queda fuera:** AI-02 sigue sin aceptarse (matriz H4 sin aprobar, revisión profesional y legal pendientes). Esta ronda cubre las cadenas
+inventariadas en `44-…` §4, **no toda la copy de la aplicación**.

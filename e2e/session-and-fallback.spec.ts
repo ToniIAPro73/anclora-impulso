@@ -326,5 +326,30 @@ test('error states: server failure and quota exhaustion are explained and create
   await expect(page.getByTestId('generate-error')).toContainText(/Podrás generar otra|You can generate another/);
   await expect(page.getByTestId('generate-error')).not.toContainText(/restablece|resets/i);
 
+  // Hermes gate (round 4): other 429 reasons are explained in the user's language, not with the server's English text.
+  await page.unroute('**/workouts/generate');
+  await page.route('**/workouts/generate', (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Too many generation requests in flight; retry shortly', reason: 'concurrency_limit', retryAfterSeconds: 1 }),
+    }),
+  );
+  await page.getByTestId('generate-workout').click();
+  await expect(page.getByTestId('generate-error')).toContainText(/solicitudes simultáneas|simultaneous requests/, { timeout: 30_000 });
+  await expect(page.getByTestId('generate-error')).not.toContainText(/in flight|Idempotency/);
+
+  await page.unroute('**/workouts/generate');
+  await page.route('**/workouts/generate', (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Too many attempts for this Idempotency-Key; start a new request later', reason: 'idempotency_attempts_exhausted', attempts: 3 }),
+    }),
+  );
+  await page.getByTestId('generate-workout').click();
+  await expect(page.getByTestId('generate-error')).toContainText(/Demasiados intentos fallidos|Too many failed attempts/);
+  await expect(page.getByTestId('generate-error')).not.toContainText(/Idempotency|new request/);
+
   expect(sql(`select count(*) from workouts where "userId"='${user.id}'`)).toBe('0');
 });

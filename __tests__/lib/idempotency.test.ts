@@ -92,6 +92,19 @@ describe('runIdempotent', () => {
     expect(acquireOperationKey('op', 'u1', { x: 9 })).toBe(kept);
   });
 
+  it('releases the key when the attempts of that key are exhausted: the next attempt is a NEW operation, not a loop on a dead key', async () => {
+    const used: string[] = [];
+    await expect(runIdempotent('op', 'u1', { x: 1 }, async (key) => {
+      used.push(key);
+      throw new ApiError('exhausted', 429, { reason: 'idempotency_attempts_exhausted' });
+    }, { sleep: noSleep })).rejects.toMatchObject({ status: 429 });
+    expect(used).toHaveLength(1); // not retried: it can never succeed with this key
+
+    await expect(runIdempotent('op', 'u1', { x: 1 }, async (key) => { used.push(key); return 'ok'; }, { sleep: noSleep })).resolves.toBe('ok');
+    expect(used).toHaveLength(2);
+    expect(used[1]).not.toBe(used[0]);
+  });
+
   it('retries a concurrency-limit 429 but honours retryAfterSeconds for the delay', async () => {
     const delays: number[] = [];
     let n = 0;

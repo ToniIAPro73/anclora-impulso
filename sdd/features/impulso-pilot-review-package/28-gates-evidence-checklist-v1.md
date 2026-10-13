@@ -38,6 +38,10 @@ Implementados en local, **sin desplegar**: política aplicada sin CDNs públicos
 *Report-Only* con recogida de violaciones. **`unsafe-inline` permanece**: el hallazgo no se da por cerrado. Verificado: 17 tests
 nuevos, suite frontend 21/149, `tsc` y `next build` aislado en verde. Pendiente: desplegar, leer las violaciones y decidir P2.
 
+### Actualización (2026-10-13): gate Hermes, cuarta ronda
+Aprobadas A1–A3 y aplicadas B1–B4 y C1–C2 (`42-…` §8); incluye una corrección funcional del cliente (clave de idempotencia agotada).
+Verificado en local: Jest 150, E2E 13/13. **Sin desplegar a producción.** AI-02 sigue sin aceptarse.
+
 ### Actualización (2026-10-13): gate Hermes, tercera ronda — cadenas 8 y 10 aprobadas
 Hermes aprobó «tal cual» la cadena 8 (aviso del modo IA) y la 10 (tope de generaciones, variante de Toni): `42-…` §6. El gate de copy
 queda **cumplido para el generador de rutinas y el aviso de tope**. **AI-02 sigue sin aceptarse**: falta la matriz promesa → función →

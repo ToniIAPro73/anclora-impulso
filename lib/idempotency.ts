@@ -130,9 +130,15 @@ export function clearAllOperationKeys() {
   }
 }
 
-/** A definitive rejection means the same content will never succeed: the next attempt is a new operation. */
+/**
+ * A definitive rejection means the same content will never succeed with THIS key: the next attempt is a new operation.
+ * A 429 is normally transient or quota-related (the key stays valid), except when the server says the attempts of this key
+ * are exhausted: reusing it would be refused again until the record expires.
+ */
 function isDefinitiveRejection(error: unknown) {
-  return error instanceof ApiError && error.status >= 400 && error.status < 500 && ![408, 409, 429].includes(error.status);
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 429) return error.details?.reason === 'idempotency_attempts_exhausted';
+  return error.status >= 400 && error.status < 500 && ![408, 409].includes(error.status);
 }
 
 function isRetriable(error: unknown) {

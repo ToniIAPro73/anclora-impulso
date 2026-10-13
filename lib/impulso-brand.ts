@@ -1,6 +1,6 @@
 export const IMPULSO_BRAND = {
   name: 'Anclora Impulso',
-  description: 'Aplicación premium de fitness con IA, progreso y seguimiento inteligente.',
+  description: 'Aplicación de fitness con generación por IA cuando está disponible, seguimiento de progreso y progresión basada en reglas.',
   logoPath: '/anclora-impulso.png',
   faviconPath: '/favicon.ico',
   premiumAccent: '#FF6A00',

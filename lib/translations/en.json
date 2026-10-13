@@ -85,7 +85,7 @@
     "progressTracking": "Progress Tracking",
     "progressTrackingDesc": "Comprehensive analytics tracking your strength gains, body measurements, and personal records",
     "adaptiveProgramming": "Adaptive Programming",
-    "adaptiveProgrammingDesc": "Intelligent progression that adapts to your performance and automatically adjusts difficulty"
+    "adaptiveProgrammingDesc": "Rule-based progression that adjusts load and reps based on your performance"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -118,7 +118,7 @@
     "nutritionToday": "Nutrition Today",
     "proteinLabel": "protein",
     "noMealsLogged": "No meals logged",
-    "nutritionHub": "Smart Nutrition",
+    "nutritionHub": "Nutrition",
     "nutritionHubPlanDesc": "Review your plan and today's macros",
     "nutritionHubEmptyDesc": "Activate nutrition with a plan and daily logging",
     "viewNutrition": "View Nutrition",
