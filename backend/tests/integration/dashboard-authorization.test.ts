@@ -6,6 +6,7 @@ import request from 'supertest';
 import app from '../../src/app';
 import { env } from '../../src/config/env';
 import { prisma } from '../../src/config/database';
+import { logDateStamp } from '../support/log-date';
 
 const tag = `d8-${randomUUID().slice(0, 8)}`;
 const routes = ['/api/dashboard/metrics', '/api/dashboard/db-metrics', '/api/dashboard/logs-stats', '/api/dashboard/logs', '/api/dashboard/summary'];
@@ -63,7 +64,7 @@ describe('dashboard authorization', () => {
 });
 
 describe('error logs do not contain secrets', () => {
-  const logFile = () => path.join(__dirname, '../../logs', `combined-${new Date().toISOString().split('T')[0]}.log`);
+  const logFile = () => path.join(__dirname, '../../logs', `combined-${logDateStamp()}.log`);
   const waitFor = async (needle: string) => {
     for (let i = 0; i < 40; i += 1) {
       if (fs.existsSync(logFile()) && fs.readFileSync(logFile(), 'utf-8').includes(needle)) return true;

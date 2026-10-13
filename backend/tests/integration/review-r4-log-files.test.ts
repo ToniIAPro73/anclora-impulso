@@ -5,9 +5,10 @@ import { randomUUID } from 'crypto';
 import request from 'supertest';
 import app from '../../src/app';
 import { prisma } from '../../src/config/database';
+import { logDateStamp } from '../support/log-date';
 
 const logsDir = path.join(__dirname, '../../logs');
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => logDateStamp();
 const allLogs = () =>
   fs.existsSync(logsDir)
     ? fs.readdirSync(logsDir).filter((f) => f.includes(today())).map((f) => fs.readFileSync(path.join(logsDir, f), 'utf8')).join('\n')

@@ -14,11 +14,12 @@ import * as jwt from '../../src/utils/jwt';
 import { createOAuthHandoff, redeemOAuthHandoff } from '../../src/services/oauth-handoff.service';
 import { redactSensitive } from '../../src/utils/redact';
 import { challengeOf, newVerifier } from '../support/oauth-helpers';
+import { logDateStamp } from '../support/log-date';
 
 const tag = `o12-${randomUUID().slice(0, 8)}`;
 const userIds: string[] = [];
 const logsDir = path.join(__dirname, '../../logs');
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => logDateStamp();
 const allLogs = () =>
   fs.existsSync(logsDir)
     ? fs.readdirSync(logsDir).filter((f) => f.includes(today())).map((f) => fs.readFileSync(path.join(logsDir, f), 'utf8')).join('\n')
