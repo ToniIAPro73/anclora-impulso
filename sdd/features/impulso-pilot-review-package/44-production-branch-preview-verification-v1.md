@@ -66,3 +66,20 @@ Toni en el formulario de login; **no procede de la aplicación** (no aparece en 
 | `ADMIN_EMAILS` existe | Obsoleta e ignorada por la autorización (F-1); conviene retirarla para no inducir a error |
 | `PASS_TEXT`, `USER_TEXT`, `UTILIZAR_USER_TEXT` existen | Nombres sin uso aparente en el código del backend; **a revisar por Toni** (podrían ser residuos) |
 | `GROQ_API_KEY`, `GROQ_MODEL_*` existen | Coherente con el generador de rutinas con IA |
+
+## 6. Segundo recorrido sobre el commit final (2026-10-13, `7226c5a`)
+
+> `staging` y `production` promocionados de nuevo por `promote.yml` (runs `38339637826` y `38339674534`, ambos `success`) a `7226c5a`,
+> idéntico a `development`. `main` sigue en `77f852a`; la producción real de Vercel no cambia. Preview verificado:
+> `anclora-impulso-c8ufuam8c-pmi140979-6354s-projects.vercel.app` (entorno `Preview`).
+
+| Comprobación | Resultado |
+|---|---|
+| Inicio de sesión desde el preview (cuenta QA dedicada) | Correcto, llega a `/dashboard` |
+| Pantallas (ejercicios, generar rutina, nutrición, progreso, planes de salud, logros, legal) | Todas cargan; **0 líneas de consola, 0 errores de página** |
+| Aparición de «inteligente» en pantalla | **0** en las siete pantallas y en el dashboard |
+| Copy nueva visible | «Nutrición» en el dashboard y «Resumen de progreso» en `/progress` |
+| Red (572 peticiones) | API: 34 × 200 y 26 × 204; **0 fallidas** (salvo la barra de comentarios `vercel.live` del preview) |
+
+**Límites:** un navegador, una cuenta nueva sin historial, sin generar rutinas ni escribir datos, no se probó móvil ni claro/oscuro. La
+descripción global del sitio (metadato) no se inspeccionó en el navegador.
