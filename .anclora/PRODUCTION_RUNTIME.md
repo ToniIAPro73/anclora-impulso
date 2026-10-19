@@ -1,6 +1,32 @@
 # Anclora Impulso — Production Runtime Manifest
 
 PRODUCTION_RUNTIME_MANIFEST_VERSION=2.1
+PROMOTION_STOP_ON_GATE_FAILURE=true
+PROMOTION_REQUIRES_PRE_STEP_GATES=true
+PROMOTION_AUTHORIZATION_TOKEN=PROMOTE=FULL
+PROMOTION_MECHANISM=.github/workflows/promote.yml
+PROMOTION_FLOW=development->staging->production->main
+PROMOTION_SUPPORTED=true
+SECRET_COMMIT_FORBIDDEN=true
+SECRET_OUTPUT_FORBIDDEN=true
+PROMOTION_FORCE_PUSH_ALLOWED=false
+PROMOTION_AUTHORIZATION_CLEAR_ON_UNAUTHORIZED_PROMPT=true
+PROMOTION_AUTHORIZATION_CLEAR_ON_NEW_SESSION=true
+PROMOTION_AUTHORIZATION_SCOPE=CURRENT_TASK_OR_CONVERSATION
+AUTO_PROMOTE=false
+TEST_EXECUTION_POLICY=BATCHED
+STOP_WHEN_SUFFICIENT_EVIDENCE=true
+CAVEMAN_GRANULARITY=TASK
+CAVEMAN_MODE_DEFAULT=AUTO
+TOKEN_ECONOMY_POLICY=ADAPTIVE
+QA_MODE_DEFAULT=AUTO
+STOP_AFTER_DEVELOPMENT_PUSH=true
+PUSH_TARGET=origin/development
+FEATURE_BRANCHES=DISALLOWED
+DEFAULT_BRANCH=development
+WORKING_BRANCH=development
+ANCLORA_FLOW_CONTRACT_VERSION=2.0
+ANCLORA_FLOW_VERSION=1
 RUNTIME_CONTRACT_AUTHORITY=CANONICAL
 STATUS=PRODUCTION_RUNTIME_CONFIRMED
 LOCAL_RUNTIME_MODEL=PRODUCTION_BACKED
@@ -103,18 +129,12 @@ manifest override generic agent defaults or home-directory agent policies.
 ## QA Contract
 
 QA_POLICY=WORKSPACE_PROPORTIONAL
-QA_MODE_DEFAULT=AUTO
 FAST_TARGETED_TESTING_POLICY=MINIMUM_SUFFICIENT_SET
 FAST_FULL_TEST_SUITE_ALLOWED=false
-STOP_WHEN_SUFFICIENT_EVIDENCE=true
-TEST_EXECUTION_POLICY=BATCHED
 FULL_GATES_AFTER_EVERY_EDIT=false
 REPEAT_UNCHANGED_SUCCESSFUL_GATES=false
 VISUAL_QA_EXECUTION=BY_QA_MODE
 
-TOKEN_ECONOMY_POLICY=ADAPTIVE
-CAVEMAN_MODE_DEFAULT=AUTO
-CAVEMAN_GRANULARITY=TASK
 QA_MINIMUM_FOR_DATABASE_MIGRATION=FULL
 QA_MINIMUM_FOR_AUTH=FULL
 QA_MINIMUM_FOR_RELEASE_PROMOTION=FULL
@@ -135,7 +155,6 @@ For dedicated human QA: Use designated production test identity. Never use Toni'
 
 ## 11. Git Branch & Operational Policy
 
-DEFAULT_BRANCH=development
 PROMOTION_POLICY=Default development-only operation; no automatic promotion. Explicit current-task user authorization permits only the repository-supported governed promotion path, subject to all gates.
 
 ## 12. Decision History
@@ -148,3 +167,8 @@ PROMOTION_POLICY=Default development-only operation; no automatic promotion. Exp
 | 2026-10-13 | Variable de entorno `FRONTEND_PREVIEW_HOST_SUFFIXES=-pmi140979-6354s-projects.vercel.app` creada en el servicio Render `Anclora-Impulso` y despliegue manual de `5a5b05d`; ramas `staging` y `production` promocionadas a `5a5b05d` por `promote.yml` (avance rápido). `main` sin tocar. | Toni (ToniIAPro73) | Configuración de CORS del backend (B1-F1): permite previews del equipo de Vercel con prefijo del proyecto. No acepta gates ni autoriza promoción a `main`. Evidencia: `sdd/features/impulso-pilot-review-package/44-production-branch-preview-verification-v1.md`. |
 | 2026-10-13 | **Promoción `production → main` ejecutada** por `promote.yml` (run `38340063885`, avance rápido): `main` pasa de `77f852a` a `7226c5a`; despliegue de **Production** de Vercel en `success`. Frontend en `impulso.anclora.com` y `anclora-impulso.vercel.app` con la copy y la CSP P0/P1 de la sesión. | Toni (ToniIAPro73), orden expresa | Acción sobre producción. Previamente: matriz H4 y gates G1–G4 aceptados por el propietario sin revisiones independientes (`IMPULSO-OWNER-ACCEPTANCE-H4-G1G4-2026-10-13`). Backend sin cambios (Render `5a5b05d`, funcionalmente `0606586`). Verificación: `44-…` §7. |
 | 2026-10-12 | Independent automated verifier authorized and designed (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) on Environment `production-migrations`. | Toni (ToniIAPro73) | Implemented locally, remote not configured. Replaces routine human reviewer in environment with automated gate. Toni still triggers manually via `workflow_dispatch`. Does not execute migrations or bypass gates. Status: NOT DEPLOYED / NOT CONFIGURED / NOT VERIFIED. |
+
+<!-- ANCLORA-MODS:START -->
+ANCLORA_MODS_COMMON_CONTRACT_VERSION=1.0.0
+Canonical shared rules: [Anclora Common Agent Contract](../anclora-mods/contracts/ANCLORA_COMMON_AGENT_CONTRACT_V1.md) and [Flow Amendment v2](../anclora-mods/ANCLORA_FLUJO_UNICO_V2.md). Repository-specific facts remain in this repository's `.anclora/` contracts.
+<!-- ANCLORA-MODS:END -->

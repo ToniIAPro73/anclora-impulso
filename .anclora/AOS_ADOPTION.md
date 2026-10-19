@@ -170,3 +170,8 @@ Declaración de adopción AOS para `anclora-impulso`.
 - ENTRADAS=Producción usa pooler (declarado por Toni, no verificado por el agente). Backend Render en plan Free, una instancia (observado en captura de Toni, 2026-10-12): D5/D6 no aplican a la topología actual.
 - ESTADO=Procedimiento definido, **no ejecutado**. Las sondas HTTP de Stage D aún no existen.
 - LIMITES=No acepta AI-08 ni ningún gate. No sustituye la revisión independiente. No autoriza promoción.
+
+<!-- ANCLORA-MODS:START -->
+ANCLORA_MODS_COMMON_CONTRACT_VERSION=1.0.0
+Canonical shared rules: [Anclora Common Agent Contract](../anclora-mods/contracts/ANCLORA_COMMON_AGENT_CONTRACT_V1.md) and [Flow Amendment v2](../anclora-mods/ANCLORA_FLUJO_UNICO_V2.md). Repository-specific facts remain in this repository's `.anclora/` contracts.
+<!-- ANCLORA-MODS:END -->
