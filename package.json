@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "next build",
-    "dev": "node ../anclora-infrastructure/scripts/free-port.mjs && next dev -p 3008",
+    "dev": "node -e \"const p='../anclora-infrastructure/scripts/free-port.mjs';if(require('fs').existsSync(p)){try{require('child_process').execFileSync(process.execPath,[p],{stdio:'inherit'})}catch(e){process.exit(e.status||1)}}\" && next dev -p 3008",
     "lint": "next lint",
     "start": "next start",
     "test": "jest --watch",
