@@ -9,7 +9,7 @@ import { defineConfig, devices } from '@playwright/test';
  * The webServer block starts `next dev` before the tests run.
  * Set BASE_URL env to override (e.g. for CI pointing at a preview URL).
  */
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3008';
 
 export default defineConfig({
   testDir: './e2e',
