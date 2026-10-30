@@ -6,6 +6,36 @@ Definir el contrato UX/UI de la capa más exclusiva del ecosistema. La experienc
 Ámbito:
 - `anclora-private-estates`
 
+> **Logo Ultra Premium fuera de la familia (CHG-0014, 2026-09-25):** `anclora-portfolio`, `anclora-azure-bay-landing` y `anclora-portfolio-showcase` usan el logo Ultra Premium dorado por ser aplicaciones de muestra del vertical inmobiliario de lujo, pero su UX se sigue gobernando por `ANCLORA_PORTFOLIO_SHOWCASE_CONTRACT.md`, no por este contrato.
+
+## Autoridad
+
+- Registro operativo: `00-governance/registry/contracts-registry.json`
+- Inventario aplicable: `00-governance/registry/ecosystem-repos.json`
+- Fuente ejecutable relacionada: `anclora-design-system`
+
+## Repos a los que aplica
+
+- `anclora-private-estates`
+
+## Sincronización con repos consumidores
+
+- Contrato fuente en la bóveda: `00-governance/contracts/core/ANCLORA_ULTRA_PREMIUM_APP_CONTRACT.md`
+- Target normal de propagación: `10-group/brand/`
+- Dependencia de auditoría y propagación desde `00-governance/registry/contracts-registry.json`
+
+## Piezas canónicas del design system
+
+La capa ultra premium no autoriza implementaciones aisladas sin sistema. Debe apoyarse en `anclora-design-system` para:
+
+- `tokens` y `themes` de firma visual
+- `foundations` de tipografía editorial, spacing, radius, border y depth
+- `components` base adaptados a la firma ultra premium
+- `patterns` de hero, gallery, immersive sections, overlays y formularios de alto valor
+
+Regla:
+- lo ultra premium puede especializar primitives, no saltarse el design system.
+
 ## Invariantes de grupo
 
 ### 1. Dirección visual
@@ -61,6 +91,7 @@ Definir el contrato UX/UI de la capa más exclusiva del ecosistema. La experienc
 - El botón premium puede seguir siendo una excepción aprobada del ecosistema siempre que conserve la semántica base de CTA principal.
 - Los accesos a áreas privadas o subportales no deben parecer dashboards internos reetiquetados.
 - Los componentes shadcn base deben adaptarse al sistema premium antes de exponerse en UI final.
+- Ningún componente de alto valor puede quedarse en estado “base library + skin rápida”.
 
 ## Gate de aceptación
 
@@ -69,3 +100,5 @@ Una feature ultra premium no está lista si:
 - la localización degrada el tono de marca
 - un modal o formulario rompe la composición premium por falta de espacio o scroll evitable
 - los componentes base aparecen sin adaptación a la firma visual del producto
+- la solución evita `anclora-design-system` y rehace localmente tokens, botones, cards o overlays que ya deberían vivir en la capa compartida
+
