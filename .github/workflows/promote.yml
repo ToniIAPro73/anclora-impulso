@@ -260,6 +260,7 @@ jobs:
         shell: bash
         env:
           SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+          TARGET: ${{ inputs.target }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           set -euo pipefail
@@ -293,7 +294,25 @@ jobs:
           fi
           [[ "$render_sha" =~ ^[0-9a-f]{40}$ ]] || fail "BACKEND_COMPAT_UNVERIFIABLE: LIVE Render deploy has no full commit SHA."
           [ -f scripts/release/check-backend-compat.sh ] || fail "BACKEND_COMPAT_UNVERIFIABLE: scripts/release/check-backend-compat.sh is missing."
-          bash scripts/release/check-backend-compat.sh "$render_sha" "$SOURCE_SHA"
+
+          if git diff --quiet "$render_sha" "$SOURCE_SHA" -- backend/; then
+            echo "Backend unchanged: backend/ is identical between Render (${render_sha:0:7}) and source (${SOURCE_SHA:0:7})."
+            bash scripts/release/check-backend-compat.sh "$render_sha" "$SOURCE_SHA"
+          else
+            echo "Backend differences detected between Render (${render_sha:0:7}) and source (${SOURCE_SHA:0:7})."
+            if [ "$TARGET" = "main" ]; then
+              fail "BACKEND_NOT_LIVE: target is main but Render backend differs from source ($SOURCE_SHA) and is not live."
+            fi
+            if [ -f scripts/release/verify-release-manifest.mjs ]; then
+              node scripts/release/verify-release-manifest.mjs . || fail "BACKEND_MIGRATION_MANIFEST_INVALID: release manifest verification failed."
+            fi
+            new_migrations="$(git diff --name-only "$render_sha" "$SOURCE_SHA" -- backend/prisma/migrations prisma/migrations 2>/dev/null | grep -E 'migration\.sql$' || true)"
+            if [ -n "$new_migrations" ]; then
+              echo "New database migrations detected between Render and source:"
+              echo "$new_migrations"
+            fi
+            echo "Preconditions verified for Render Auto-Deploy on production advance."
+          fi
 
   promote:
     needs: verify
@@ -377,8 +396,85 @@ jobs:
         shell: bash
         env:
           SOURCE_SHA: ${{ needs.verify.outputs.source_sha }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           set -euo pipefail
-          for target in staging production main; do
-            git push origin "$SOURCE_SHA:refs/heads/$target"
-          done
+          fail() { echo "::error::PROMOTION_BLOCKED_$1"; exit 1; }
+
+          # 1. Advance staging ref
+          git push origin "$SOURCE_SHA:refs/heads/staging"
+
+          # 2. Inspect runtime contract for optional Render backend gate
+          contract="$(git show "$SOURCE_SHA:.anclora/PRODUCTION_RUNTIME.md" 2>/dev/null || true)"
+          gate_mode="$(printf '%s\n' "$contract" | grep -E '^BACKEND_COMPAT_GATE=' | head -n 1 || true)"
+          gate_mode="${gate_mode#BACKEND_COMPAT_GATE=}"
+          service_id="$(printf '%s\n' "$contract" | grep -E '^BACKEND_RENDER_SERVICE_ID=' | head -n 1 || true)"
+          service_id="${service_id#BACKEND_RENDER_SERVICE_ID=}"
+
+          target_prod_sha="$(git rev-parse origin/production)"
+          backend_changed=false
+          if ! git diff --quiet "$target_prod_sha" "$SOURCE_SHA" -- backend/; then
+            backend_changed=true
+          fi
+
+          # 3. Advance production ref (triggers native Render Auto-Deploy if connected to production)
+          git push origin "$SOURCE_SHA:refs/heads/production"
+
+          # 4. If backend changed and Render gate is active, wait boundedly for Render deploy to become live
+          if [ "$gate_mode" = "required" ] && [ "$backend_changed" = "true" ]; then
+            [ -n "${RENDER_API_KEY:-}" ] || fail "BACKEND_DEPLOY_UNVERIFIABLE: RENDER_API_KEY missing during production advance."
+            [[ "$service_id" =~ ^srv-[a-z0-9]+$ ]] || fail "BACKEND_DEPLOY_UNVERIFIABLE: invalid Render service id."
+
+            echo "Backend changed; awaiting Render Auto-Deploy for commit $SOURCE_SHA to reach 'live'..."
+            max_attempts=60
+            sleep_interval=10
+            attempt=1
+            deploy_live=false
+
+            while [ "$attempt" -le "$max_attempts" ]; do
+              if deploys="$(curl -fsS --max-time 15 \
+                  -H "Authorization: Bearer $RENDER_API_KEY" \
+                  -H 'Accept: application/json' \
+                  "https://api.render.com/v1/services/$service_id/deploys?limit=10" 2>/dev/null)"; then
+
+                deploy_info="$(jq -r --arg sha "$SOURCE_SHA" '
+                  [.[] | .deploy? | select(type == "object" and .commit.id == $sha)] | first // empty
+                  | if . == null then "NOT_FOUND" else "\(.id)\t\(.status)" end
+                ' <<< "$deploys" 2>/dev/null || echo "ERROR")"
+
+                if [ "$deploy_info" != "NOT_FOUND" ] && [ "$deploy_info" != "ERROR" ]; then
+                  IFS=$'\t' read -r dep_id dep_status <<< "$deploy_info"
+                  echo "Attempt $attempt/$max_attempts: deploy $dep_id status is '$dep_status'..."
+                  case "$dep_status" in
+                    live)
+                      deploy_live=true
+                      break
+                      ;;
+                    build_failed|update_failed|canceled)
+                      fail "BACKEND_DEPLOY_FAILED: Render deploy $dep_id ended with status $dep_status."
+                      ;;
+                    created|queued|in_progress|pre_deploy_in_progress)
+                      ;;
+                    *)
+                      echo "Unhandled deploy status: $dep_status"
+                      ;;
+                  esac
+                else
+                  echo "Attempt $attempt/$max_attempts: Render deploy for $SOURCE_SHA not registered yet..."
+                fi
+              else
+                echo "Attempt $attempt/$max_attempts: transient failure reading Render deploys, retrying..."
+              fi
+
+              attempt=$((attempt + 1))
+              sleep "$sleep_interval"
+            done
+
+            [ "$deploy_live" = "true" ] || fail "BACKEND_DEPLOY_TIMEOUT: Render deploy for $SOURCE_SHA did not reach 'live' within $((max_attempts * sleep_interval))s."
+            echo "Render deploy for $SOURCE_SHA is live."
+          else
+            echo "No backend changes or Render gate not required; proceeding directly to main."
+          fi
+
+          # 5. Advance main ref (triggers Vercel frontend deploy)
+          git push origin "$SOURCE_SHA:refs/heads/main"

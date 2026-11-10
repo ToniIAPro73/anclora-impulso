@@ -83,7 +83,7 @@ FRONTEND_PROVIDER=Vercel
 BACKEND_PROVIDER=Render (Express service, rootDir=backend)
 BACKEND_RENDER_SERVICE_ID=srv-d6ps41v5r7bs73dvrudg
 BACKEND_COMPAT_GATE=required
-BACKEND_COMPAT_GATE_DETAILS=Promotion reads the LIVE Render deploy commit with repository secret RENDER_API_KEY, then blocks if backend/ differs or cannot be verified. Render remains manual (Auto-Deploy Off).
+BACKEND_COMPAT_GATE_DETAILS=Promotion advances production to trigger native Render Auto-Deploy (branch production, rootDir=backend), waits boundedly inside promote.yml until the deploy matching the source SHA is live, and then advances main (Vercel). Frontend-only promotions verify Render compatibility without waiting for a new backend deploy.
 PRODUCTION_DOMAIN=anclora-impulso-p08s2sv2w-pmi140979-6354s-projects.vercel.app
 PRODUCTION_DEPLOYMENT_PROVIDER=Vercel
 
@@ -130,11 +130,10 @@ Executed once on 2026-10-12 under the P1 model (environment with required review
 Run #1 applied the six `20261012*` migrations at commit `c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d`; the ledger was re-verified afterwards (section 12).
 Environment, reviewers and secret existed at that run; this contract does not re-verify them for future runs.
 
-Coupling: branch `main` is the production branch of Vercel. The Render service `Anclora-Impulso` has Auto-Deploy Off and, since 2026-10-12,
-its configured branch is `development` (decision of Toni; deploys are manual from the dashboard). Moving `main` still deploys the frontend.
-Promotion gate: `promote.yml` (job `verify`, step `Verify Render backend compatibility`, logic in `scripts/release/check-backend-compat.sh`) fails closed with `PROMOTION_BLOCKED_BACKEND_PENDING_DEPLOY` or `PROMOTION_BLOCKED_BACKEND_COMPAT_UNVERIFIABLE`. Order for backend-dependent changes: push to development, run `production-migrations.yml` if there are migrations, deploy Render manually at that SHA, then `PROMOTE=FULL`.
-Before 2026-10-12 the service followed `main`; confirm the branch setting before relying on either assumption. Migrations MUST be applied and verified BEFORE the backend that
-needs them is deployed (see `sdd/features/impulso-pilot-review-package/21-d10-production-migration-runbook-v2.md`).
+Coupling: branch `production` is the deployment branch for Render (Auto-Deploy ON, rootDir=backend). Branch `main` is the production branch of Vercel.
+Promotion gate: `promote.yml` enforces the sequential pipeline: CI and preconditions verified -> staging pushed -> production pushed (triggering Render Auto-Deploy) -> bounded runner wait until Render deploy matching source SHA is `live` -> main pushed (triggering Vercel). For frontend-only promotions, Render compatibility is verified against the live deploy without requiring a new backend deployment.
+Order for backend-dependent changes: push to development, run `production-migrations.yml` if there are migrations, then `PROMOTE=FULL`.
+Migrations MUST be applied and verified BEFORE the backend that needs them is deployed (see `sdd/features/impulso-pilot-review-package/21-d10-production-migration-runbook-v2.md`).
 
 ## 5. Storage Contract
 
