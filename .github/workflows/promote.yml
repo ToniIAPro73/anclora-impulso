@@ -256,6 +256,45 @@ jobs:
             [ "$state" = "success" ] || fail "LEGACY_STATUS_NOT_SUCCESS: combined status is $state."
           fi
 
+      - name: Verify optional Render backend compatibility
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::PROMOTION_BLOCKED_$1"; exit 1; }
+          contract="$(git show "$SOURCE_SHA:.anclora/PRODUCTION_RUNTIME.md" 2>/dev/null || true)"
+          gate_count="$(printf '%s\n' "$contract" | grep -cE '^BACKEND_COMPAT_GATE=' || true)"
+          [ "$gate_count" -le 1 ] || fail "BACKEND_COMPAT_UNVERIFIABLE: BACKEND_COMPAT_GATE must be declared at most once."
+          if [ "$gate_count" -eq 0 ]; then
+            echo "Optional Render backend compatibility gate is not configured for this repository."
+            exit 0
+          fi
+          gate_mode="$(printf '%s\n' "$contract" | grep -E '^BACKEND_COMPAT_GATE=' | head -n 1)"
+          gate_mode="${gate_mode#BACKEND_COMPAT_GATE=}"
+          [ "$gate_mode" = "required" ] || fail "BACKEND_COMPAT_UNVERIFIABLE: BACKEND_COMPAT_GATE must be 'required' when declared."
+
+          service_count="$(printf '%s\n' "$contract" | grep -cE '^BACKEND_RENDER_SERVICE_ID=' || true)"
+          [ "$service_count" -eq 1 ] || fail "BACKEND_COMPAT_UNVERIFIABLE: declare BACKEND_RENDER_SERVICE_ID exactly once."
+          service_id="$(printf '%s\n' "$contract" | grep -E '^BACKEND_RENDER_SERVICE_ID=' | head -n 1)"
+          service_id="${service_id#BACKEND_RENDER_SERVICE_ID=}"
+          [[ "$service_id" =~ ^srv-[a-z0-9]+$ ]] || fail "BACKEND_COMPAT_UNVERIFIABLE: BACKEND_RENDER_SERVICE_ID is not a Render service id."
+          [ -n "${RENDER_API_KEY:-}" ] || fail "BACKEND_COMPAT_UNVERIFIABLE: repository secret RENDER_API_KEY is missing. Add it in GitHub repository Settings > Secrets and variables > Actions."
+
+          if ! deploys="$(curl -fsS --max-time 20 \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H 'Accept: application/json' \
+              "https://api.render.com/v1/services/$service_id/deploys?limit=100")"; then
+            fail "BACKEND_COMPAT_UNVERIFIABLE: Render deploy history could not be read."
+          fi
+          if ! render_sha="$(jq -er '[.[] | .deploy? | select(type == "object" and .status == "live")] | first | .commit.id // empty' <<< "$deploys" 2>/dev/null)"; then
+            fail "BACKEND_COMPAT_UNVERIFIABLE: no LIVE Render deploy with a commit was found in the deploy history."
+          fi
+          [[ "$render_sha" =~ ^[0-9a-f]{40}$ ]] || fail "BACKEND_COMPAT_UNVERIFIABLE: LIVE Render deploy has no full commit SHA."
+          [ -f scripts/release/check-backend-compat.sh ] || fail "BACKEND_COMPAT_UNVERIFIABLE: scripts/release/check-backend-compat.sh is missing."
+          bash scripts/release/check-backend-compat.sh "$render_sha" "$SOURCE_SHA"
+
   promote:
     needs: verify
     if: inputs.target != 'full'

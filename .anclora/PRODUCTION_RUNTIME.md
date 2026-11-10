@@ -81,6 +81,9 @@ FRAMEWORK=Next.js
 
 FRONTEND_PROVIDER=Vercel
 BACKEND_PROVIDER=Render (Express service, rootDir=backend)
+BACKEND_RENDER_SERVICE_ID=srv-d6ps41v5r7bs73dvrudg
+BACKEND_COMPAT_GATE=required
+BACKEND_COMPAT_GATE_DETAILS=Promotion reads the LIVE Render deploy commit with repository secret RENDER_API_KEY, then blocks if backend/ differs or cannot be verified. Render remains manual (Auto-Deploy Off).
 PRODUCTION_DOMAIN=anclora-impulso-p08s2sv2w-pmi140979-6354s-projects.vercel.app
 PRODUCTION_DEPLOYMENT_PROVIDER=Vercel
 
@@ -129,6 +132,7 @@ Environment, reviewers and secret existed at that run; this contract does not re
 
 Coupling: branch `main` is the production branch of Vercel. The Render service `Anclora-Impulso` has Auto-Deploy Off and, since 2026-10-12,
 its configured branch is `development` (decision of Toni; deploys are manual from the dashboard). Moving `main` still deploys the frontend.
+Promotion gate: `promote.yml` (job `verify`, step `Verify Render backend compatibility`, logic in `scripts/release/check-backend-compat.sh`) fails closed with `PROMOTION_BLOCKED_BACKEND_PENDING_DEPLOY` or `PROMOTION_BLOCKED_BACKEND_COMPAT_UNVERIFIABLE`. Order for backend-dependent changes: push to development, run `production-migrations.yml` if there are migrations, deploy Render manually at that SHA, then `PROMOTE=FULL`.
 Before 2026-10-12 the service followed `main`; confirm the branch setting before relying on either assumption. Migrations MUST be applied and verified BEFORE the backend that
 needs them is deployed (see `sdd/features/impulso-pilot-review-package/21-d10-production-migration-runbook-v2.md`).
 
@@ -204,6 +208,7 @@ PROMOTION_POLICY=Default development-only operation; no automatic promotion. Exp
 | 2026-10-13 | Variable de entorno `FRONTEND_PREVIEW_HOST_SUFFIXES=-pmi140979-6354s-projects.vercel.app` creada en el servicio Render `Anclora-Impulso` y despliegue manual de `5a5b05d`; ramas `staging` y `production` promocionadas a `5a5b05d` por `promote.yml` (avance rápido). `main` sin tocar. | Toni (ToniIAPro73) | Configuración de CORS del backend (B1-F1): permite previews del equipo de Vercel con prefijo del proyecto. No acepta gates ni autoriza promoción a `main`. Evidencia: `sdd/features/impulso-pilot-review-package/44-production-branch-preview-verification-v1.md`. |
 | 2026-10-13 | **Promoción `production → main` ejecutada** por `promote.yml` (run `38340063885`, avance rápido): `main` pasa de `77f852a` a `7226c5a`; despliegue de **Production** de Vercel en `success`. Frontend en `impulso.anclora.com` y `anclora-impulso.vercel.app` con la copy y la CSP P0/P1 de la sesión. | Toni (ToniIAPro73), orden expresa | Acción sobre producción. Previamente: matriz H4 y gates G1–G4 aceptados por el propietario sin revisiones independientes (`IMPULSO-OWNER-ACCEPTANCE-H4-G1G4-2026-10-13`). Backend sin cambios (Render `5a5b05d`, funcionalmente `0606586`). Verificación: `44-…` §7. |
 | 2026-10-12 | Independent automated verifier authorized and designed (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) on Environment `production-migrations`. | Toni (ToniIAPro73) | Implemented locally, remote not configured. Replaces routine human reviewer in environment with automated gate. Toni still triggers manually via `workflow_dispatch`. Does not execute migrations or bypass gates. Status: NOT DEPLOYED / NOT CONFIGURED / NOT VERIFIED. |
+| 2026-11-09 | Read-only verification of Neon production schema and `_prisma_migrations` ledger (`AUD-006` / `TASK-001`). Confirmed 58 tables in `public` (including all 10 `health_plan_*` tables) and migration `20260914130000_add_health_plans` finished without rollback, plus all `20261012*` migrations finished. Clarified `docs/roadmap/impulso-post-ux-health/P1-FINAL-GATE-REPORT.md` wording ("configured development database" -> `PRODUCTION_BACKED` Neon database). | Agente (Claude Code), a petición de Toni (ToniIAPro73) | Read-only documentary reconciliation. No schema or data mutations. |
 
 <!-- ANCLORA-AOS:START -->
 ANCLORA_AOS_AUTHORITY=anclora-governance
