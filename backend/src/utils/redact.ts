@@ -35,6 +35,8 @@ const SECRET_PARAMS = 'code|state|token|access_token|refresh_token|id_token|acce
 export function redactText(text: string | undefined | null): string {
   if (!text) return text ?? '';
   return text
+    // Whole header lines: credentials can sit in any position of a cookie or authorization value.
+    .replace(/\b(authorization|proxy-authorization|cookie|set-cookie)(\s*[:=]\s*)[^\r\n"']+/gi, '$1$2[REDACTED]')
     .replace(new RegExp(`([?&;]\\s*(?:${SECRET_PARAMS})=)[^&\\s"'<>]+`, 'gi'), '$1[REDACTED]')
     .replace(new RegExp(`((?:${SECRET_PARAMS})["']?\\s*[:=]\\s*["']?)[A-Za-z0-9._~+/=-]{8,}`, 'gi'), '$1[REDACTED]')
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, 'Bearer [REDACTED]')
