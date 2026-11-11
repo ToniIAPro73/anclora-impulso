@@ -1071,7 +1071,7 @@ export async function generateMealPlan(userId: string, params: GenerateMealPlanI
           mealType: selectedMeal.mealType,
           selectedRecipeId: selectedMeal.recipe.id,
           adjustmentReason: ageAwareGuidance
-            ? `Personalizado con criterios del perfil: ${ageAwareGuidance.split('\n')[0]}`
+            ? 'Orientación general 40+: prioridad a saciedad, energía estable y adherencia (no sustituye criterio profesional).'
             : null,
         },
       });

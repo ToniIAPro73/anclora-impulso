@@ -1,3 +1,4 @@
+import { DEFAULT_PLAN_LIMITS } from '../../src/services/workouts/plan-limits';
 import { validateWorkoutPlan, type CatalogExercise } from '../../src/services/workouts/plan-validator';
 
 const catalog: CatalogExercise[] = [
@@ -115,7 +116,22 @@ describe('validateWorkoutPlan', () => {
       id: `ex-${i}`, equipment: 'dumbbell', difficulty: 'beginner', trainingEnvironments: ['home'],
     }));
     expect(codes(many(6), { catalog: bigCatalog })).toEqual([]);
+    expect(codes(many(6), { catalog: bigCatalog, age: 40 })).toEqual(['TOO_MANY_EXERCISES']);
     expect(codes(many(6), { catalog: bigCatalog, age: 45 })).toEqual(['TOO_MANY_EXERCISES']);
     expect(codes(many(7), { catalog: bigCatalog })).toEqual(['TOO_MANY_EXERCISES']);
+  });
+
+  it('keeps DEFAULT_PLAN_LIMITS frozen, conservative and flagged PENDING_PROFESSIONAL_REVIEW (TASK-010)', () => {
+    expect(Object.isFrozen(DEFAULT_PLAN_LIMITS)).toBe(true);
+    expect(DEFAULT_PLAN_LIMITS.reviewStatus).toBe('PENDING_PROFESSIONAL_REVIEW');
+    expect(DEFAULT_PLAN_LIMITS.maxExercisesAge40Plus).toBeLessThanOrEqual(DEFAULT_PLAN_LIMITS.maxExercises);
+
+    const overCeiling = validPlan();
+    overCeiling.exercises[0].sets = DEFAULT_PLAN_LIMITS.maxSets + 1;
+    overCeiling.exercises[0].reps = DEFAULT_PLAN_LIMITS.maxReps + 1;
+    overCeiling.exercises[0].rest = DEFAULT_PLAN_LIMITS.maxRestSeconds + 1;
+    expect(codes(overCeiling)).toEqual(
+      expect.arrayContaining(['SETS_OUT_OF_RANGE', 'REPS_OUT_OF_RANGE', 'REST_OUT_OF_RANGE']),
+    );
   });
 });

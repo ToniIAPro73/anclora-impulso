@@ -256,8 +256,8 @@ export function WorkoutGenerator() {
             {profile.age && profile.age >= 40 ? (
               <div className="rounded-2xl border border-orange-200/70 bg-orange-50/80 p-4 text-sm text-orange-800 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-200">
                 {isSpanish
-                  ? `Este entrenamiento se ajustará con criterios 40+: más prioridad a fuerza, movilidad, recuperación y composición corporal${profile.sex ? ` para ${profile.sex === "female" ? "mujer" : "hombre"}` : ""}.`
-                  : `This workout will use 40+ rules: more emphasis on strength, mobility, recovery and body composition${profile.sex ? ` for a ${profile.sex === "female" ? "female" : "male"} profile` : ""}.`}
+                  ? "Orientación general 40+: se prioriza fuerza base, movilidad y recuperación progresiva (contenido educativo, no clínico)."
+                  : "General 40+ guidance: prioritizes baseline strength, mobility, and gradual recovery (educational, not clinical care)."}
               </div>
             ) : null}
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">

@@ -221,8 +221,8 @@ function NutritionPageContent() {
                 {profile.age && profile.age >= 40 ? (
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-300">
                     {t
-                      ? `El plan tendrá en cuenta criterios 40+: proteína suficiente, saciedad, recuperación y ajustes por sexo${profile.sex ? ` para ${profile.sex === "female" ? "mujer" : "hombre"}` : ""}.`
-                      : `The plan will use 40+ rules: sufficient protein, satiety, recovery and sex-specific adjustments${profile.sex ? ` for a ${profile.sex === "female" ? "female" : "male"} profile` : ""}.`}
+                      ? "Orientación general 40+: prioridad a saciedad, proteína repartida, alimentos frescos y recuperación (no sustituye criterio profesional)."
+                      : "General 40+ guidance: prioritizes satiety, steady protein, whole foods, and recovery (not professional advice)."}
                   </div>
                 ) : null}
                 <div>
@@ -328,8 +328,8 @@ function NutritionPageContent() {
                 {profile.age && profile.age >= 40 ? (
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-300">
                     {t
-                      ? `El plan tendrá en cuenta criterios 40+: proteína suficiente, saciedad, recuperación y ajustes por sexo${profile.sex ? ` para ${profile.sex === "female" ? "mujer" : "hombre"}` : ""}.`
-                      : `The plan will use 40+ rules: sufficient protein, satiety, recovery and sex-specific adjustments${profile.sex ? ` for a ${profile.sex === "female" ? "female" : "male"} profile` : ""}.`}
+                      ? "Orientación general 40+: prioridad a saciedad, proteína repartida, alimentos frescos y recuperación (no sustituye criterio profesional)."
+                      : "General 40+ guidance: prioritizes satiety, steady protein, whole foods, and recovery (not professional advice)."}
                   </div>
                 ) : null}
                 <div>
