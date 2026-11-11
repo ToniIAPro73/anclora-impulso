@@ -17,6 +17,8 @@ model User {
   fullName     String
   avatarDataUrl String?
   sex          String?
+  sexAtBirth   String?
+  genderIdentity String?
   age          Int?
   heightCm     Float?
   weightKg     Float?
@@ -939,12 +941,14 @@ model XPEvent {
 model HealthPlanDefinition {
   id          String   @id @default(uuid())
   key         String   @unique
+  cohortKey   String?
+  variantKey  String?
   nameEs      String
   nameEn      String
   descriptionEs String
   descriptionEn String
   minAge      Int
-  maxAge      Int
+  maxAge      Int?
   status      String   @default("draft")
   version     Int      @default(1)
   createdAt   DateTime @default(now())
@@ -953,7 +957,9 @@ model HealthPlanDefinition {
   pillars     HealthPlanPillar[]
   content     HealthPlanContentReference[]
   enrollments HealthPlanEnrollment[]
+  @@unique([cohortKey, version])
   @@index([status])
+  @@index([cohortKey, variantKey])
   @@map("health_plan_definitions")
 }
 

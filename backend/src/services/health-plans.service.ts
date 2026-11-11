@@ -26,9 +26,9 @@ async function ensureRutaVitalDefinition() {
 
   const definition = await prisma.healthPlanDefinition.upsert({
     where: { key: RUTA_VITAL_KEY },
-    update: { status: 'published', version: 1 },
+    update: { status: 'published', version: 1, cohortKey: 'RV-50-60', variantKey: 'NEUTRAL' },
     create: {
-      id: randomUUID(), key: RUTA_VITAL_KEY, nameEs: 'Ruta Vital 50–60', nameEn: 'Vital Path 50–60',
+      id: randomUUID(), key: RUTA_VITAL_KEY, cohortKey: 'RV-50-60', variantKey: 'NEUTRAL', nameEs: 'Ruta Vital 50–60', nameEn: 'Vital Path 50–60',
       descriptionEs: 'Una ruta progresiva para fuerza, movimiento, nutrición, recuperación y continuidad.',
       descriptionEn: 'A progressive path for strength, movement, nutrition, recovery and continuity.',
       minAge: 50, maxAge: 60, status: 'published', version: 1,

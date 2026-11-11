@@ -104,6 +104,10 @@
     {
       "name": "20261012090000_add_oauth_handoffs",
       "sha256": "cd8d9e7955ea5a9d6a7a7d729a7f42fb6c510087afb17657fbb7e0b39c8aa888"
+    },
+    {
+      "name": "20261111211500_add_modular_health_plan_catalog_and_optional_identity",
+      "sha256": "a3fd37f1e217e8c1129a18146de008b0492d2445a62c03e65ba9ffc1c0025d8e"
     }
   ]
 }
