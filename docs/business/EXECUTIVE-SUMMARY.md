@@ -1,8 +1,10 @@
 # Resumen Ejecutivo - Anclora Impulso
 
+> **NOTA DE VERIFICACIÓN (2026-11-11):** Este documento es un resumen ejecutivo comercial histórico (Octubre 2025). Todas las cifras de tracción ("50 usuarios beta", "4.8/5", "75% retención"), tamaño de mercado, precios de suscripción propuestos, ronda Seed y proyecciones financieras (Año 1–5) representan **hipótesis y objetivos de negocio NO medidos ni verificados en producción**. Para el estado técnico verificado del runtime, consulta [`.anclora/PRODUCTION_RUNTIME.md`](../../.anclora/PRODUCTION_RUNTIME.md) y [`docs/anclora-master-audit/15_VALIDATION_AND_KPIS.md`](../anclora-master-audit/15_VALIDATION_AND_KPIS.md).
+
 ## 🎯 LA OPORTUNIDAD
 
-**Anclora Impulso** es una plataforma web de fitness que utiliza inteligencia artificial de última generación (GPT-4) para generar entrenamientos completamente personalizados, ofreciendo el valor de un entrenador personal por menos del 5% del costo tradicional.
+**Anclora Impulso** es una plataforma web de fitness que utiliza modelos de lenguaje (actualmente integrados vía Groq con respaldo determinista validado) para generar entrenamientos personalizados, buscando ofrecer orientación estructurada a un coste accesible frente al entrenamiento presencial tradicional.
 
 El mercado del fitness digital está valorado en **$96 mil millones** y crecerá a **$396 mil millones para 2030** (33% CAGR). Sin embargo, el 80% de las personas abandonan sus rutinas de ejercicio en los primeros 5 meses debido a la falta de personalización accesible y seguimiento efectivo. Esta desconexión representa una oportunidad de **$77 mil millones** esperando ser capturada.
 
@@ -26,9 +28,9 @@ El resultado es un mercado masivo con una tasa de fracaso alarmante, representan
 
 Anclora Impulso resuelve estos problemas mediante una plataforma tecnológica que combina inteligencia artificial avanzada con ciencia del deporte, ofreciendo cuatro pilares fundamentales:
 
-**Personalización con IA de Última Generación.** Utilizamos GPT-4, el modelo de lenguaje más avanzado disponible, para generar entrenamientos completamente personalizados en segundos. Nuestro sistema considera más de 50 variables incluyendo objetivos específicos, equipo disponible, nivel de condición física, tiempo disponible, historial de lesiones y preferencias personales. No son rutinas pre-fabricadas con variables ajustables, sino programas diseñados desde cero para cada usuario, rivalizando con los creados por entrenadores profesionales certificados.
+**Personalización con IA.** Utilizamos modelos de lenguaje vía Groq con respaldo determinista y validación de límites de seguridad para generar entrenamientos personalizados según perfil, equipo disponible, nivel y limitaciones declaradas (con revisión profesional pendiente para los topes del piloto).
 
-**Biblioteca Exhaustiva de Ejercicios.** Ofrecemos más de 100 ejercicios cuidadosamente curados y validados por profesionales certificados, cada uno con instrucciones detalladas paso a paso, demostraciones visuales de técnica correcta, advertencias de seguridad y variaciones según nivel. Los usuarios nunca más se preguntarán si están ejecutando un ejercicio correctamente o si existe riesgo de lesión.
+**Biblioteca de Ejercicios.** Biblioteca estructurada con instrucciones paso a paso y demostraciones visuales en desarrollo y curación continua (revisión clínica externa pendiente para prescripción 40+).
 
 **Seguimiento Inteligente y Análisis de Progreso.** Nuestro sistema registra automáticamente cada entrenamiento, identifica récords personales sin intervención manual, genera gráficos visuales de evolución en múltiples métricas y ajusta dinámicamente los entrenamientos futuros basándose en el progreso real. Esta retroalimentación constante mantiene la motivación alta y asegura mejora continua.
 
@@ -66,11 +68,11 @@ El mercado objetivo es masivo y está experimentando crecimiento explosivo impul
 
 ---
 
-## 🚀 TRACCIÓN Y VALIDACIÓN
+## 🚀 ESTADO TÉCNICO Y OBJETIVOS DE VALIDACIÓN *(Métricas comerciales pendientes de medición)*
 
-No somos una idea en papel. Tenemos un producto completamente funcional con validación real de mercado:
+> **Importante:** Los indicadores cuantitativos de usuarios beta (50), satisfacción (4.8/5) y retención (75%) listados originalmente como narrativa de pitch **no están verificados en telemetría de producción**. Ver KPIs base en `docs/anclora-master-audit/15_VALIDATION_AND_KPIS.md`.
 
-**Producto en Producción.** Nuestro MVP está completamente operativo y accesible en web. No es un prototipo ni un demo, sino una aplicación real que genera entrenamientos con IA, rastrea progreso y ofrece toda la funcionalidad core prometida. La arquitectura técnica es moderna y escalable, construida con Next.js, Express, PostgreSQL y integración directa con OpenAI GPT-4.
+**Producto Técnico Desplegado.** Aplicación funcional construida con Next.js (Vercel), Express (Render), PostgreSQL (Neon) e integración con Groq y respaldo determinista validado.
 
 **Usuarios Beta Activos.** Cincuenta usuarios han probado la plataforma durante los últimos dos meses en condiciones reales de uso. Estos usuarios representan nuestro mercado objetivo: personas de 25-45 años, conscientes de salud, con acceso a tecnología pero sin presupuesto para entrenador personal.
 
@@ -88,7 +90,7 @@ Esta tracción temprana valida tres elementos críticos: el producto resuelve un
 
 Nuestro posicionamiento competitivo se basa en diferenciación tecnológica, enfoque de mercado y economía de unidad superior:
 
-**Tecnología de IA Superior.** Somos la única aplicación de fitness que utiliza GPT-4 para generación de entrenamientos. Competidores como Freeletics y Fitbod usan algoritmos básicos o IA de generaciones anteriores. Esta ventaja tecnológica se traduce directamente en personalización superior, entrenamientos más efectivos y satisfacción de usuario más alta. Además, estamos acumulando datos propietarios que nos permitirán desarrollar modelos fine-tuned específicos para fitness, creando un moat defensivo creciente.
+**Enfoque en IA con Guardarraíles.** La aplicación combina generación por LLM (Groq) con validación determinista de catálogo y topes conservadores (`backend/src/services/workouts/plan-validator.ts`), priorizando seguridad y continuidad frente a modelos genéricos sin validación.
 
 **Enfoque en Mercado Desatendido.** Mientras grandes jugadores como Nike Training Club, Peloton y Fitbod se enfocan en mercados angloparlantes saturados, nosotros dominamos el mercado hispanohablante de 500 millones de personas. Esta estrategia de "blue ocean" nos da 2-3 años de ventaja antes de que llegue competencia seria, tiempo suficiente para establecer brand recognition, construir comunidad leal y alcanzar economías de escala.
 
@@ -118,7 +120,7 @@ Estamos levantando una **ronda Seed de $500,000** a cambio del **15% de equity**
 
 ## 📊 PROYECCIONES FINANCIERAS
 
-Nuestras proyecciones son conservadoras y están basadas en benchmarks validados de industria:
+*(Supuestos históricos de proyección comercial de Octubre 2025, pendientes de validación en producción)*:
 
 **Año 1** alcanzamos 10,000 usuarios totales con tasa de conversión del 5% resultando en 500 usuarios de pago. Generamos $60K en ingresos anuales con EBITDA negativo de -$120K mientras invertimos en producto y validación de mercado. El enfoque este año es probar canales de adquisición, optimizar conversión y establecer métricas base.
 
@@ -130,7 +132,7 @@ Nuestras proyecciones son conservadoras y están basadas en benchmarks validados
 
 **Año 5** llegamos a 1,000,000 de usuarios totales y 60,000 usuarios de pago, generando $7.2M en ingresos con $4.7M en EBITDA (margen del 65%). Estamos posicionados como líder en fitness con IA en mercados hispanohablantes y con presencia significativa en mercados angloparlantes.
 
-Estas proyecciones asumen tasas de conversión conservadoras del 5-6%, churn mejorando de 8% a 5% mensual, y CAC de $10-15 por usuario de pago. Todos estos números son alcanzables basándose en nuestras métricas actuales y benchmarks de industria.
+Estas hipótesis asumen tasas de conversión del 5-6%, churn objetivo de 8% a 5% mensual y CAC objetivo de $10-15 por usuario de pago, todos ellos objetivos de negocio pendientes de validación con métricas reales.
 
 ---
 
@@ -162,11 +164,11 @@ El timing es crítico en startups, y este es el momento perfecto para invertir e
 
 **El mercado está explotando.** Fitness digital creció 33% anual y continuará esta trayectoria impulsado por adopción post-pandemia, conciencia de salud preventiva y aceptación de IA. Estamos montando una ola masiva.
 
-**La tecnología está madura.** GPT-4 y modelos similares recién están disponibles para aplicaciones comerciales. Somos early movers en aplicar esta tecnología a fitness personalizado, dándonos ventaja de 12-18 meses sobre competidores.
+**La tecnología está lista para validar.** Usamos modelos LLM vía Groq con validación determinista de catálogo y topes conservadores (`backend/src/services/workouts/plan-validator.ts`).
 
-**El mercado hispanohablante está desatendido.** Grandes jugadores se enfocan en USA y Europa. Tenemos ventana de 2-3 años para dominar LATAM antes de que llegue competencia seria.
+**El mercado hispanohablante está desatendido.** Hipótesis de expansión en mercados hispanohablantes frente a competidores centrados en mercados angloparlantes.
 
-**Tenemos tracción real.** No somos solo una idea. Tenemos producto funcionando, usuarios satisfechos y métricas validadas. El riesgo de ejecución es significativamente menor que startups en etapa de idea.
+**Base técnica desplegada (tracción comercial pendiente de validar).** Producto operativo en Vercel + Render + Neon; las métricas comerciales y de retención están pendientes de instrumentación y medición real.
 
 **La valuación es atractiva.** $3.3M post-money para una empresa con producto, tracción y mercado de $96B es una oportunidad excepcional. Serie A será a valuación 4-5x más alta.
 

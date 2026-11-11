@@ -21,8 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Anclora Impulso** is a full-stack fitness application featuring AI-powered workout generation, progress tracking, and personalized training routines. It's a monorepo with separate frontend (Next.js) and backend (Express) applications.
 
-- **Status:** Production-ready
-- **Free Deployment:** Vercel (frontend), Railway/Render (backend), Neon (database)
+- **Status:** Active product runtime (`PRODUCTION_BACKED`; see `.anclora/PRODUCTION_RUNTIME.md`)
+- **Production Hosting:** Vercel (frontend, `main`), Render (backend `rootDir=backend`, `production` with native Auto-Deploy), Neon (PostgreSQL database)
 
 ---
 
@@ -57,7 +57,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Testing:** Jest + Supertest
 - **Documentation:** OpenAPI 3.0.0 / Swagger UI
 - **Package Manager:** pnpm
-- **Deploy:** Railway or Render
+- **Deploy:** Render (`rootDir=backend`, branch `production`, native Auto-Deploy via `.github/workflows/promote.yml`)
 
 ---
 
@@ -76,16 +76,17 @@ pnpm test:coverage    # Generate coverage report
 
 ### Backend (backend/ directory)
 ```bash
-pnpm dev                    # Start with hot-reload (tsx watch)
-pnpm build                  # Compile TypeScript to dist/
-pnpm start                  # Run compiled server
-pnpm prisma:generate        # Generate Prisma client
-pnpm prisma:migrate         # Run migrations
-pnpm prisma:studio          # Open Prisma GUI
-pnpm prisma:seed            # Populate database with 70+ exercises
-pnpm test                   # Run Jest tests (watch mode)
-pnpm test:ci                # Run tests with coverage (CI mode)
-pnpm test:coverage          # Generate coverage report
+pnpm dev                              # Start with hot-reload (tsx watch)
+pnpm prisma:generate && pnpm run typecheck  # Generate Prisma client before typechecking
+pnpm build                            # Generate Prisma client + compile TypeScript to dist/
+pnpm start                            # Run compiled server
+pnpm prisma:generate                  # Generate Prisma client
+pnpm prisma:migrate                   # Run migrations (local isolated/test only)
+pnpm prisma:studio                    # Open Prisma GUI
+pnpm prisma:seed                      # Populate database with exercises
+pnpm test                             # Run Jest tests (watch mode)
+pnpm test:ci                          # Run tests with coverage (CI mode)
+pnpm test:coverage                    # Generate coverage report
 ```
 
 ### API Documentation
@@ -348,10 +349,10 @@ logger.warn('Slow request', { url: '/api/workouts/generate', duration: '2500ms' 
 logger.error('Database error', { error: error.message });
 ```
 
-### Dashboard
-- **URL:** `http://localhost:3001/dashboard/dashboard.html` (dev)
-- **Features:** Real-time metrics, CPU/memory graphs, logs viewer, health status
-- **⚠️ Security:** Currently unprotected. Protect in production with HTTP basic auth or JWT middleware.
+### Admin Operations & Dashboard Telemetry
+- **Web Dashboard:** Next.js route `/dashboard` (user application dashboard)
+- **Operational API:** `/api/dashboard/{summary,metrics,db-metrics,logs-stats,logs}` protected by `authenticate` + `requireAdmin` (`backend/src/routes/dashboard.routes.ts`).
+- **Security Note:** Legacy unauthenticated Express static `/dashboard` HTML serving was retired (`TASK-007`).
 
 ### Health Checks
 All health checks evaluate database connectivity, memory usage (< 80%), and disk space.
@@ -561,14 +562,13 @@ const announcement = useAriaLive('Saved successfully', 'polite')
 ## Deployment Notes
 
 ### Vercel (Frontend)
-- Auto-deploys on git push to main
-- No build-time checks (ESLint/TS disabled per `next.config.mjs`)
-- Environment: Set `NEXT_PUBLIC_API_URL` to production backend URL
+- Auto-deploys on `main` (advanced sequentially by `.github/workflows/promote.yml` after CI and Render backend verification).
+- Production proxy: `NEXT_PUBLIC_API_PROXY=true` with `API_PROXY_TARGET` pointing to the Render service origin.
 
-### Railway/Render (Backend)
-- Provide DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET as env vars
-- Runs `npm install && npm run build && npm start`
-- Health check endpoint: `GET /health/simple`
+### Render (Backend)
+- Root directory: `backend`, connected to `production` branch with native Auto-Deploy.
+- Runs build/start (`dist/server.js`) with Neon `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, and `FRONTEND_URL`.
+- Health check endpoint: `GET /health/simple`.
 
 ### Neon (Database)
 - 500 MB free tier
@@ -593,24 +593,18 @@ const announcement = useAriaLive('Saved successfully', 'polite')
 
 ### Backend Testing
 - **Framework:** Jest + Supertest
-- **Test Files:** `backend/tests/` folder
-- **Unit Tests:** Utilities, validators, password, JWT
-- **Integration Tests:** Auth, exercises, workouts, progress
+- **Test Files:** `backend/tests/unit/` and `backend/tests/integration/`
+- **Unit Tests:** Pure domain logic, validators, security config, guidance provenance, fallback logic (`cd backend && npx jest --ci --runInBand tests/unit`)
+- **Integration Tests:** API endpoints requiring isolated test PostgreSQL (`scripts/test-db.sh`, 31 files)
 - **Scripts:**
   - `pnpm test` - Run in watch mode (from backend/)
   - `pnpm test:ci` - Run with coverage
   - `pnpm test:coverage` - Generate coverage report
-- **Coverage:** 23+ tests across critical paths
 
 ### CI/CD Pipeline
-- **File:** `.github/workflows/test.yml`
-- **Services:** PostgreSQL for integration tests
-- **Jobs:**
-  - Frontend tests
-  - Backend tests
-  - Build verification
-  - ESLint checks
-- **Runs on:** Every push and pull request
+- **CI File:** `.github/workflows/ci.yml` (`test-backend` with Postgres 16 service running `prisma generate`, `pnpm run typecheck`, `prisma migrate deploy`, `pnpm test:ci`, `pnpm build`; `test-frontend` running `lint`, `typecheck`, `test:ci`, `build`).
+- **Promotion & Migrations:** `.github/workflows/promote.yml` and `.github/workflows/production-migrations.yml` (see `.anclora/PRODUCTION_RUNTIME.md`).
+- **Runs on:** Every push and pull request to `development`, `staging`, `production`, `main`.
 
 ---
 
@@ -691,7 +685,9 @@ Anclora-Impulso/
 │   └── investors/                 # Investor package
 │
 ├── .github/workflows/
-│   └── test.yml                   # CI/CD pipeline (NEW)
+│   ├── ci.yml                     # CI test/lint/typecheck/build pipeline
+│   ├── promote.yml                # Governed promotion gate
+│   └── production-migrations.yml  # Protected Prisma migration runner
 │
 └── Configuration/
     ├── .env.example               # Backend env template
@@ -734,7 +730,7 @@ Anclora-Impulso/
 
 ### User & Deployment Guides
 - **README.md** - User-facing quick start and repo entry point
-- **docs/operations/DEPLOY.md** - Deployment guide for Vercel, Railway, Neon
+- **docs/operations/DEPLOY.md** - Deployment guide for Vercel, Render, Neon
 - **docs/development/INTEGRATION.md** - Frontend-backend integration details
 
 ### Monitoring & Configuration
@@ -755,23 +751,20 @@ Anclora-Impulso/
 
 ---
 
-## Project Status
+## Reproducible Verification Metrics
 
-- ✅ **Phase 1:** Security & Testing (complete)
-- ✅ **Phase 2:** Performance & UX (complete)
-- ✅ **Phase 3:** Quality & Accessibility (complete)
-- ✅ **Production Ready:** Yes
+Run commands directly from the repository root (`anclora-impulso/`) or `backend/`:
 
-**Total Implementation:** ~5 hours (estimated 12 weeks)
-**Files:** 50+ created/modified
-**Code:** 2,500+ lines added
-**Tests:** 23+ test cases
-**Security Fixes:** 10
-**Accessibility Score:** 95% (WCAG 2.1 AA)
+- **Frontend unit tests (`npx jest --ci --coverage=false`):** 24 suites / 162 tests
+- **Backend unit tests (`cd backend && npx jest --ci --runInBand tests/unit`):** 20 suites / 180 tests
+- **Backend integration test files (`ls -1 backend/tests/integration/*.test.ts | wc -l`):** 31 files (require isolated test PostgreSQL)
+- **Prisma models (`grep -c "^model " backend/prisma/schema.prisma`):** 57 models
+- **Prisma migrations (`ls -1 backend/prisma/migrations | grep -v migration_lock.toml | wc -l`):** 26 migrations
+- **Frontend & backend typechecks (`./node_modules/.bin/tsc --noEmit` and `cd backend && pnpm run prisma:generate && pnpm run typecheck`):** 0 errors
 
 ---
 
-*Last updated: November 20, 2025*
+*Last updated: 2026-11-11*
 
 <!-- ANCLORA-AOS:START -->
 # Claude adapter
