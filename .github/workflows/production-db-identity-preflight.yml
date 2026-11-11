@@ -1,0 +1,121 @@
+name: Production DB Identity Preflight (read-only)
+
+# Strictly read-only diagnostic workflow for Anclora Impulso (Q1):
+# - Executes inside the protected GitHub Environment `production-migrations`
+#   so human reviewer approval governs access to PRODUCTION_MIGRATION_DATABASE_URL.
+# - Never runs prisma migrate deploy, DDL, seeds, backups, promotions, or deploys.
+# - Never prints connection URLs, hostnames, usernames, passwords, or database names.
+# - Never emits MigrationAttestationV1 or modifies .anclora/PRODUCTION_RUNTIME.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_fingerprint:
+        description: "Optional independent sha256:<64-hex> fingerprint to cross-check (never overrides PRODUCTION_RUNTIME.md)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+concurrency:
+  group: production-db-identity-preflight
+  cancel-in-progress: false
+
+jobs:
+  validate_candidate:
+    name: Validate candidate commit (no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.repository == 'ToniIAPro73/anclora-impulso'
+    outputs:
+      candidate_sha: ${{ steps.resolve.outputs.candidate_sha }}
+      default_branch_fingerprint: ${{ steps.resolve.outputs.default_branch_fingerprint }}
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify ancestry, release manifest, and approved contract reference
+        id: resolve
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_FP: ${{ inputs.expected_fingerprint }}
+        run: |
+          set -euo pipefail
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::invalid candidate SHA"; exit 1; }
+          [ "$(git rev-parse HEAD)" = "$CANDIDATE_SHA" ] || { echo "::error::checked-out SHA mismatch"; exit 1; }
+          git merge-base --is-ancestor "$CANDIDATE_SHA" "origin/$DEFAULT_BRANCH" \
+            || { echo "::error::candidate commit is not contained in origin/$DEFAULT_BRANCH"; exit 1; }
+          if [ -n "$EXPECTED_FP" ]; then
+            [[ "$EXPECTED_FP" =~ ^sha256:[0-9a-f]{64}$ ]] \
+              || { echo "::error::expected_fingerprint must match sha256:<64-hex>"; exit 1; }
+          fi
+          node scripts/release/verify-release-manifest.mjs .
+          default_fp="$(git show "origin/$DEFAULT_BRANCH:.anclora/PRODUCTION_RUNTIME.md" \
+            | sed -n 's/^DATABASE_TARGET_FINGERPRINT=//p' | head -n 1 | tr -d '\r' | xargs || true)"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+          echo "default_branch_fingerprint=$default_fp" >> "$GITHUB_OUTPUT"
+
+  identity_preflight:
+    name: Read-only DB identity and _prisma_migrations preflight
+    needs: validate_candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production-migrations
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_MIGRATION_DATABASE_URL }}
+      PRODUCTION_MIGRATION_DATABASE_URL: ${{ secrets.PRODUCTION_MIGRATION_DATABASE_URL }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate_candidate.outputs.candidate_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Mask connection parameters and verify direct URL
+        run: |
+          set -euo pipefail
+          [ -n "${PRODUCTION_MIGRATION_DATABASE_URL:-}" ] || { echo "::error::PRODUCTION_MIGRATION_DATABASE_URL is missing"; exit 1; }
+          node scripts/release/mask-and-check-db-url.mjs
+
+      - name: Run read-only identity and ledger preflight
+        env:
+          CANDIDATE_SHA: ${{ needs.validate_candidate.outputs.candidate_sha }}
+          DEFAULT_FP: ${{ needs.validate_candidate.outputs.default_branch_fingerprint }}
+          EXPECTED_FP: ${{ inputs.expected_fingerprint }}
+        run: |
+          set -euo pipefail
+          node scripts/release/identity-preflight.mjs \
+            --repo-root . \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --default-branch-fingerprint "$DEFAULT_FP" \
+            --expected-fingerprint "$EXPECTED_FP" \
+            --output identity-preflight.json
+
+      - name: Upload non-secret identity preflight report
+        uses: actions/upload-artifact@v4
+        with:
+          name: identity-preflight-report
+          path: |
+            identity-preflight.json
+            identity-preflight.json.sha256
+          if-no-files-found: error
+          retention-days: 30
+
