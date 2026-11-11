@@ -1,6 +1,5 @@
 import { goTo } from './navigate';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { API_BASE, DIRECT_API_BASE } from '@/lib/api/base-url';
 
 export type OAuthProvider = 'google' | 'github';
 
@@ -63,7 +62,7 @@ export async function beginOAuth(provider: OAuthProvider): Promise<void> {
   // A newer attempt in this tab supersedes any earlier one: a late return of the old flow can no longer be redeemed.
   sessionStorage.setItem(OAUTH_ATTEMPT_KEY, JSON.stringify(attempt));
   const challenge = await s256(verifier);
-  goTo(`${API_URL}/auth/${provider}?challenge=${encodeURIComponent(challenge)}`);
+  goTo(`${DIRECT_API_BASE}/auth/${provider}?challenge=${encodeURIComponent(challenge)}`);
 }
 
 /** Reads AND removes the pending attempt (single use). Returns null when there is none or it is malformed/expired. */
@@ -92,20 +91,21 @@ export function takeOAuthAttempt(now: number = Date.now()): OAuthAttempt | null 
 export interface OAuthRedeemResult {
   user: { id: string; email: string; fullName: string; isAdmin?: boolean };
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 /** Redeems the handoff code with the verifier of THIS tab's attempt. Throws on any refusal. */
 export async function redeemOAuthHandoff(code: string, attempt: OAuthAttempt): Promise<OAuthRedeemResult> {
-  const response = await fetch(`${API_URL}/auth/oauth/exchange`, {
+  const response = await fetch(`${API_BASE}/auth/oauth/exchange`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code, verifier: attempt.verifier, provider: attempt.provider }),
     cache: 'no-store',
   });
   if (!response.ok) throw new Error('oauth_exchange_failed');
   const body = (await response.json()) as Partial<OAuthRedeemResult>;
-  if (typeof body.accessToken !== 'string' || typeof body.refreshToken !== 'string' || !body.user) {
+  if (typeof body.accessToken !== 'string' || !body.user) {
     throw new Error('oauth_exchange_malformed');
   }
   return body as OAuthRedeemResult;

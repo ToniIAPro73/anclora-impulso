@@ -50,7 +50,8 @@ describe('/auth/callback (F-4)', () => {
     await waitFor(() => expect(reload).toHaveBeenCalledWith('/dashboard'));
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body).toEqual({ code: 'c'.repeat(43), verifier: 'v'.repeat(43), provider: 'google' });
-    expect(localStorage.getItem('refreshToken')).toBe('rt1.fresh');
+    // AC-03 (TASK-002): the refresh token is never persisted in localStorage.
+    expect(localStorage.getItem('refreshToken')).toBeNull();
     expect(sessionStorage.getItem(OAUTH_ATTEMPT_KEY)).toBeNull();
   });
 

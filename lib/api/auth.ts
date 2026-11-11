@@ -12,7 +12,7 @@ export interface User {
 export interface AuthResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 export interface RegisterData {
@@ -26,11 +26,14 @@ export interface LoginData {
   password: string;
 }
 
-/** Single place where a new session is persisted, so every caller (pages, context) gets silent refresh. */
+/**
+ * Single place where a new session is persisted, so every caller (pages, context) gets silent refresh.
+ * Refresh tokens are managed via HttpOnly cookie (/api/auth); any legacy refreshToken in localStorage is removed.
+ */
 function storeSession(response: AuthResponse) {
   apiClient.setToken(response.accessToken);
-  if (typeof window !== 'undefined' && response.refreshToken) {
-    localStorage.setItem('refreshToken', response.refreshToken);
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('refreshToken');
   }
 }
 
@@ -62,7 +65,7 @@ export const authApi = {
    */
   logout(info: LogoutInfo = { reason: 'unspecified', origin: 'unspecified' }) {
     if (typeof console !== 'undefined') console.info('[auth] logout', { reason: info.reason, origin: info.origin });
-    // Fire-and-forget: revoke on the server using the tokens that are about to be cleared.
+    // Fire-and-forget: revoke on the server using the tokens/cookie that are about to be cleared.
     void apiClient.revokeSessionOnServer(info);
     clearAllOperationKeys();
     apiClient.setToken(null);
@@ -74,13 +77,15 @@ export const authApi = {
 
   /**
    * The server already REJECTED this session (401 after a failed refresh). Local cleanup only: no logout request,
-   * and only if the stored refresh token is still the one the failed check used — another tab may have signed in
+   * and only if the stored session token is still the one the failed check used — another tab may have signed in
    * since, and its session must not be touched.
    */
-  discardRejectedSession(expectedRefreshToken: string | null, origin: string) {
-    const current = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+  discardRejectedSession(expectedSessionToken: string | null, origin: string) {
+    const currentRefresh = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+    const currentAccess = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const current = currentRefresh ?? currentAccess;
     if (typeof console !== 'undefined') console.info('[auth] session discarded', { reason: 'session_invalid', origin });
-    if (current !== null && current !== expectedRefreshToken) return false;
+    if (current !== null && expectedSessionToken !== null && current !== expectedSessionToken) return false;
     clearAllOperationKeys();
     apiClient.setToken(null);
     if (typeof window !== 'undefined') localStorage.removeItem('refreshToken');

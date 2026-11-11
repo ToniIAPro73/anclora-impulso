@@ -12,31 +12,46 @@ async function loadClient() {
   return mod.apiClient;
 }
 
-describe('api client session refresh', () => {
+describe('api client session refresh (TASK-002 HttpOnly cookie + transition)', () => {
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem('accessToken', 'old-access');
-    localStorage.setItem('refreshToken', 'rt1.old');
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('refreshes once on 401, stores the rotated pair and retries the request', async () => {
-    const calls: Array<{ url: string; auth: string | null }> = [];
+  it('refreshes once on 401 using HttpOnly cookie (credentials: include), stores only accessToken and never writes refreshToken to localStorage', async () => {
+    const calls: Array<{ url: string; auth: string | null; credentials?: RequestCredentials }> = [];
     global.fetch = jest.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
       const headers = new Headers(init?.headers);
-      calls.push({ url: String(url), auth: headers.get('Authorization') });
+      calls.push({ url: String(url), auth: headers.get('Authorization'), credentials: init?.credentials });
       if (String(url).endsWith('/auth/refresh')) return jsonResponse(200, { accessToken: 'new-access', refreshToken: 'rt1.new' });
       return headers.get('Authorization') === 'Bearer new-access' ? jsonResponse(200, { ok: true }) : jsonResponse(401, { error: 'Token expirado' });
     }) as unknown as typeof fetch;
 
     const client = await loadClient();
     await expect(client.get('/workouts')).resolves.toEqual({ ok: true });
-    expect(localStorage.getItem('refreshToken')).toBe('rt1.new');
+    expect(localStorage.getItem('refreshToken')).toBeNull();
     expect(localStorage.getItem('accessToken')).toBe('new-access');
-    expect(calls.filter((c) => c.url.endsWith('/auth/refresh'))).toHaveLength(1);
+    const refreshCalls = calls.filter((c) => c.url.endsWith('/auth/refresh'));
+    expect(refreshCalls).toHaveLength(1);
+    expect(refreshCalls[0].credentials).toBe('include');
+  });
+
+  it('removes any legacy refreshToken from localStorage after a successful refresh rotation', async () => {
+    localStorage.setItem('refreshToken', 'rt1.legacy');
+    global.fetch = jest.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      if (String(url).endsWith('/auth/refresh')) return jsonResponse(200, { accessToken: 'new-access', refreshToken: 'rt1.new' });
+      return headers.get('Authorization') === 'Bearer new-access' ? jsonResponse(200, { ok: true }) : jsonResponse(401, { error: 'Token expirado' });
+    }) as unknown as typeof fetch;
+
+    const client = await loadClient();
+    await expect(client.get('/workouts')).resolves.toEqual({ ok: true });
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(localStorage.getItem('accessToken')).toBe('new-access');
   });
 
   it('shares one refresh between concurrent 401s (single-flight)', async () => {
@@ -46,7 +61,7 @@ describe('api client session refresh', () => {
       if (String(url).endsWith('/auth/refresh')) {
         refreshCalls += 1;
         await new Promise((r) => setTimeout(r, 20));
-        return jsonResponse(200, { accessToken: 'new-access', refreshToken: 'rt1.new' });
+        return jsonResponse(200, { accessToken: 'new-access' });
       }
       return headers.get('Authorization') === 'Bearer new-access' ? jsonResponse(200, {}) : jsonResponse(401, {});
     }) as unknown as typeof fetch;
@@ -54,9 +69,11 @@ describe('api client session refresh', () => {
     const client = await loadClient();
     await Promise.all([client.get('/a'), client.get('/b'), client.get('/c')]);
     expect(refreshCalls).toBe(1);
+    expect(localStorage.getItem('refreshToken')).toBeNull();
   });
 
   it('clears the dead session when the refresh is rejected and surfaces the original error', async () => {
+    localStorage.setItem('refreshToken', 'rt1.old');
     global.fetch = jest.fn(async (url: RequestInfo | URL) =>
       String(url).endsWith('/auth/refresh') ? jsonResponse(401, { error: 'Sesión revocada' }) : jsonResponse(401, { error: 'Token expirado' }),
     ) as unknown as typeof fetch;
@@ -75,7 +92,7 @@ describe('api client session refresh', () => {
 
     const client = await loadClient();
     await expect(client.get('/workouts')).rejects.toThrow('Token expirado');
-    expect(localStorage.getItem('refreshToken')).toBe('rt1.old');
+    expect(localStorage.getItem('accessToken')).toBe('old-access');
   });
 
   it('refreshes for /auth/me (session check) but not for credential endpoints', async () => {
@@ -88,21 +105,22 @@ describe('api client session refresh', () => {
     const urls: string[] = [];
     global.fetch = jest.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
       urls.push(String(url));
-      if (String(url).endsWith('/auth/refresh')) return jsonResponse(200, { accessToken: 'new', refreshToken: 'rt1.new' });
+      if (String(url).endsWith('/auth/refresh')) return jsonResponse(200, { accessToken: 'new' });
       return new Headers(init?.headers).get('Authorization') === 'Bearer new' ? jsonResponse(200, { id: 'u' }) : jsonResponse(401, {});
     }) as unknown as typeof fetch;
     await expect(client.get('/auth/me')).resolves.toEqual({ id: 'u' });
     expect(urls.filter((u) => u.endsWith('/auth/refresh'))).toHaveLength(1);
   });
 
-  it('logout revokes on the server with both tokens before clearing locally', async () => {
+  it('logout revokes on the server with credentials: include', async () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, {}));
     global.fetch = fetchMock as unknown as typeof fetch;
     const client = await loadClient();
-    await client.revokeSessionOnServer();
+    await client.revokeSessionOnServer({ reason: 'user_action', origin: 'test' });
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url.endsWith('/auth/logout')).toBe(true);
-    expect(JSON.parse(String(init.body))).toEqual({ refreshToken: 'rt1.old' });
+    expect(init.credentials).toBe('include');
+    expect(JSON.parse(String(init.body))).toEqual({ reason: 'user_action', origin: 'test' });
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer old-access');
   });
 });

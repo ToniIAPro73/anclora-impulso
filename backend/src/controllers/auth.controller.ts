@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/auth.service';
 import { verifyAccessTokenIgnoringExpiry } from '../utils/jwt';
 import { revokeByRefreshToken, revokeSession, rotateRefreshToken } from '../services/session.service';
+import { clearRefreshTokenCookie, extractRefreshToken, setRefreshTokenCookie } from '../utils/refresh-cookie';
 import type { RegisterInput, LoginInput } from '../utils/validators';
 import logger from '../config/logger';
 
@@ -15,7 +16,7 @@ export async function register(
 ): Promise<void> {
   try {
     const result = await authService.register(req.body);
-    
+    setRefreshTokenCookie(res, result.refreshToken);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -32,7 +33,7 @@ export async function login(
 ): Promise<void> {
   try {
     const result = await authService.login(req.body);
-    
+    setRefreshTokenCookie(res, result.refreshToken);
     res.json(result);
   } catch (error) {
     next(error);
@@ -70,20 +71,21 @@ export async function refreshToken(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { refreshToken } = req.body;
+    const token = extractRefreshToken(req);
 
-    if (!refreshToken) {
+    if (!token) {
       res.status(400).json({ error: 'Refresh token requerido' });
       return;
     }
 
-    if (typeof refreshToken !== 'string' || refreshToken.length > 4096) {
+    if (typeof token !== 'string' || token.length > 4096) {
       res.status(400).json({ error: 'Refresh token requerido' });
       return;
     }
 
     // Rotación: el refresh presentado queda consumido y se entrega uno nuevo.
-    const rotated = await rotateRefreshToken(refreshToken);
+    const rotated = await rotateRefreshToken(token);
+    setRefreshTokenCookie(res, rotated.refreshToken);
 
     res.json({ accessToken: rotated.accessToken, refreshToken: rotated.refreshToken });
   } catch (error) {
@@ -106,9 +108,9 @@ export async function logout(
     const origin = typeof req.body?.origin === 'string' && /^[A-Za-z0-9._:-]{1,64}$/.test(req.body.origin) ? req.body.origin : 'unspecified';
     logger.info('auth.logout', { reason, origin });
 
-    const refreshToken = req.body?.refreshToken;
-    if (typeof refreshToken === 'string' && refreshToken.length <= 4096) {
-      await revokeByRefreshToken(refreshToken, 'logout');
+    const token = extractRefreshToken(req);
+    if (typeof token === 'string' && token.length <= 4096) {
+      await revokeByRefreshToken(token, 'logout');
     }
 
     const header = req.headers.authorization;
@@ -124,5 +126,6 @@ export async function logout(
     // Never leak internals from logout.
   }
 
+  clearRefreshTokenCookie(res);
   res.json({ message: 'Sesión cerrada exitosamente' });
 }

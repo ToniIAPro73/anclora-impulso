@@ -49,7 +49,7 @@ function OAuthCallbackHandler() {
           return
         }
         apiClient.setToken(auth.accessToken)
-        localStorage.setItem("refreshToken", auth.refreshToken)
+        localStorage.removeItem("refreshToken")
         // Full reload so AuthProvider re-reads the stored session.
         replaceWith("/dashboard")
       } catch {

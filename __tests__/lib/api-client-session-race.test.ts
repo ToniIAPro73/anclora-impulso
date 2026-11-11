@@ -107,11 +107,11 @@ describe('R8-A refresh started under A', () => {
     expect(net.calls.filter((c) => c.url.endsWith('/workouts') && c.auth === 'Bearer access-B')).toHaveLength(0);
   });
 
-  it('control: without a session change the rotated pair is stored and the request is retried', async () => {
+  it('control: without a session change the rotated accessToken is stored, legacy refreshToken is removed from localStorage, and the request is retried', async () => {
     const { client, net, request } = await startRefreshUnderA();
     net.refreshA.resolve(jsonResponse(200, { accessToken: 'access-B', refreshToken: 'rt1.A2' }));
     await expect(request).resolves.toEqual({ who: 'B' });
-    expect(store()).toEqual({ access: 'access-B', refresh: 'rt1.A2' });
+    expect(store()).toEqual({ access: 'access-B', refresh: null });
     expect(client.getToken()).toBe('access-B');
   });
 });

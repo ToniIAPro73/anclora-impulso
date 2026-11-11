@@ -15,6 +15,7 @@ import {
 } from '../services/oauth/github.provider';
 import { resolveOAuthAccount, OAuthRefusal } from '../services/oauth.service';
 import { createOAuthHandoff, redeemOAuthHandoff, HANDOFF_CHALLENGE_PATTERN } from '../services/oauth-handoff.service';
+import { setRefreshTokenCookie } from '../utils/refresh-cookie';
 
 const COOKIE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutos, tiempo de vida del handshake PKCE
 
@@ -157,6 +158,7 @@ export async function exchangeOAuthHandoff(req: Request, res: Response, next: (e
   try {
     const { code, verifier, provider } = (req.body ?? {}) as Record<string, unknown>;
     const auth = await redeemOAuthHandoff({ code, verifier, provider });
+    setRefreshTokenCookie(res, auth.refreshToken);
     res.setHeader('Cache-Control', 'no-store');
     res.json(auth);
   } catch (error) {

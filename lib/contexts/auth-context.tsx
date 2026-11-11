@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const generation = apiClient.getSessionGeneration()
       // Stale = another login/logout in this tab, OR another tab replaced the shared credentials with a different identity.
       const isStale = () => apiClient.getSessionGeneration() !== generation || apiClient.hasIdentityDrifted()
-      const refreshTokenAtStart = localStorage.getItem("refreshToken")
+      const sessionTokenAtStart = localStorage.getItem("refreshToken") ?? token
 
       // 1) Is the SESSION valid? Only this step may end it, and only on a definitive 401.
       let currentUser: User
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // A check of an older identity is inert: no state, no warnings, no loading flag, no discard.
         if (isStale()) return
         if (isRejectedSession(error)) {
-          authApi.discardRejectedSession(refreshTokenAtStart, "auth-context.checkSession.me")
+          authApi.discardRejectedSession(sessionTokenAtStart, "auth-context.checkSession.me")
           setUser(null)
           setProfile(mergeUserProfile())
         } else {
@@ -175,10 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authApi.login({ email, password })
-    // storeSession already moved the client to the new session generation; any older check is now inert.
+    // storeSession already moved the client to the new session generation and cleared any legacy refreshToken in localStorage.
     const generation = apiClient.getSessionGeneration()
 
-    localStorage.setItem("refreshToken", response.refreshToken)
+    localStorage.removeItem("refreshToken")
     setUser(response.user)
     setIsLoading(false)
     await loadProfile(response.user, () => apiClient.getSessionGeneration() !== generation || apiClient.hasIdentityDrifted())
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authApi.register({ email, password, fullName })
     const generation = apiClient.getSessionGeneration()
 
-    localStorage.setItem("refreshToken", response.refreshToken)
+    localStorage.removeItem("refreshToken")
     setUser(response.user)
     setIsLoading(false)
     await loadProfile(response.user, () => apiClient.getSessionGeneration() !== generation || apiClient.hasIdentityDrifted())

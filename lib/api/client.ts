@@ -15,7 +15,7 @@ export class ApiError extends Error {
 // Credential-exchange endpoints never trigger a refresh (a 401 there is a real rejection). /auth/me does.
 const NO_REFRESH_ENDPOINTS = new Set(['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { API_BASE } from './base-url';
 
 /**
  * Correlation identity of a token: its `sid` claim (stable across refresh rotation of the same server session), or
@@ -96,41 +96,43 @@ class ApiClient {
   private refreshInFlight: Promise<boolean> | null = null;
 
   /**
-   * Exchanges the stored refresh token for a new pair (the server rotates it). Single-flight per tab:
-   * concurrent 401s share one refresh. Returns false when the session can no longer be renewed.
-   * The result is applied only if the session that started it is still the active one: the generation and the
-   * stored refresh token are re-validated at the exact point where storage would be modified.
+   * Exchanges the active refresh session (HttpOnly cookie, with transition fallback for any legacy localStorage
+   * refreshToken) for a new accessToken. Single-flight per tab: concurrent 401s share one refresh.
+   * Never stores refreshToken in localStorage (TASK-002 / AUD-001).
    */
   private refreshSession(): Promise<boolean> {
     if (this.refreshInFlight) return this.refreshInFlight;
 
     this.refreshInFlight = (async () => {
       if (typeof window === 'undefined') return false;
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) return false;
+      const accessAtStart = localStorage.getItem('accessToken');
+      const legacyRefreshToken = localStorage.getItem('refreshToken');
+      if (!this.token && !accessAtStart && !legacyRefreshToken) return false;
       const generation = this.sessionGeneration;
       const identity = identityOf(this.token);
       const stillSameSession = () => this.sessionGeneration === generation;
 
-      // The stored refresh token must belong to the session of the request being served. If another tab has put a
-      // different identity in the shared storage, that refresh token is not ours to exchange.
-      if (identityOf(localStorage.getItem('accessToken')) !== identity) return false;
+      // The stored access token must belong to the session of the request being served. If another tab has put a
+      // different identity in the shared storage, that session is not ours to exchange.
+      if (identityOf(accessAtStart) !== identity) return false;
 
       try {
         const response = await fetch(`${this.baseUrl}/auth/refresh`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
+          body: JSON.stringify(legacyRefreshToken ? { refreshToken: legacyRefreshToken } : {}),
         });
 
         // Another session (login/logout/discard) took over while this was in flight: touch nothing.
         if (!stillSameSession()) return false;
-        // The stored pair changed meanwhile. Never write over it. Adopt it only if it provably continues THIS
+        // The stored credentials changed meanwhile. Never write over them. Adopt only if they provably continue THIS
         // session (same identity); a different identity is another user signing in, not a rotation.
-        if (localStorage.getItem('refreshToken') !== refreshToken) {
-          const adopted = localStorage.getItem('accessToken');
-          if (adopted && identityOf(adopted) === identity) {
-            this.token = adopted;
+        const currentAccess = localStorage.getItem('accessToken');
+        const currentRefresh = localStorage.getItem('refreshToken');
+        if (currentAccess !== accessAtStart || currentRefresh !== legacyRefreshToken) {
+          if (currentAccess && identityOf(currentAccess) === identity) {
+            this.token = currentAccess;
             return true;
           }
           return false;
@@ -146,10 +148,16 @@ class ApiClient {
         }
         const body = (await response.json()) as { accessToken?: string; refreshToken?: string };
         // json() is a second await: the session may have changed again
-        if (!stillSameSession() || localStorage.getItem('refreshToken') !== refreshToken) return false;
+        if (
+          !stillSameSession() ||
+          localStorage.getItem('accessToken') !== accessAtStart ||
+          localStorage.getItem('refreshToken') !== legacyRefreshToken
+        ) {
+          return false;
+        }
         if (!body.accessToken) return false;
         this.writeToken(body.accessToken);
-        if (body.refreshToken) localStorage.setItem('refreshToken', body.refreshToken);
+        localStorage.removeItem('refreshToken');
         return true;
       } catch {
         return false;
@@ -176,6 +184,7 @@ class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
+      credentials: options.credentials ?? 'include',
       headers,
     });
 
@@ -202,20 +211,24 @@ class ApiClient {
     return response.json();
   }
 
-  /** Server-side logout (revokes the session). Best effort: local sign-out never depends on it. */
+  /** Server-side logout (revokes the session and clears HttpOnly cookie). Best effort: local sign-out never depends on it. */
   async revokeSessionOnServer(info?: { reason: string; origin: string }): Promise<void> {
     if (typeof window === 'undefined') return;
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!this.token && !refreshToken) return;
+    const legacyRefreshToken = localStorage.getItem('refreshToken');
+    if (!this.token && !legacyRefreshToken) return;
     try {
       await fetch(`${this.baseUrl}/auth/logout`, {
         method: 'POST',
         keepalive: true,
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
         },
-        body: JSON.stringify({ refreshToken, ...(info ? { reason: info.reason, origin: info.origin } : {}) }),
+        body: JSON.stringify({
+          ...(legacyRefreshToken ? { refreshToken: legacyRefreshToken } : {}),
+          ...(info ? { reason: info.reason, origin: info.origin } : {}),
+        }),
       });
     } catch {
       // offline or server unreachable: the local session is still cleared
@@ -246,4 +259,4 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_URL);
+export const apiClient = new ApiClient(API_BASE);
