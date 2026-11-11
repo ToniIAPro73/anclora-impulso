@@ -1,4 +1,4 @@
-const SENSITIVE_KEY = /pass(word)?|secret|token|authorization|cookie|api[-_]?key|^code$|code[-_]?verifier|verifier|handoff|credential|avatardataurl/i;
+const SENSITIVE_KEY = /pass(word)?|secret|token|authorization|cookie|api[-_]?key|^code$|code[-_]?verifier|verifier|handoff|credential|avatardataurl|sex[-_]?at[-_]?birth|gender[-_]?identity/i;
 const MAX_DEPTH = 6;
 
 /** Deep-copies a value replacing the content of sensitive keys; safe for logging. Never mutates the input. */
