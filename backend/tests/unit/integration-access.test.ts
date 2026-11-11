@@ -64,5 +64,32 @@ describe('evaluateIntegrationAccess (R6: runner variables are not proof)', () =>
       expect(run(LOCAL, 'admin').allowed).toBe(false);
       expect(run('postgresql://u%40x:p@127.0.0.1:54329/anclora_impulso_test', 'u@x').allowed).toBe(true);
     });
+
+    it('rejects Neon production hosts and non-_test database names even on loopback (TASK-012)', () => {
+      expect(
+        evaluateIntegrationAccess({
+          databaseUrl: 'postgresql://u:p@ep-shy-cloud-123456.us-east-2.aws.neon.tech:5432/neondb',
+          scriptPort: '5432',
+          scriptName: 'neondb',
+        }).allowed,
+      ).toBe(false);
+
+      expect(
+        evaluateIntegrationAccess({
+          databaseUrl: 'postgresql://u:p@127.0.0.1:54329/neondb',
+          scriptPort: '54329',
+          scriptName: 'neondb',
+        }).allowed,
+      ).toBe(false);
+
+      expect(
+        evaluateIntegrationAccess({
+          databaseUrl: 'postgresql://u:p@127.0.0.1:54329/postgres',
+          scriptPort: '54329',
+          scriptName: 'postgres',
+        }).allowed,
+      ).toBe(false);
+    });
   });
 });
+

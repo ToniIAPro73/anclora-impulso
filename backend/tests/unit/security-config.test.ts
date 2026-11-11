@@ -1,5 +1,6 @@
 import {
   applySecurityPolicy,
+  assertRequiredJwtSecrets,
   evaluateSecurityConfig,
   parseDurationSeconds,
   SecurityConfigError,
@@ -72,3 +73,70 @@ describe('security policy modes (AI-06 AC02)', () => {
     }
   });
 });
+
+describe('mandatory startup JWT secrets outside test (TASK-006 / AUD-002)', () => {
+  it.each(['development', 'staging', 'production'])('throws on default or empty secrets in %s', (nodeEnv) => {
+    expect(() =>
+      assertRequiredJwtSecrets({
+        nodeEnv,
+        jwtSecret: KNOWN_DEFAULT_SECRETS[0],
+        jwtRefreshSecret: good.jwtRefreshSecret,
+      }),
+    ).toThrow(/JWT_SECRET/);
+
+    expect(() =>
+      assertRequiredJwtSecrets({
+        nodeEnv,
+        jwtSecret: good.jwtSecret,
+        jwtRefreshSecret: KNOWN_DEFAULT_SECRETS[1],
+      }),
+    ).toThrow(/JWT_REFRESH_SECRET/);
+
+    expect(() =>
+      assertRequiredJwtSecrets({
+        nodeEnv,
+        jwtSecret: '',
+        jwtRefreshSecret: good.jwtRefreshSecret,
+      }),
+    ).toThrow(/JWT_SECRET/);
+  });
+
+  it.each(['development', 'staging', 'production'])('throws on short or identical secrets in %s (AC-01)', (nodeEnv) => {
+    expect(() =>
+      assertRequiredJwtSecrets({ nodeEnv, jwtSecret: 'x'.repeat(31), jwtRefreshSecret: good.jwtRefreshSecret }),
+    ).toThrow(/JWT_SECRET.*32/);
+    expect(() =>
+      assertRequiredJwtSecrets({ nodeEnv, jwtSecret: good.jwtSecret, jwtRefreshSecret: 'y'.repeat(31) }),
+    ).toThrow(/JWT_REFRESH_SECRET.*32/);
+    expect(() =>
+      assertRequiredJwtSecrets({ nodeEnv, jwtSecret: good.jwtSecret, jwtRefreshSecret: good.jwtSecret }),
+    ).toThrow(/idénticos/);
+  });
+
+  it('accepts distinct secrets of at least 32 characters outside test', () => {
+    expect(() =>
+      assertRequiredJwtSecrets({ nodeEnv: 'production', jwtSecret: 'a'.repeat(32), jwtRefreshSecret: 'b'.repeat(32) }),
+    ).not.toThrow();
+  });
+
+  it('allows test environment to run unit suites without throwing', () => {
+    expect(() =>
+      assertRequiredJwtSecrets({
+        nodeEnv: 'test',
+        jwtSecret: KNOWN_DEFAULT_SECRETS[0],
+        jwtRefreshSecret: KNOWN_DEFAULT_SECRETS[1],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts configured secrets in development and production', () => {
+    expect(() =>
+      assertRequiredJwtSecrets({
+        nodeEnv: 'development',
+        jwtSecret: good.jwtSecret,
+        jwtRefreshSecret: good.jwtRefreshSecret,
+      }),
+    ).not.toThrow();
+  });
+});
+

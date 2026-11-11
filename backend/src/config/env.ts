@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { assertRequiredJwtSecrets } from '../utils/security-config';
 
 dotenv.config();
 
@@ -134,11 +135,5 @@ if (!env.databaseUrl) {
   console.warn('⚠️  DATABASE_URL no está configurada');
 }
 
-if (env.nodeEnv === 'production') {
-  if (env.jwtSecret === 'default-secret-change-in-production') {
-    throw new Error('JWT_SECRET debe ser configurado en producción');
-  }
-  if (env.jwtRefreshSecret === 'default-refresh-secret-change-in-production') {
-    throw new Error('JWT_REFRESH_SECRET debe ser configurado en producción');
-  }
-}
+assertRequiredJwtSecrets(env);
+

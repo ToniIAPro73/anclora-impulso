@@ -19,7 +19,7 @@ P1 implements the first opt-in Health Plan without duplicating the existing work
 | Gate | Result | Evidence |
 |---|---|---|
 | Schema validity | PASS | `npx prisma validate` |
-| Additive migration | PASS | `npx prisma migrate deploy` applied `20260914130000_add_health_plans` to configured development database |
+| Additive migration | PASS | `npx prisma migrate deploy` applied `20260914130000_add_health_plans` to the configured database (`PRODUCTION_BACKED` Neon database per `.anclora/PRODUCTION_RUNTIME.md`; verified in `_prisma_migrations` ledger on 2026-11-09 with `finished_at` set and 0 rollbacks) |
 | Backend typecheck/build | PASS | `npm run typecheck`, `npm run build` |
 | Frontend lint/typecheck/build | PASS | `npm run lint`, `npm run typecheck`, `npm run build` |
 | Domain tests | PASS | cohort boundaries, safety classification, adaptation and phases |

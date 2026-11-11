@@ -89,3 +89,36 @@ export function applySecurityPolicy(
     findings,
   };
 }
+
+/**
+ * Startup guard (TASK-006 / AUD-002): fails startup in any environment other than `test`
+ * when JWT secrets are missing or left at known default values. Never logs secret values.
+ */
+export function assertRequiredJwtSecrets(input: {
+  nodeEnv: string;
+  jwtSecret: string;
+  jwtRefreshSecret: string;
+}): void {
+  if (input.nodeEnv === 'test') return;
+
+  if (!input.jwtSecret || KNOWN_DEFAULT_SECRETS.includes(input.jwtSecret)) {
+    throw new Error('JWT_SECRET debe ser configurado fuera del entorno de test');
+  }
+
+  if (!input.jwtRefreshSecret || KNOWN_DEFAULT_SECRETS.includes(input.jwtRefreshSecret)) {
+    throw new Error('JWT_REFRESH_SECRET debe ser configurado fuera del entorno de test');
+  }
+
+  if (input.jwtSecret.length < MIN_SECRET_LENGTH) {
+    throw new Error(`JWT_SECRET debe tener al menos ${MIN_SECRET_LENGTH} caracteres fuera del entorno de test`);
+  }
+
+  if (input.jwtRefreshSecret.length < MIN_SECRET_LENGTH) {
+    throw new Error(`JWT_REFRESH_SECRET debe tener al menos ${MIN_SECRET_LENGTH} caracteres fuera del entorno de test`);
+  }
+
+  if (input.jwtSecret === input.jwtRefreshSecret) {
+    throw new Error('JWT_SECRET y JWT_REFRESH_SECRET no pueden ser idénticos fuera del entorno de test');
+  }
+}
+

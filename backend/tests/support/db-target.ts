@@ -23,11 +23,15 @@ export function describeDatabaseTarget(url: string | undefined) {
   if (!LOOPBACK.has(parsed.hostname)) {
     return { ok: false as const, reason: `database host is not loopback (${parsed.hostname === '' ? 'empty' : 'remote'})` };
   }
+  const database = parsed.pathname.replace(/^\//, '');
+  if (!database || !database.endsWith('_test')) {
+    return { ok: false as const, reason: 'database name must end with _test' };
+  }
   return {
     ok: true as const,
     host: parsed.hostname,
     port: parsed.port || '5432',
-    database: parsed.pathname.replace(/^\//, ''),
+    database,
     user: decodeURIComponent(parsed.username),
   };
 }
