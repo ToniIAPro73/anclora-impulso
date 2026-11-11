@@ -42,6 +42,10 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  deployments: read
+  id-token: write
+  attestations: write
 
 concurrency:
   group: production-migrations
@@ -133,3 +137,35 @@ jobs:
       - name: Apply versioned migrations (prisma migrate deploy)
         working-directory: ./backend
         run: pnpm exec prisma migrate deploy
+
+      - name: Verify post-migration ledger and emit MigrationAttestationV1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          dep_id="$(gh api "repos/$GITHUB_REPOSITORY/deployments?sha=$CANDIDATE_SHA&environment=production-migrations" \
+            --jq '.[0].id // empty' 2>/dev/null || true)"
+          approvers="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals" \
+            --jq '[.[] | select(.state == "approved") | .user.login] | unique | join(",")' 2>/dev/null || true)"
+          node scripts/release/emit-migration-attestation.mjs \
+            --repo-root . \
+            --output migration-attestation.json \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --deployment-id "$dep_id" \
+            --approved-by "$approvers"
+
+      - name: Upload immutable MigrationAttestationV1 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-attestation
+          path: |
+            migration-attestation.json
+            migration-attestation.json.sha256
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Generate Sigstore build provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: migration-attestation.json

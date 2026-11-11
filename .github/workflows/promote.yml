@@ -33,6 +33,9 @@ on:
 permissions:
   statuses: read
   checks: read
+  actions: read
+  deployments: read
+  attestations: read
   contents: write
 concurrency:
   group: promote-${{ github.workflow }}
@@ -47,6 +50,13 @@ jobs:
       source_branch: ${{ steps.source.outputs.source_branch }}
       required_checks: ${{ steps.source.outputs.required_checks }}
       authorized_apps: ${{ steps.source.outputs.authorized_apps }}
+      migration_gate_required: ${{ steps.migration_gate.outputs.migration_gate_required }}
+      migration_runner_workflow: ${{ steps.migration_gate.outputs.migration_runner_workflow }}
+      migration_environment: ${{ steps.migration_gate.outputs.migration_environment }}
+      migration_attested_run_id: ${{ steps.migration_gate.outputs.migration_attested_run_id }}
+      migration_attested_run_attempt: ${{ steps.migration_gate.outputs.migration_attested_run_attempt }}
+      migration_manifest_sha256: ${{ steps.migration_gate.outputs.migration_manifest_sha256 }}
+      migration_tree_sha256: ${{ steps.migration_gate.outputs.migration_tree_sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -256,6 +266,611 @@ jobs:
             [ "$state" = "success" ] || fail "LEGACY_STATUS_NOT_SUCCESS: combined status is $state."
           fi
 
+      - name: Verify database migration attestation
+        id: migration_gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import { createHash } from 'node:crypto'
+          import { execFileSync } from 'node:child_process'
+          import { appendFileSync } from 'node:fs'
+          import { inflateRawSync } from 'node:zlib'
+
+          const fail = (code, msg) => {
+            console.error(`::error::PROMOTION_BLOCKED_${code}: ${msg}`)
+            process.exit(1)
+          }
+
+          const sha256Hex = (buf) => createHash('sha256').update(buf).digest('hex')
+
+          const setOutput = (key, val) => {
+            const outFile = process.env.GITHUB_OUTPUT
+            if (outFile) appendFileSync(outFile, `${key}=${val ?? ''}\n`)
+          }
+
+          const canonicalSort = (value) => {
+            if (Array.isArray(value)) return value.map(canonicalSort)
+            if (value && typeof value === 'object') {
+              const sorted = {}
+              for (const k of Object.keys(value).sort()) sorted[k] = canonicalSort(value[k])
+              return sorted
+            }
+            return value
+          }
+
+          const gitText = (args) => {
+            try {
+              return execFileSync('git', args, { encoding: 'utf8' })
+            } catch (err) {
+              throw new Error(err.message)
+            }
+          }
+
+          const gitBuf = (args) => execFileSync('git', args)
+
+          const isAncestor = (ancestor, descendant) => {
+            if (!/^[0-9a-f]{40}$/i.test(ancestor) || !/^[0-9a-f]{40}$/i.test(descendant)) return false
+            if (ancestor.toLowerCase() === descendant.toLowerCase()) return true
+            try {
+              execFileSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], { stdio: 'ignore' })
+              return true
+            } catch {
+              return false
+            }
+          }
+
+          const parseRuntimeContract = (markdown) => {
+            const map = new Map()
+            for (const line of markdown.split(/\r?\n/)) {
+              const m = /^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line)
+              if (!m) continue
+              const [, key, rawVal] = m
+              const val = rawVal.trim()
+              if (!map.has(key)) map.set(key, [])
+              map.get(key).push(val)
+            }
+            const out = {}
+            for (const [k, vals] of map.entries()) {
+              const nonEmpty = vals.filter((v) => v.length > 0)
+              const unique = [...new Set(nonEmpty)]
+              if (unique.length > 1) {
+                fail('MIGRATION_CONTRACT_CONTRADICTION', `Conflicting contract values for ${k} at ${sourceSha}.`)
+              }
+              out[k] = vals[vals.length - 1] ?? ''
+            }
+            return out
+          }
+
+          const parseSingleZipEntry = (zipBuf, targetFileName) => {
+            if (!Buffer.isBuffer(zipBuf) || zipBuf.length < 22) {
+              fail('MIGRATION_EVIDENCE_TAMPERED', 'Corrupt or empty attestation artifact archive.')
+            }
+            let eocdOffset = -1
+            for (let i = zipBuf.length - 22; i >= Math.max(0, zipBuf.length - 65557); i -= 1) {
+              if (zipBuf.readUInt32LE(i) === 0x06054b50) {
+                eocdOffset = i
+                break
+              }
+            }
+            if (eocdOffset < 0) fail('MIGRATION_EVIDENCE_TAMPERED', 'Missing ZIP End of Central Directory.')
+
+            const cdCount = zipBuf.readUInt16LE(eocdOffset + 10)
+            const cdOffset = zipBuf.readUInt32LE(eocdOffset + 16)
+            if (cdOffset + 46 > zipBuf.length) fail('MIGRATION_EVIDENCE_TAMPERED', 'Truncated ZIP central directory.')
+
+            let ptr = cdOffset
+            let foundEntry = null
+            for (let idx = 0; idx < cdCount; idx += 1) {
+              if (ptr + 46 > zipBuf.length || zipBuf.readUInt32LE(ptr) !== 0x02014b50) {
+                fail('MIGRATION_EVIDENCE_TAMPERED', 'Malformed ZIP central directory entry.')
+              }
+              const method = zipBuf.readUInt16LE(ptr + 10)
+              const compSize = zipBuf.readUInt32LE(ptr + 20)
+              const uncompSize = zipBuf.readUInt32LE(ptr + 24)
+              const nameLen = zipBuf.readUInt16LE(ptr + 28)
+              const extraLen = zipBuf.readUInt16LE(ptr + 30)
+              const commentLen = zipBuf.readUInt16LE(ptr + 32)
+              const localHeaderOffset = zipBuf.readUInt32LE(ptr + 42)
+              const name = zipBuf.subarray(ptr + 46, ptr + 46 + nameLen).toString('utf8')
+              ptr += 46 + nameLen + extraLen + commentLen
+
+              if (name.includes('..') || name.startsWith('/')) {
+                fail('MIGRATION_EVIDENCE_TAMPERED', `Unsafe ZIP entry path: ${name}`)
+              }
+              if (name === targetFileName) {
+                if (foundEntry) fail('MIGRATION_EVIDENCE_TAMPERED', `Duplicate ${targetFileName} entries in archive.`)
+                foundEntry = { method, compSize, uncompSize, localHeaderOffset }
+              }
+            }
+
+            if (!foundEntry) fail('MIGRATION_EVIDENCE_TAMPERED', `Artifact missing ${targetFileName}.`)
+            const lfh = foundEntry.localHeaderOffset
+            if (lfh + 30 > zipBuf.length || zipBuf.readUInt32LE(lfh) !== 0x04034b50) {
+              fail('MIGRATION_EVIDENCE_TAMPERED', 'Corrupt ZIP local file header.')
+            }
+            const lfhNameLen = zipBuf.readUInt16LE(lfh + 26)
+            const lfhExtraLen = zipBuf.readUInt16LE(lfh + 28)
+            const dataStart = lfh + 30 + lfhNameLen + lfhExtraLen
+            const dataEnd = dataStart + foundEntry.compSize
+            if (dataEnd > zipBuf.length) fail('MIGRATION_EVIDENCE_TAMPERED', 'Truncated ZIP compressed entry.')
+            const compData = zipBuf.subarray(dataStart, dataEnd)
+
+            let outBuf
+            if (foundEntry.method === 0) outBuf = compData
+            else if (foundEntry.method === 8) outBuf = inflateRawSync(compData)
+            else fail('MIGRATION_EVIDENCE_TAMPERED', `Unsupported ZIP compression method ${foundEntry.method}.`)
+
+            if (outBuf.length !== foundEntry.uncompSize) {
+              fail('MIGRATION_EVIDENCE_TAMPERED', 'Decompressed entry size mismatch.')
+            }
+            return outBuf
+          }
+
+          const ghJson = (apiPath) => {
+            let raw
+            try {
+              raw = execFileSync('gh', ['api', apiPath], { encoding: 'utf8' })
+            } catch (err) {
+              fail('MIGRATION_GITHUB_API_UNAVAILABLE', `GitHub API failed on ${apiPath}: ${err.message}`)
+            }
+            try {
+              return JSON.parse(raw)
+            } catch {
+              fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Malformed JSON from GitHub API on ${apiPath}.`)
+            }
+          }
+
+          const ghArray = (apiPath) => {
+            const parsed = ghJson(apiPath)
+            if (!Array.isArray(parsed)) {
+              fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Expected JSON array from GitHub API on ${apiPath}.`)
+            }
+            return parsed
+          }
+
+          const ghPaginatedList = (basePath, arrayKey) => {
+            const sep = basePath.includes('?') ? '&' : '?'
+            const items = []
+            const seenIds = new Set()
+            let expectedTotal = null
+            for (let page = 1; page <= 50; page += 1) {
+              const payload = ghJson(`${basePath}${sep}per_page=100&page=${page}`)
+              if (!payload || typeof payload !== 'object' || typeof payload.total_count !== 'number' || !Array.isArray(payload[arrayKey])) {
+                fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Malformed paginated payload for ${basePath}.`)
+              }
+              if (expectedTotal === null) expectedTotal = payload.total_count
+              else if (payload.total_count !== expectedTotal) {
+                fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Pagination total_count changed mid-query on ${basePath}.`)
+              }
+              const batch = payload[arrayKey]
+              for (const item of batch) {
+                if (!item || typeof item !== 'object' || typeof item.id !== 'number') {
+                  fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Invalid item inside ${basePath} response.`)
+                }
+                if (seenIds.has(item.id)) {
+                  fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Duplicate item id ${item.id} inside ${basePath}.`)
+                }
+                seenIds.add(item.id)
+                items.push(item)
+              }
+              if (items.length >= expectedTotal || batch.length === 0) break
+            }
+            if (expectedTotal === null || items.length !== expectedTotal) {
+              fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Pagination incomplete on ${basePath}: expected=${expectedTotal} received=${items.length}.`)
+            }
+            return items
+          }
+
+          const ghBuffer = (apiPath) => {
+            try {
+              return execFileSync('gh', ['api', apiPath])
+            } catch (err) {
+              fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Failed downloading artifact from ${apiPath}: ${err.message}`)
+            }
+          }
+
+          const sourceSha = (process.env.SOURCE_SHA ?? '').trim()
+          const target = (process.env.TARGET ?? 'staging').trim()
+          const repo = (process.env.GITHUB_REPOSITORY ?? '').trim()
+          if (!/^[0-9a-f]{40}$/i.test(sourceSha)) fail('MIGRATION_CANDIDATE_SHA_MISMATCH', 'Invalid SOURCE_SHA.')
+          if (!repo) fail('MIGRATION_GITHUB_API_UNAVAILABLE', 'GITHUB_REPOSITORY is missing.')
+
+          let contractRaw = ''
+          try {
+            contractRaw = gitText(['show', `${sourceSha}:.anclora/PRODUCTION_RUNTIME.md`])
+          } catch {
+            fail('MIGRATION_CONTRACT_MISSING', '.anclora/PRODUCTION_RUNTIME.md missing at source SHA.')
+          }
+          const contract = parseRuntimeContract(contractRaw)
+
+          const dbProvider = contract.DATABASE_PROVIDER ?? ''
+          if (!dbProvider) {
+            fail('MIGRATION_CONTRACT_MISSING', 'DATABASE_PROVIDER declaration missing in .anclora/PRODUCTION_RUNTIME.md.')
+          }
+
+          const treeFiles = gitText(['ls-tree', '-r', '--name-only', sourceSha])
+            .split(/\r?\n/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+
+          const standardMigrationFiles = treeFiles.filter((f) =>
+            /(?:^|\/)(?:prisma\/migrations\/[^/]+\/migration\.sql|drizzle\/[^/]+\.sql|alembic\/versions\/[^/]+\.py|db\/migrations\/[^/]+\.sql|neon\/migrations\/[^/]+\.sql)$/.test(f),
+          )
+
+          if (dbProvider.toLowerCase() === 'none') {
+            const migSys = (contract.MIGRATION_SYSTEM ?? 'none').toLowerCase()
+            const migDir = (contract.MIGRATION_DIRECTORY ?? 'none').toLowerCase()
+            if (migSys !== 'none' || migDir !== 'none' || standardMigrationFiles.length > 0) {
+              fail('MIGRATION_CONTRACT_CONTRADICTION', 'DATABASE_PROVIDER is NONE but migration contract or files are present.')
+            }
+            setOutput('migration_gate_required', 'false')
+            setOutput('migration_runner_workflow', '')
+            setOutput('migration_environment', '')
+            setOutput('migration_attested_run_id', '')
+            setOutput('migration_attested_run_attempt', '')
+            setOutput('migration_manifest_sha256', '')
+            setOutput('migration_tree_sha256', '')
+            console.log('NO_DATABASE_DECLARED: database-less repository verified with zero migration artifacts.')
+            process.exit(0)
+          }
+
+          const migrationSystem = contract.MIGRATION_SYSTEM ?? ''
+          const rawMigDir = contract.MIGRATION_DIRECTORY ?? ''
+          const runnerWorkflow = contract.MIGRATION_RUNNER_WORKFLOW ?? ''
+          const migrationEnv = contract.MIGRATION_ENVIRONMENT ?? ''
+          const expectedFingerprint = contract.DATABASE_TARGET_FINGERPRINT ?? ''
+          const declaredManifestPath = contract.MIGRATION_MANIFEST_PATH ?? ''
+          const cryptoMode = (contract.MIGRATION_CRYPTO_ATTESTATION ?? 'optional').toLowerCase()
+          const gateOnStaging = (contract.MIGRATION_GATE_ON_STAGING ?? 'false').toLowerCase() === 'true'
+
+          if (!migrationSystem || migrationSystem.toLowerCase() === 'none' ||
+              !rawMigDir || rawMigDir.toLowerCase() === 'none' ||
+              !runnerWorkflow || !migrationEnv) {
+            fail('MIGRATION_CONTRACT_MISSING', 'DB repository missing MIGRATION_SYSTEM, MIGRATION_DIRECTORY, MIGRATION_RUNNER_WORKFLOW, or MIGRATION_ENVIRONMENT.')
+          }
+          if (!/^sha256:[0-9a-f]{64}$/.test(expectedFingerprint)) {
+            fail('MIGRATION_CONTRACT_MISSING', 'DATABASE_TARGET_FINGERPRINT missing or not in non-secret sha256:<64-hex> format.')
+          }
+
+          const normalizedDir = rawMigDir.replace(/^\.\//, '').replace(/\/+$/, '')
+
+          const prismaPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)/migration\\.sql$`)
+          const directPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)\\.(sql|py)$`)
+
+          const migrations = []
+          for (const filePath of treeFiles) {
+            const pm = prismaPattern.exec(filePath)
+            if (pm) {
+              migrations.push({ name: pm[1], sha256: sha256Hex(gitBuf(['show', `${sourceSha}:${filePath}`])) })
+            }
+          }
+          if (migrations.length === 0) {
+            for (const filePath of treeFiles) {
+              const dm = directPattern.exec(filePath)
+              if (dm) {
+                migrations.push({ name: dm[1], sha256: sha256Hex(gitBuf(['show', `${sourceSha}:${filePath}`])) })
+              }
+            }
+          }
+          migrations.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+          const actualCount = migrations.length
+          const actualNames = migrations.map((m) => m.name)
+          const actualNameSet = new Set(actualNames)
+          const actualTreeSha256 = sha256Hex(migrations.map((m) => `${m.name}:${m.sha256}\n`).join(''))
+
+          const manifestPath = declaredManifestPath || (treeFiles.includes('scripts/release/release-manifest.json') ? 'scripts/release/release-manifest.json' : '')
+          let actualManifestSha256 = null
+          if (manifestPath) {
+            if (!treeFiles.includes(manifestPath)) {
+              fail('MIGRATION_MANIFEST_MISMATCH', `Declared manifest ${manifestPath} missing at ${sourceSha}.`)
+            }
+            const manifestBytes = gitBuf(['show', `${sourceSha}:${manifestPath}`])
+            actualManifestSha256 = sha256Hex(manifestBytes)
+            let manifestJson
+            try {
+              manifestJson = JSON.parse(manifestBytes.toString('utf8'))
+            } catch {
+              fail('MIGRATION_MANIFEST_MISMATCH', `Manifest ${manifestPath} is invalid JSON.`)
+            }
+            if (!manifestJson || !Array.isArray(manifestJson.migrations)) {
+              fail('MIGRATION_MANIFEST_MISMATCH', `Manifest ${manifestPath} missing migrations array.`)
+            }
+            const sortedManifest = [...manifestJson.migrations].sort((a, b) =>
+              a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+            )
+            if (sortedManifest.length !== actualCount) {
+              fail('MIGRATION_MANIFEST_MISMATCH', `Manifest count (${sortedManifest.length}) differs from tree (${actualCount}).`)
+            }
+            for (let i = 0; i < actualCount; i += 1) {
+              if (sortedManifest[i].name !== migrations[i].name || sortedManifest[i].sha256 !== migrations[i].sha256) {
+                fail('MIGRATION_MANIFEST_MISMATCH', `Manifest mismatch at migration ${migrations[i].name}.`)
+              }
+            }
+          }
+
+          if (target === 'staging' && !gateOnStaging) {
+            setOutput('migration_gate_required', 'false')
+            setOutput('migration_runner_workflow', runnerWorkflow)
+            setOutput('migration_environment', migrationEnv)
+            setOutput('migration_attested_run_id', '')
+            setOutput('migration_attested_run_attempt', '')
+            setOutput('migration_manifest_sha256', actualManifestSha256 ?? '')
+            setOutput('migration_tree_sha256', actualTreeSha256)
+            console.log('Target is staging and MIGRATION_GATE_ON_STAGING is false; production DB gate deferred.')
+            process.exit(0)
+          }
+
+          const workflowFile = runnerWorkflow.replace(/^\.github\/workflows\//, '')
+          const runs = ghPaginatedList(`repos/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}/runs`, 'workflow_runs')
+            .sort((a, b) => (b.id - a.id) || ((b.run_attempt ?? 1) - (a.run_attempt ?? 1)))
+
+          if (runs.length === 0) {
+            fail('MIGRATION_EVIDENCE_MISSING', `No runs recorded for ${runnerWorkflow}.`)
+          }
+
+          for (const r of runs) {
+            if (r.path && r.path !== runnerWorkflow) {
+              fail('MIGRATION_WORKFLOW_UNAUTHORIZED', `Observed run ${r.id} has unexpected path ${r.path}.`)
+            }
+          }
+
+          const activeRun = runs.find((r) => r.status !== 'completed')
+          if (activeRun) {
+            fail('MIGRATION_CONCURRENT_RUN_CONFLICT', `Migration runner run ${activeRun.id} is still ${activeRun.status}.`)
+          }
+
+          const relevantRuns = runs.filter((r) => r.head_sha === sourceSha || isAncestor(r.head_sha, sourceSha))
+          if (relevantRuns.length === 0) {
+            fail('MIGRATION_CANDIDATE_SHA_MISMATCH', `No migration runner run matches candidate SHA ${sourceSha} or its ancestors.`)
+          }
+
+          const selectedRun = relevantRuns[0]
+          if (['pull_request', 'pull_request_target', 'pull_request_review', 'pull_request_review_comment', 'fork'].includes(selectedRun.event ?? '')) {
+            fail('MIGRATION_WORKFLOW_UNAUTHORIZED', `Migration run ${selectedRun.id} triggered by untrusted event ${selectedRun.event}.`)
+          }
+          for (const newer of runs) {
+            if (newer.id > selectedRun.id) {
+              if (newer.conclusion === 'cancelled') {
+                fail('MIGRATION_RUNNER_CANCELLED', `Newer migration run ${newer.id} was cancelled after candidate run ${selectedRun.id}.`)
+              }
+              if (newer.conclusion !== 'success') {
+                fail('MIGRATION_CONCURRENT_RUN_CONFLICT', `Newer migration run ${newer.id} ended ${newer.conclusion} after run ${selectedRun.id}.`)
+              }
+            }
+          }
+
+          if (selectedRun.conclusion === 'cancelled') {
+            fail('MIGRATION_RUNNER_CANCELLED', `Latest relevant migration run ${selectedRun.id} was cancelled.`)
+          }
+          if (selectedRun.conclusion !== 'success') {
+            fail('MIGRATION_RUNNER_FAILED', `Latest relevant migration run ${selectedRun.id} concluded ${selectedRun.conclusion}.`)
+          }
+
+          const runAttempt = selectedRun.run_attempt ?? 1
+          const jobs = ghPaginatedList(
+            `repos/${repo}/actions/runs/${selectedRun.id}/attempts/${runAttempt}/jobs`,
+            'jobs',
+          )
+          if (jobs.length === 0) fail('MIGRATION_RUNNER_FAILED', `Run ${selectedRun.id} reports zero jobs.`)
+          const succeededJobIds = new Set()
+          for (const job of jobs) {
+            if (job.status !== 'completed') {
+              fail('MIGRATION_CONCURRENT_RUN_CONFLICT', `Job ${job.name} in run ${selectedRun.id} is ${job.status}.`)
+            }
+            if (job.conclusion === 'cancelled') {
+              fail('MIGRATION_RUNNER_CANCELLED', `Job ${job.name} in run ${selectedRun.id} was cancelled.`)
+            }
+            if (!['success', 'skipped', 'neutral'].includes(job.conclusion)) {
+              fail('MIGRATION_RUNNER_FAILED', `Job ${job.name} in run ${selectedRun.id} failed (${job.conclusion}).`)
+            }
+            if (job.conclusion === 'success') succeededJobIds.add(job.id)
+            if (job.environment && typeof job.environment === 'object' && job.environment.name && job.environment.name !== migrationEnv) {
+              fail('MIGRATION_ENVIRONMENT_MISMATCH', `Job ${job.name} ran in environment ${job.environment.name} instead of ${migrationEnv}.`)
+            }
+          }
+          if (succeededJobIds.size === 0) fail('MIGRATION_RUNNER_FAILED', `Run ${selectedRun.id} had zero successful jobs.`)
+
+          const deployments = ghArray(`repos/${repo}/deployments?sha=${selectedRun.head_sha}&per_page=100`)
+          const shaDeployments = deployments.filter((d) => d && d.sha === selectedRun.head_sha)
+          const envDeployments = shaDeployments.filter((d) => d.environment === migrationEnv)
+          if (envDeployments.length === 0) {
+            if (shaDeployments.length > 0) {
+              fail('MIGRATION_ENVIRONMENT_MISMATCH', `Deployments for ${selectedRun.head_sha} exist only in other environment(s), not ${migrationEnv}.`)
+            }
+            fail('MIGRATION_APPROVAL_MISSING', `No GitHub Deployment exists for ${selectedRun.head_sha} in ${migrationEnv}.`)
+          }
+
+          const verifiedDeploymentIds = new Set()
+          let sawForeignRunDeployment = false
+          for (const dep of envDeployments) {
+            const statuses = ghArray(`repos/${repo}/deployments/${dep.id}/statuses?per_page=50`)
+            if (statuses.length > 0 && statuses[0].state === 'success') {
+              if (statuses[0].environment && statuses[0].environment !== migrationEnv) {
+                continue
+              }
+              const statusUrl = statuses[0].log_url || statuses[0].target_url || ''
+              const urlMatch = /\/actions\/runs\/(\d+)\/job\/(\d+)(?:[/?#]|$)/.exec(statusUrl)
+              if (!urlMatch) continue
+              if (Number(urlMatch[1]) !== selectedRun.id || !succeededJobIds.has(Number(urlMatch[2]))) {
+                sawForeignRunDeployment = true
+                continue
+              }
+              verifiedDeploymentIds.add(dep.id)
+            }
+          }
+          if (verifiedDeploymentIds.size === 0) {
+            if (sawForeignRunDeployment) {
+              fail('MIGRATION_WORKFLOW_UNAUTHORIZED', `Deployment status for ${migrationEnv} binds to a different workflow run or job than ${selectedRun.id}.`)
+            }
+            fail('MIGRATION_APPROVAL_MISSING', `Deployment in ${migrationEnv} for ${selectedRun.head_sha} lacks success status bound to run ${selectedRun.id}.`)
+          }
+
+          const approvals = ghArray(`repos/${repo}/actions/runs/${selectedRun.id}/approvals`)
+          const envApprovals = approvals.filter(
+            (a) => a && Array.isArray(a.environments) && a.environments.some((e) => e && e.name === migrationEnv),
+          )
+          if (approvals.length > 0 && envApprovals.length === 0) {
+            fail('MIGRATION_ENVIRONMENT_MISMATCH', `Run ${selectedRun.id} approvals reference wrong environment instead of ${migrationEnv}.`)
+          }
+          const validApproval = envApprovals.some((a) => a.state === 'approved' && a.user && typeof a.user.login === 'string' && a.user.login.length > 0)
+          if (!validApproval) {
+            fail('MIGRATION_APPROVAL_MISSING', `Run ${selectedRun.id} has no approved reviewer record for ${migrationEnv}.`)
+          }
+
+          const artifacts = ghPaginatedList(`repos/${repo}/actions/runs/${selectedRun.id}/artifacts`, 'artifacts')
+          const matchingArtifacts = artifacts.filter((a) => a && a.name === 'migration-attestation')
+          if (matchingArtifacts.length === 0) {
+            fail('MIGRATION_EVIDENCE_MISSING', `Run ${selectedRun.id} missing migration-attestation artifact.`)
+          }
+          if (matchingArtifacts.length > 1) {
+            fail('MIGRATION_EVIDENCE_TAMPERED', `Run ${selectedRun.id} contains ambiguous multiple migration-attestation artifacts.`)
+          }
+          const artifact = matchingArtifacts[0]
+          if (artifact.expired === true) {
+            fail('MIGRATION_EVIDENCE_MISSING', `Attestation artifact ${artifact.id} on run ${selectedRun.id} is expired.`)
+          }
+          if (artifact.workflow_run && (artifact.workflow_run.id !== selectedRun.id || artifact.workflow_run.head_sha !== selectedRun.head_sha)) {
+            fail('MIGRATION_EVIDENCE_TAMPERED', `Artifact ${artifact.id} workflow_run metadata does not match run ${selectedRun.id}.`)
+          }
+
+          const zipBuf = ghBuffer(`repos/${repo}/actions/artifacts/${artifact.id}/zip`)
+          if (typeof artifact.digest === 'string' && artifact.digest.length > 0) {
+            const actualZipDigest = `sha256:${sha256Hex(zipBuf)}`
+            if (actualZipDigest !== artifact.digest) {
+              fail('MIGRATION_EVIDENCE_TAMPERED', `Artifact ZIP digest mismatch: expected ${artifact.digest} got ${actualZipDigest}.`)
+            }
+          }
+
+          const attestationBytes = parseSingleZipEntry(zipBuf, 'migration-attestation.json')
+          let att
+          try {
+            att = JSON.parse(attestationBytes.toString('utf8'))
+          } catch {
+            fail('MIGRATION_EVIDENCE_TAMPERED', 'migration-attestation.json is invalid JSON.')
+          }
+
+          if (!att || typeof att !== 'object' || att.schemaVersion !== 'MigrationAttestationV1' || typeof att.attestationDigest !== 'string') {
+            fail('MIGRATION_EVIDENCE_TAMPERED', 'Invalid MigrationAttestationV1 schema or missing attestationDigest.')
+          }
+          const withoutDigest = { ...att }
+          delete withoutDigest.attestationDigest
+          const recomputedDigest = sha256Hex(JSON.stringify(canonicalSort(withoutDigest)))
+          if (recomputedDigest !== att.attestationDigest) {
+            fail('MIGRATION_EVIDENCE_TAMPERED', 'attestationDigest verification failed; payload was altered.')
+          }
+
+          if (cryptoMode === 'required') {
+            const subjectHex = sha256Hex(attestationBytes)
+            const sigData = ghJson(`repos/${repo}/attestations/sha256:${subjectHex}`)
+            if (!sigData || !Array.isArray(sigData.attestations) || sigData.attestations.length === 0) {
+              fail('MIGRATION_CRYPTO_ATTESTATION_MISSING', `No GitHub Sigstore attestation found for sha256:${subjectHex}.`)
+            }
+            const verifiedBundle = sigData.attestations.some((entry) => {
+              const b64 = entry?.bundle?.dsseEnvelope?.payload
+              if (typeof b64 !== 'string' || !b64) return false
+              let stmt
+              try {
+                stmt = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'))
+              } catch {
+                return false
+              }
+              const subjects = Array.isArray(stmt?.subject) ? stmt.subject : []
+              if (!subjects.some((s) => s?.digest?.sha256 === subjectHex)) return false
+              const wf = stmt?.predicate?.buildDefinition?.externalParameters?.workflow
+              if (!wf || wf.repository !== `https://github.com/${repo}` || wf.path !== runnerWorkflow) return false
+              const ghMeta = stmt?.predicate?.buildDefinition?.internalParameters?.github
+              if (!ghMeta || ghMeta.environment !== migrationEnv) return false
+              if (ghMeta.run_id && String(ghMeta.run_id) !== String(selectedRun.id)) return false
+              if (ghMeta.sha && ghMeta.sha !== selectedRun.head_sha) return false
+              return true
+            })
+            if (!verifiedBundle) {
+              fail('MIGRATION_CRYPTO_ATTESTATION_MISSING', `Sigstore DSSE payload does not bind ${repo} ${runnerWorkflow} environment=${migrationEnv} run=${selectedRun.id}.`)
+            }
+          }
+
+          if (att.repository !== repo) {
+            fail('MIGRATION_EVIDENCE_TAMPERED', `Attestation repository ${att.repository} != ${repo}.`)
+          }
+          if (att.workflowRun?.workflowPath !== runnerWorkflow) {
+            fail('MIGRATION_WORKFLOW_UNAUTHORIZED', `Attestation workflowPath ${att.workflowRun?.workflowPath} != ${runnerWorkflow}.`)
+          }
+          if (att.workflowRun?.runId !== selectedRun.id || att.workflowRun?.runAttempt !== runAttempt) {
+            fail('MIGRATION_EVIDENCE_TAMPERED', `Attestation run identity mismatch (${att.workflowRun?.runId}/${att.workflowRun?.runAttempt}).`)
+          }
+          if (att.workflowRun?.candidateSha !== selectedRun.head_sha) {
+            fail('MIGRATION_CANDIDATE_SHA_MISMATCH', `Attestation candidateSha ${att.workflowRun?.candidateSha} != run head_sha ${selectedRun.head_sha}.`)
+          }
+          if (att.environment?.name !== migrationEnv) {
+            fail('MIGRATION_ENVIRONMENT_MISMATCH', `Attestation environment ${att.environment?.name} != ${migrationEnv}.`)
+          }
+          if (!verifiedDeploymentIds.has(att.environment?.deploymentId)) {
+            fail('MIGRATION_EVIDENCE_TAMPERED', `Attestation deploymentId ${att.environment?.deploymentId} is not verified on GitHub.`)
+          }
+          if (att.database?.targetFingerprint !== expectedFingerprint) {
+            fail('MIGRATION_DATABASE_MISMATCH', `Attestation database fingerprint differs from contract ${expectedFingerprint}.`)
+          }
+          if (att.execution?.status !== 'succeeded') {
+            fail('MIGRATION_RUNNER_FAILED', `Attestation execution status is ${att.execution?.status}.`)
+          }
+
+          const post = att.dbPostCheck
+          if (!post || typeof post !== 'object' ||
+              post.status !== 'verified' ||
+              typeof post.pendingCount !== 'number' ||
+              typeof post.failedCount !== 'number' ||
+              typeof post.rolledBackCount !== 'number' ||
+              typeof post.checksumMismatchCount !== 'number' ||
+              typeof post.appliedCount !== 'number' ||
+              typeof post.appliedMigrationsDigest !== 'string' ||
+              !/^[0-9a-f]{64}$/.test(post.appliedMigrationsDigest)) {
+            fail('MIGRATION_STATE_UNKNOWN', 'Attestation dbPostCheck incomplete or missing verifiable post-migration ledger state.')
+          }
+          if (post.rolledBackCount > 0 || post.checksumMismatchCount > 0 || (post.extraDbCount ?? 0) > 0) {
+            fail('MIGRATION_STATE_UNKNOWN', `Database ledger inconsistent: rolledBack=${post.rolledBackCount} checksumMismatch=${post.checksumMismatchCount}.`)
+          }
+          if (post.pendingCount > 0 || post.failedCount > 0 || post.appliedCount < (att.migrations?.count ?? 0)) {
+            fail('MIGRATION_PRIOR_PENDING', `Database ledger reports unapplied/failed prior migrations: pending=${post.pendingCount} failed=${post.failedCount} applied=${post.appliedCount}.`)
+          }
+
+          const attestedNames = Array.isArray(att.migrations?.names) ? att.migrations.names : []
+          const attestedNameSet = new Set(attestedNames)
+          const missingInAttestation = actualNames.filter((n) => !attestedNameSet.has(n))
+
+          if (att.migrations?.directory !== normalizedDir) {
+            fail('MIGRATION_CONTRACT_CONTRADICTION', `Attestation migration directory ${att.migrations?.directory} != ${normalizedDir}.`)
+          }
+          if (missingInAttestation.length > 0) {
+            fail('MIGRATION_REQUIRED_PENDING', `Candidate introduces unattested migration(s): ${missingInAttestation.join(', ')}.`)
+          }
+          if (actualManifestSha256 !== null && att.migrations?.manifestSha256 !== actualManifestSha256) {
+            fail('MIGRATION_MANIFEST_MISMATCH', `Attestation manifestSha256 ${att.migrations?.manifestSha256} != candidate manifestSha256 ${actualManifestSha256}.`)
+          }
+          if (att.migrations?.treeSha256 !== actualTreeSha256) {
+            fail('MIGRATION_REQUIRED_PENDING', `Candidate migration tree digest differs from attested tree digest.`)
+          }
+          if (post.appliedCount < actualCount) {
+            fail('MIGRATION_PRIOR_PENDING', `Database ledger applied ${post.appliedCount} migrations < declared ${actualCount}.`)
+          }
+          if (post.appliedCount !== actualCount || post.appliedMigrationsDigest !== actualTreeSha256) {
+            fail('MIGRATION_STATE_UNKNOWN', 'Database appliedMigrationsDigest does not match candidate migration bytes.')
+          }
+
+          setOutput('migration_gate_required', 'true')
+          setOutput('migration_runner_workflow', runnerWorkflow)
+          setOutput('migration_environment', migrationEnv)
+          setOutput('migration_attested_run_id', String(selectedRun.id))
+          setOutput('migration_attested_run_attempt', String(runAttempt))
+          setOutput('migration_manifest_sha256', actualManifestSha256 ?? '')
+          setOutput('migration_tree_sha256', actualTreeSha256)
+          console.log(`MIGRATION_GATE_VERIFIED: run=${selectedRun.id}#${runAttempt} count=${actualCount} tree=${actualTreeSha256.slice(0, 12)}`)
+          NODE
+
       - name: Verify optional Render backend compatibility
         shell: bash
         env:
@@ -353,6 +968,108 @@ jobs:
           git merge-base --is-ancestor "$target_sha" "$SOURCE_SHA" \
             || fail "DIVERGENCE: $TARGET has commits not present in the source branch."
 
+      - name: Revalidate migration attestation before push
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.verify.outputs.source_sha }}
+          TARGET: ${{ inputs.target }}
+          MIGRATION_GATE_REQUIRED: ${{ needs.verify.outputs.migration_gate_required }}
+          MIGRATION_ATTESTED_RUN_ID: ${{ needs.verify.outputs.migration_attested_run_id }}
+          MIGRATION_ATTESTED_RUN_ATTEMPT: ${{ needs.verify.outputs.migration_attested_run_attempt }}
+          MIGRATION_MANIFEST_SHA256: ${{ needs.verify.outputs.migration_manifest_sha256 }}
+          MIGRATION_TREE_SHA256: ${{ needs.verify.outputs.migration_tree_sha256 }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import { createHash } from 'node:crypto'
+          import { execFileSync } from 'node:child_process'
+
+          const fail = (code, msg) => {
+            console.error(`::error::PROMOTION_BLOCKED_${code}: ${msg}`)
+            process.exit(1)
+          }
+          const sha256Hex = (buf) => createHash('sha256').update(buf).digest('hex')
+
+          const sourceSha = (process.env.SOURCE_SHA ?? '').trim()
+          const target = (process.env.TARGET ?? 'staging').trim()
+          const repo = (process.env.GITHUB_REPOSITORY ?? '').trim()
+          if (!/^[0-9a-f]{40}$/i.test(sourceSha)) fail('MIGRATION_RACE_DETECTED', 'Invalid SOURCE_SHA.')
+
+          let contractRaw = ''
+          try {
+            contractRaw = execFileSync('git', ['show', `${sourceSha}:.anclora/PRODUCTION_RUNTIME.md`], { encoding: 'utf8' })
+          } catch {
+            fail('MIGRATION_CONTRACT_MISSING', 'Missing .anclora/PRODUCTION_RUNTIME.md during pre-push revalidation.')
+          }
+          const contract = {}
+          for (const line of contractRaw.split(/\r?\n/)) {
+            const m = /^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line)
+            if (m) contract[m[1]] = m[2].trim()
+          }
+          const dbProvider = contract.DATABASE_PROVIDER ?? ''
+          if (!dbProvider) fail('MIGRATION_CONTRACT_MISSING', 'DATABASE_PROVIDER missing during pre-push revalidation.')
+          const gateOnStaging = (contract.MIGRATION_GATE_ON_STAGING ?? 'false').toLowerCase() === 'true'
+          if (dbProvider.toLowerCase() === 'none' || (target === 'staging' && !gateOnStaging)) {
+            process.exit(0)
+          }
+
+          const attestedRunId = Number(process.env.MIGRATION_ATTESTED_RUN_ID ?? '')
+          const attestedAttempt = Number(process.env.MIGRATION_ATTESTED_RUN_ATTEMPT ?? '1')
+          const expectedTree = (process.env.MIGRATION_TREE_SHA256 ?? '').trim()
+          const runnerWorkflow = contract.MIGRATION_RUNNER_WORKFLOW ?? ''
+          if (!runnerWorkflow || !Number.isInteger(attestedRunId) || attestedRunId <= 0 || !/^[0-9a-f]{64}$/.test(expectedTree)) {
+            fail('MIGRATION_RACE_DETECTED', 'Missing attested migration metadata prior to push.')
+          }
+
+          const normalizedDir = (contract.MIGRATION_DIRECTORY ?? '').replace(/^\.\//, '').replace(/\/+$/, '')
+          const treeFiles = execFileSync('git', ['ls-tree', '-r', '--name-only', sourceSha], { encoding: 'utf8' })
+            .split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+          const prismaPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)/migration\\.sql$`)
+          const directPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)\\.(sql|py)$`)
+          const migs = []
+          for (const fp of treeFiles) {
+            const pm = prismaPattern.exec(fp)
+            if (pm) migs.push({ name: pm[1], sha256: sha256Hex(execFileSync('git', ['show', `${sourceSha}:${fp}`])) })
+          }
+          if (migs.length === 0) {
+            for (const fp of treeFiles) {
+              const dm = directPattern.exec(fp)
+              if (dm) migs.push({ name: dm[1], sha256: sha256Hex(execFileSync('git', ['show', `${sourceSha}:${fp}`])) })
+            }
+          }
+          migs.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+          const currentTree = sha256Hex(migs.map((m) => `${m.name}:${m.sha256}\n`).join(''))
+          if (currentTree !== expectedTree) {
+            fail('MIGRATION_RACE_DETECTED', 'Migration tree digest changed between verify and push.')
+          }
+
+          if (!repo) fail('MIGRATION_GITHUB_API_UNAVAILABLE', 'GITHUB_REPOSITORY missing.')
+          const workflowFile = runnerWorkflow.replace(/^\.github\/workflows\//, '')
+          let payload
+          try {
+            payload = JSON.parse(execFileSync('gh', ['api', `repos/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}/runs?per_page=100`], { encoding: 'utf8' }))
+          } catch (err) {
+            fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Failed pre-push migration run recheck: ${err.message}`)
+          }
+          if (!payload || !Array.isArray(payload.workflow_runs)) {
+            fail('MIGRATION_GITHUB_API_UNAVAILABLE', 'Malformed workflow_runs response during pre-push recheck.')
+          }
+          const runs = payload.workflow_runs
+          const targetRun = runs.find((r) => r && r.id === attestedRunId)
+          if (!targetRun || targetRun.status !== 'completed' || targetRun.conclusion !== 'success' || (targetRun.run_attempt ?? 1) !== attestedAttempt) {
+            fail('MIGRATION_RACE_DETECTED', `Attested migration run ${attestedRunId}#${attestedAttempt} is no longer clean/latest.`)
+          }
+          const newerConflict = runs.find((r) =>
+            r && (r.id > attestedRunId || (r.id === attestedRunId && (r.run_attempt ?? 1) > attestedAttempt)) &&
+            (r.status !== 'completed' || r.conclusion !== 'success'),
+          )
+          if (newerConflict) {
+            fail('MIGRATION_RACE_DETECTED', `Concurrent or newer migration run ${newerConflict.id} (${newerConflict.status}/${newerConflict.conclusion}) detected before push.`)
+          }
+          console.log(`MIGRATION_PRE_PUSH_REVALIDATED: run=${attestedRunId}#${attestedAttempt}`)
+          NODE
+
       - name: Main baseline integrity (pre-push)
         if: inputs.target == 'main' && hashFiles('package-lock.json') != ''
         run: npm ci
@@ -391,6 +1108,106 @@ jobs:
               fail "DIVERGENCE: $target has commits outside development."
             fi
           done
+
+      - name: Revalidate migration attestation before full-chain push
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.verify.outputs.source_sha }}
+          TARGET: full
+          MIGRATION_GATE_REQUIRED: ${{ needs.verify.outputs.migration_gate_required }}
+          MIGRATION_ATTESTED_RUN_ID: ${{ needs.verify.outputs.migration_attested_run_id }}
+          MIGRATION_ATTESTED_RUN_ATTEMPT: ${{ needs.verify.outputs.migration_attested_run_attempt }}
+          MIGRATION_MANIFEST_SHA256: ${{ needs.verify.outputs.migration_manifest_sha256 }}
+          MIGRATION_TREE_SHA256: ${{ needs.verify.outputs.migration_tree_sha256 }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import { createHash } from 'node:crypto'
+          import { execFileSync } from 'node:child_process'
+
+          const fail = (code, msg) => {
+            console.error(`::error::PROMOTION_BLOCKED_${code}: ${msg}`)
+            process.exit(1)
+          }
+          const sha256Hex = (buf) => createHash('sha256').update(buf).digest('hex')
+
+          const sourceSha = (process.env.SOURCE_SHA ?? '').trim()
+          const repo = (process.env.GITHUB_REPOSITORY ?? '').trim()
+          if (!/^[0-9a-f]{40}$/i.test(sourceSha)) fail('MIGRATION_RACE_DETECTED', 'Invalid SOURCE_SHA.')
+
+          let contractRaw = ''
+          try {
+            contractRaw = execFileSync('git', ['show', `${sourceSha}:.anclora/PRODUCTION_RUNTIME.md`], { encoding: 'utf8' })
+          } catch {
+            fail('MIGRATION_CONTRACT_MISSING', 'Missing .anclora/PRODUCTION_RUNTIME.md during full-chain revalidation.')
+          }
+          const contract = {}
+          for (const line of contractRaw.split(/\r?\n/)) {
+            const m = /^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line)
+            if (m) contract[m[1]] = m[2].trim()
+          }
+          const dbProvider = contract.DATABASE_PROVIDER ?? ''
+          if (!dbProvider) fail('MIGRATION_CONTRACT_MISSING', 'DATABASE_PROVIDER missing during full-chain revalidation.')
+          if (dbProvider.toLowerCase() === 'none') {
+            process.exit(0)
+          }
+
+          const attestedRunId = Number(process.env.MIGRATION_ATTESTED_RUN_ID ?? '')
+          const attestedAttempt = Number(process.env.MIGRATION_ATTESTED_RUN_ATTEMPT ?? '1')
+          const expectedTree = (process.env.MIGRATION_TREE_SHA256 ?? '').trim()
+          const runnerWorkflow = contract.MIGRATION_RUNNER_WORKFLOW ?? ''
+          if (!runnerWorkflow || !Number.isInteger(attestedRunId) || attestedRunId <= 0 || !/^[0-9a-f]{64}$/.test(expectedTree)) {
+            fail('MIGRATION_RACE_DETECTED', 'Missing attested migration metadata prior to full-chain push.')
+          }
+
+          const normalizedDir = (contract.MIGRATION_DIRECTORY ?? '').replace(/^\.\//, '').replace(/\/+$/, '')
+          const treeFiles = execFileSync('git', ['ls-tree', '-r', '--name-only', sourceSha], { encoding: 'utf8' })
+            .split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+          const prismaPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)/migration\\.sql$`)
+          const directPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)\\.(sql|py)$`)
+          const migs = []
+          for (const fp of treeFiles) {
+            const pm = prismaPattern.exec(fp)
+            if (pm) migs.push({ name: pm[1], sha256: sha256Hex(execFileSync('git', ['show', `${sourceSha}:${fp}`])) })
+          }
+          if (migs.length === 0) {
+            for (const fp of treeFiles) {
+              const dm = directPattern.exec(fp)
+              if (dm) migs.push({ name: dm[1], sha256: sha256Hex(execFileSync('git', ['show', `${sourceSha}:${fp}`])) })
+            }
+          }
+          migs.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+          const currentTree = sha256Hex(migs.map((m) => `${m.name}:${m.sha256}\n`).join(''))
+          if (currentTree !== expectedTree) {
+            fail('MIGRATION_RACE_DETECTED', 'Migration tree digest changed between verify and full-chain push.')
+          }
+
+          if (!repo) fail('MIGRATION_GITHUB_API_UNAVAILABLE', 'GITHUB_REPOSITORY missing.')
+          const workflowFile = runnerWorkflow.replace(/^\.github\/workflows\//, '')
+          let payload
+          try {
+            payload = JSON.parse(execFileSync('gh', ['api', `repos/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}/runs?per_page=100`], { encoding: 'utf8' }))
+          } catch (err) {
+            fail('MIGRATION_GITHUB_API_UNAVAILABLE', `Failed pre-push migration run recheck: ${err.message}`)
+          }
+          if (!payload || !Array.isArray(payload.workflow_runs)) {
+            fail('MIGRATION_GITHUB_API_UNAVAILABLE', 'Malformed workflow_runs response during full-chain recheck.')
+          }
+          const runs = payload.workflow_runs
+          const targetRun = runs.find((r) => r && r.id === attestedRunId)
+          if (!targetRun || targetRun.status !== 'completed' || targetRun.conclusion !== 'success' || (targetRun.run_attempt ?? 1) !== attestedAttempt) {
+            fail('MIGRATION_RACE_DETECTED', `Attested migration run ${attestedRunId}#${attestedAttempt} is no longer clean/latest.`)
+          }
+          const newerConflict = runs.find((r) =>
+            r && (r.id > attestedRunId || (r.id === attestedRunId && (r.run_attempt ?? 1) > attestedAttempt)) &&
+            (r.status !== 'completed' || r.conclusion !== 'success'),
+          )
+          if (newerConflict) {
+            fail('MIGRATION_RACE_DETECTED', `Concurrent or newer migration run ${newerConflict.id} (${newerConflict.status}/${newerConflict.conclusion}) detected before full-chain push.`)
+          }
+          console.log(`MIGRATION_PRE_PUSH_REVALIDATED: run=${attestedRunId}#${attestedAttempt}`)
+          NODE
 
       - name: Promote the full chain after fail-closed checks
         shell: bash

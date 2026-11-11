@@ -117,6 +117,9 @@ MIGRATION_RUNNER=GITHUB_ACTIONS_MANUAL_AUTOMATED_RULE_PROTECTED
 MIGRATION_RUNNER_STATUS=EXECUTED_ONCE_2026-10-12_P1_MODEL (run #1, commit c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d; see section 12)
 MIGRATION_RUNNER_WORKFLOW=.github/workflows/production-migrations.yml
 MIGRATIONS_PRECEDE_BACKEND_DEPLOY=true
+MIGRATION_ENVIRONMENT=production-migrations
+MIGRATION_MANIFEST_PATH=scripts/release/release-manifest.json
+MIGRATION_CRYPTO_ATTESTATION=required
 
 All schema migrations apply strictly against the designated production database.
 Destructive drops or resets are strictly prohibited without authorization.
