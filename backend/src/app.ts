@@ -64,7 +64,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Servir archivos estáticos
+// Servir archivos estáticos de ejercicios (el antiguo HTML estático /dashboard fue retirado; usar /api/dashboard admin + frontend /dashboard)
 app.use(
   '/exercises',
   express.static('public/exercises', {
@@ -74,7 +74,6 @@ app.use(
     },
   })
 );
-app.use('/dashboard', express.static('public'));
 
 // Logging middleware
 app.use(responseTimeLogger);
