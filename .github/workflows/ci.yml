@@ -60,6 +60,9 @@ jobs:
         working-directory: ./backend
         run: pnpm exec prisma generate
 
+      - name: Verify release migration manifest
+        run: node scripts/release/verify-release-manifest.mjs .
+
       - name: Typecheck backend
         working-directory: ./backend
         run: pnpm run typecheck
@@ -71,6 +74,114 @@ jobs:
       - name: Run backend tests
         working-directory: ./backend
         run: pnpm test:ci
+
+      - name: Verify modular health-plan seed idempotency (PostgreSQL 16)
+        working-directory: ./backend
+        run: |
+          pnpm exec tsx prisma/seed-health-plans.ts
+          pnpm exec tsx prisma/seed-health-plans.ts
+          node <<'EOF'
+          const { PrismaClient } = require('@prisma/client');
+          (async () => {
+            const p = new PrismaClient();
+            try {
+              const defs = await p.healthPlanDefinition.findMany();
+              const drafts = defs.filter((d) => /^P(0[1-9]|10)$/.test(d.cohortKey ?? ''));
+              if (drafts.length !== 10) throw new Error('Expected 10 P01-P10 rows, got ' + drafts.length);
+              if (drafts.some((d) => d.status !== 'draft')) throw new Error('All P01-P10 rows must stay draft');
+              const p09 = drafts.find((d) => d.cohortKey === 'P09');
+              const p10 = drafts.find((d) => d.cohortKey === 'P10');
+              if (!p09 || !p10 || p09.minAge !== 60 || p09.maxAge !== null || p10.minAge !== 60 || p10.maxAge !== null) {
+                throw new Error('P09/P10 60+ bounds mismatch');
+              }
+              const rv = defs.find((d) => d.key === 'ruta-vital-50-60');
+              if (rv && (rv.status !== 'published' || rv.minAge !== 50 || rv.maxAge !== 60)) {
+                throw new Error('Ruta Vital v1 mutated unexpectedly');
+              }
+              console.log('PostgreSQL 16 seed idempotency verified:', drafts.length, 'drafts; Ruta Vital intact:', Boolean(rv));
+            } finally {
+              await p.$disconnect();
+            }
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
+      - name: Verify upgrade migration from previous schema with pre-existing Ruta Vital data (PostgreSQL 16)
+        working-directory: ./backend
+        env:
+          UPGRADE_DATABASE_URL: postgresql://impulso@localhost:5432/impulso_upgrade_test?schema=public
+        run: |
+          set -euo pipefail
+          node <<'EOF'
+          const { PrismaClient } = require('@prisma/client');
+          (async () => {
+            const p = new PrismaClient();
+            try {
+              await p.$executeRawUnsafe('DROP DATABASE IF EXISTS "impulso_upgrade_test"');
+              await p.$executeRawUnsafe('CREATE DATABASE "impulso_upgrade_test"');
+            } finally {
+              await p.$disconnect();
+            }
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
+          rm -rf "$RUNNER_TEMP/pre-phase2-prisma"
+          cp -R prisma "$RUNNER_TEMP/pre-phase2-prisma"
+          rm -rf "$RUNNER_TEMP/pre-phase2-prisma/migrations/20261111211500_add_modular_health_plan_catalog_and_optional_identity"
+
+          DATABASE_URL="$UPGRADE_DATABASE_URL" pnpm exec prisma migrate deploy --schema="$RUNNER_TEMP/pre-phase2-prisma/schema.prisma"
+
+          DATABASE_URL="$UPGRADE_DATABASE_URL" pnpm exec prisma db execute --stdin --schema="$RUNNER_TEMP/pre-phase2-prisma/schema.prisma" <<'SQL'
+          INSERT INTO "users" ("id", "email", "fullName", "sex", "age", "updatedAt")
+          VALUES ('rv-legacy-user', 'rv-legacy@example.com', 'Legacy Ruta Vital User', 'female', 55, NOW());
+
+          INSERT INTO "health_plan_definitions" ("id", "key", "nameEs", "nameEn", "descriptionEs", "descriptionEn", "minAge", "maxAge", "status", "version", "updatedAt")
+          VALUES ('rv-legacy-plan', 'ruta-vital-50-60', 'Ruta Vital 50–60', 'Vital Path 50–60', 'Ruta previa', 'Previous path', 50, 60, 'published', 1, NOW());
+
+          INSERT INTO "health_plan_enrollments" ("id", "userId", "planId", "status", "updatedAt")
+          VALUES ('rv-legacy-enrollment', 'rv-legacy-user', 'rv-legacy-plan', 'active', NOW());
+          SQL
+
+          DATABASE_URL="$UPGRADE_DATABASE_URL" pnpm exec prisma migrate deploy
+          DATABASE_URL="$UPGRADE_DATABASE_URL" pnpm exec tsx prisma/seed-health-plans.ts
+          DATABASE_URL="$UPGRADE_DATABASE_URL" pnpm exec tsx prisma/seed-health-plans.ts
+
+          node <<'EOF'
+          const { PrismaClient } = require('@prisma/client');
+          (async () => {
+            const p = new PrismaClient({ datasources: { db: { url: process.env.UPGRADE_DATABASE_URL } } });
+            try {
+              const user = await p.user.findUnique({ where: { id: 'rv-legacy-user' } });
+              if (!user || user.sex !== 'female' || user.age !== 55 || user.sexAtBirth !== null || user.genderIdentity !== null) {
+                throw new Error('Legacy user integrity or non-inference failed: ' + JSON.stringify(user));
+              }
+              const defs = await p.healthPlanDefinition.findMany();
+              const rv = defs.find((d) => d.key === 'ruta-vital-50-60');
+              if (!rv || rv.id !== 'rv-legacy-plan' || rv.status !== 'published' || rv.minAge !== 50 || rv.maxAge !== 60 || rv.cohortKey !== 'RV-50-60' || rv.variantKey !== 'NEUTRAL') {
+                throw new Error('Ruta Vital backfill or compatibility failed: ' + JSON.stringify(rv));
+              }
+              const enr = await p.healthPlanEnrollment.findUnique({ where: { id: 'rv-legacy-enrollment' } });
+              if (!enr || enr.status !== 'active' || enr.planId !== 'rv-legacy-plan') {
+                throw new Error('Legacy enrollment integrity failed: ' + JSON.stringify(enr));
+              }
+              const drafts = defs.filter((d) => /^P(0[1-9]|10)$/.test(d.cohortKey ?? ''));
+              if (drafts.length !== 10 || drafts.some((d) => d.status !== 'draft')) {
+                throw new Error('Expected 10 draft P01-P10 rows after upgrade double-seed');
+              }
+              console.log('Upgrade migration + backfill + double-seed verified on PostgreSQL 16');
+            } finally {
+              await p.$disconnect();
+            }
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
 
       - name: Build backend
         working-directory: ./backend
