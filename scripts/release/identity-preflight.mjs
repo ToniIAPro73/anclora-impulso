@@ -35,8 +35,29 @@ const FORBIDDEN_ARG_RE =
   /(?:^|--)(?:migrate|deploy|seed|push|promote|reset|resolve|backup|snapshot|create|delete|write|apply|ddl)\b/i
 const FORBIDDEN_SQL_RE =
   /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|COPY|MERGE|CALL|DO|EXECUTE|PREPARE)\b/i
+const FINGERPRINT_RE = /^sha256:[0-9a-f]{64}$/
+const VALUE_OPTIONS = new Set([
+  'repo-root',
+  'candidate-sha',
+  'default-branch-fingerprint',
+  'expected-fingerprint',
+  'output',
+])
 
 const sha256Hex = (input) => createHash('sha256').update(input).digest('hex')
+
+export const normalizeOptionalFingerprint = (value, fieldName = 'fingerprint') => {
+  if (value === undefined || value === null) return null
+  if (typeof value !== 'string') {
+    throw new Error(`PREFLIGHT_INVALID_FINGERPRINT_TYPE: ${fieldName} must be a string, got ${typeof value}`)
+  }
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (!FINGERPRINT_RE.test(trimmed)) {
+    throw new Error(`PREFLIGHT_INVALID_FINGERPRINT_FORMAT: ${fieldName} must match sha256:<64-hex>`)
+  }
+  return trimmed
+}
 
 export const assertNoForbiddenCliFlags = (argv) => {
   for (const token of argv) {
@@ -433,16 +454,25 @@ export const runIdentityPreflight = async (options = {}) => {
   const sensitiveTokens = collectSensitiveTokens(databaseUrl)
   const observedTarget = extractTargetIdentity(databaseUrl, { requireDirect: true })
 
-  // Anti-substitution check against committed PRODUCTION_RUNTIME.md contract.
-  const contractFingerprint = contract.DATABASE_TARGET_FINGERPRINT || null
-  const approvedRefFingerprint = options.defaultBranchContractFingerprint || null
+  // Anti-substitution and explicit type/format validation against committed contract.
+  const contractFingerprint = normalizeOptionalFingerprint(
+    contract.DATABASE_TARGET_FINGERPRINT,
+    'contract.DATABASE_TARGET_FINGERPRINT',
+  )
+  const approvedRefFingerprint = normalizeOptionalFingerprint(
+    options.defaultBranchContractFingerprint,
+    'defaultBranchContractFingerprint',
+  )
   if (contractFingerprint && approvedRefFingerprint && contractFingerprint !== approvedRefFingerprint) {
     throw new Error(
       `PREFLIGHT_CONTRACT_DRIFT: candidate DATABASE_TARGET_FINGERPRINT (${contractFingerprint}) differs from default branch (${approvedRefFingerprint})`,
     )
   }
   const effectiveContractFingerprint = approvedRefFingerprint ?? contractFingerprint
-  const inputExpectedFingerprint = options.expectedFingerprint?.trim() || null
+  const inputExpectedFingerprint = normalizeOptionalFingerprint(
+    options.expectedFingerprint,
+    'expectedFingerprint',
+  )
   if (
     effectiveContractFingerprint &&
     inputExpectedFingerprint &&
@@ -556,8 +586,8 @@ export const runIdentityPreflight = async (options = {}) => {
     mismatches.length > 0
       ? 'IDENTITY_MISMATCH_BLOCKED'
       : unverified.length > 0
-        ? 'IDENTITY_PREFLIGHT_PARTIAL'
-        : 'IDENTITY_VERIFIED_MATCH'
+        ? 'BLOCKED_OPERATOR_VERIFICATION'
+        : 'IDENTITY_VERIFIED'
 
   const report = {
     schemaVersion: 'ProductionDatabaseIdentityPreflightV1',
@@ -618,15 +648,29 @@ export const runIdentityPreflight = async (options = {}) => {
   return { report, serialized, sensitiveTokens }
 }
 
-const parseCliArgs = (argv) => {
+export const parseCliArgs = (argv) => {
   assertNoForbiddenCliFlags(argv)
   const args = {}
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i]
     if (!token.startsWith('--')) continue
+    const eqIdx = token.indexOf('=')
+    if (eqIdx !== -1) {
+      const key = token.slice(2, eqIdx)
+      args[key] = token.slice(eqIdx + 1)
+      continue
+    }
     const key = token.slice(2)
     const next = argv[i + 1]
-    if (!next || next.startsWith('--')) {
+    if (VALUE_OPTIONS.has(key)) {
+      if (next === undefined || next.startsWith('--')) {
+        throw new Error(`PREFLIGHT_INVALID_CLI_ARG: flag --${key} requires a value`)
+      }
+      args[key] = next
+      i += 1
+      continue
+    }
+    if (next === undefined || next.startsWith('--')) {
       args[key] = true
     } else {
       args[key] = next
@@ -648,8 +692,8 @@ if (isMain) {
     const result = await runIdentityPreflight({
       repoRoot: args['repo-root'] ?? '.',
       candidateSha: args['candidate-sha'] ?? null,
-      defaultBranchContractFingerprint: args['default-branch-fingerprint'] || null,
-      expectedFingerprint: args['expected-fingerprint'] || null,
+      defaultBranchContractFingerprint: args['default-branch-fingerprint'],
+      expectedFingerprint: args['expected-fingerprint'],
       databaseUrl,
     })
 

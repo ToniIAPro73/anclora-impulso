@@ -102,12 +102,18 @@ jobs:
           EXPECTED_FP: ${{ inputs.expected_fingerprint }}
         run: |
           set -euo pipefail
-          node scripts/release/identity-preflight.mjs \
-            --repo-root . \
-            --candidate-sha "$CANDIDATE_SHA" \
-            --default-branch-fingerprint "$DEFAULT_FP" \
-            --expected-fingerprint "$EXPECTED_FP" \
+          args=(
+            --repo-root .
+            --candidate-sha "$CANDIDATE_SHA"
             --output identity-preflight.json
+          )
+          if [ -n "$DEFAULT_FP" ]; then
+            args+=(--default-branch-fingerprint "$DEFAULT_FP")
+          fi
+          if [ -n "$EXPECTED_FP" ]; then
+            args+=(--expected-fingerprint "$EXPECTED_FP")
+          fi
+          node scripts/release/identity-preflight.mjs "${args[@]}"
 
       - name: Upload non-secret identity preflight report
         uses: actions/upload-artifact@v4

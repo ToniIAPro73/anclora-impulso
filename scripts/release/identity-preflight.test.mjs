@@ -12,6 +12,8 @@ import {
   assertReadOnlySql,
   extractTargetIdentity,
   LEDGER_READ_ONLY_SQL,
+  normalizeOptionalFingerprint,
+  parseCliArgs,
   runIdentityPreflight,
 } from './identity-preflight.mjs'
 import { computeCrlfSqlSha256, computeDatabaseFingerprint } from './emit-migration-attestation.mjs'
@@ -169,7 +171,7 @@ test('S3: Render y Neon sin credenciales autorizadas declaran RENDER_IDENTITY_UN
       ledgerRows: fx.ledgerRows,
     })
 
-    assert.equal(report.status, 'IDENTITY_PREFLIGHT_PARTIAL')
+    assert.equal(report.status, 'BLOCKED_OPERATOR_VERIFICATION')
     assert.equal(report.observedTarget.fingerprint, expectedFp)
     assert.equal(report.observedTarget.port, '5432')
     assert.equal(report.observedTarget.isPooler, false)
@@ -244,7 +246,7 @@ test('S4: verificación cruzada completa GitHub + Render + Neon + Contrato -> ID
       ledgerRows: fx.ledgerRows,
       fetchFn: makeMockFetch(poolerRenderUrl, true),
     })
-    assert.equal(ok.report.status, 'IDENTITY_VERIFIED_MATCH')
+    assert.equal(ok.report.status, 'IDENTITY_VERIFIED')
     assert.equal(ok.report.contract.contractFingerprintMatchesObserved, true)
     assert.equal(ok.report.render.comparison.fingerprintMatches, true)
     assert.equal(ok.report.render.comparison.endpointMatches, true)
@@ -313,6 +315,118 @@ test('S4: verificación cruzada completa GitHub + Render + Neon + Contrato -> ID
     )
     assert.notEqual(cliBlocked.status, 0)
     assert.match(cliBlocked.stderr, /PREFLIGHT_FORBIDDEN_OPERATION/)
+  } finally {
+    fx.cleanup()
+  }
+})
+
+test('S5: parseCliArgs y normalizeOptionalFingerprint validan tipos, cadenas vacías, formatos inválidos y BLOCKED_OPERATOR_VERIFICATION sin referencia independiente', async () => {
+  const fx = makeFixtureRepo()
+  const directUrl = 'postgresql://mig_role:pw1@ep-prod-555.eu-central-1.aws.neon.tech:5432/impulso_prod?sslmode=require'
+  const validFp = computeDatabaseFingerprint(directUrl)
+
+  try {
+    // 1) parseCliArgs con valores vacíos desde GitHub Actions ("") no los convierte en booleanos
+    const parsedEmpty = parseCliArgs([
+      '--repo-root', '.',
+      '--candidate-sha', 'a'.repeat(40),
+      '--default-branch-fingerprint', '',
+      '--expected-fingerprint', '',
+      '--output', 'identity-preflight.json',
+    ])
+    assert.equal(parsedEmpty['default-branch-fingerprint'], '')
+    assert.equal(parsedEmpty['expected-fingerprint'], '')
+
+    // Flag de valor sin argumento falla cerrado
+    assert.throws(
+      () => parseCliArgs(['--expected-fingerprint', '--output', 'out.json']),
+      /PREFLIGHT_INVALID_CLI_ARG/,
+    )
+
+    // 2) normalizeOptionalFingerprint: undefined, null, '', false, formato inválido y válido
+    assert.equal(normalizeOptionalFingerprint(undefined, 'expectedFingerprint'), null)
+    assert.equal(normalizeOptionalFingerprint(null, 'expectedFingerprint'), null)
+    assert.equal(normalizeOptionalFingerprint('', 'expectedFingerprint'), null)
+    assert.equal(normalizeOptionalFingerprint('   ', 'expectedFingerprint'), null)
+    assert.throws(
+      () => normalizeOptionalFingerprint(false, 'expectedFingerprint'),
+      /PREFLIGHT_INVALID_FINGERPRINT_TYPE/,
+    )
+    assert.throws(
+      () => normalizeOptionalFingerprint(true, 'expectedFingerprint'),
+      /PREFLIGHT_INVALID_FINGERPRINT_TYPE/,
+    )
+    assert.throws(
+      () => normalizeOptionalFingerprint('sha256:nothex', 'expectedFingerprint'),
+      /PREFLIGHT_INVALID_FINGERPRINT_FORMAT/,
+    )
+    assert.equal(normalizeOptionalFingerprint(validFp, 'expectedFingerprint'), validFp)
+
+    // 3) runIdentityPreflight con undefined, null y cadena vacía -> BLOCKED_OPERATOR_VERIFICATION (nunca IDENTITY_VERIFIED)
+    for (const emptyVal of [undefined, null, '']) {
+      const res = await runIdentityPreflight({
+        repoRoot: fx.root,
+        candidateSha: 'a'.repeat(40),
+        databaseUrl: directUrl,
+        defaultBranchContractFingerprint: emptyVal,
+        expectedFingerprint: emptyVal,
+        renderApiKey: '',
+        neonApiKey: '',
+        ledgerRows: fx.ledgerRows,
+      })
+      assert.equal(res.report.status, 'BLOCKED_OPERATOR_VERIFICATION')
+      assert.notEqual(res.report.status, 'IDENTITY_VERIFIED')
+      assert.equal(res.report.contract.inputExpectedFingerprintProvided, false)
+    }
+
+    // 4) runIdentityPreflight rechaza explícitamente boolean false o formato inválido (fail-closed)
+    await assert.rejects(
+      () => runIdentityPreflight({
+        repoRoot: fx.root,
+        databaseUrl: directUrl,
+        expectedFingerprint: false,
+        ledgerRows: fx.ledgerRows,
+      }),
+      /PREFLIGHT_INVALID_FINGERPRINT_TYPE/,
+    )
+    await assert.rejects(
+      () => runIdentityPreflight({
+        repoRoot: fx.root,
+        databaseUrl: directUrl,
+        expectedFingerprint: 'sha256:bad',
+        ledgerRows: fx.ledgerRows,
+      }),
+      /PREFLIGHT_INVALID_FINGERPRINT_FORMAT/,
+    )
+
+    // 5) Con fingerprint válido igual al observado, si falta Render o Neon sigue devolviendo BLOCKED_OPERATOR_VERIFICATION
+    const withExpectedOnly = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      expectedFingerprint: validFp,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: fx.ledgerRows,
+    })
+    assert.equal(withExpectedOnly.report.status, 'BLOCKED_OPERATOR_VERIFICATION')
+    assert.equal(withExpectedOnly.report.contract.inputExpectedFingerprintMatchesObserved, true)
+
+    // 6) Invocación CLI real con --default-branch-fingerprint "" --expected-fingerprint "" nunca falla con .trim is not a function
+    const cliEmptyFlags = spawnSync(
+      process.execPath,
+      [
+        join(HERE, 'identity-preflight.mjs'),
+        '--repo-root', fx.root,
+        '--candidate-sha', 'a'.repeat(40),
+        '--default-branch-fingerprint', '',
+        '--expected-fingerprint', '',
+      ],
+      { encoding: 'utf8', env: { ...process.env, PRODUCTION_MIGRATION_DATABASE_URL: '' } },
+    )
+    assert.notEqual(cliEmptyFlags.status, 0)
+    assert.doesNotMatch(cliEmptyFlags.stderr, /trim is not a function/)
+    assert.match(cliEmptyFlags.stderr, /PREFLIGHT_DATABASE_URL_MISSING/)
   } finally {
     fx.cleanup()
   }
