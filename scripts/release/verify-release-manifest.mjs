@@ -8,6 +8,10 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import {
+  computeCrlfSqlSha256,
+  validateHistoricalChecksumEquivalences,
+} from './emit-migration-attestation.mjs';
 
 const root = process.argv[2] ?? process.cwd();
 const dir = join(root, 'backend', 'prisma', 'migrations');
@@ -30,11 +34,19 @@ if (JSON.stringify(actual) !== JSON.stringify(declared)) {
   const extra = actual.filter((n) => !declared.includes(n));
   fail(`manifest and migrations differ (declared-only: ${missing.length}, present-only: ${extra.length})`);
 }
+const diskWithCrlf = [];
 for (const m of manifest.migrations) {
   if (!/^[0-9a-f]{64}$/.test(m.sha256 ?? '')) fail(`manifest entry ${m.name} has no valid sha256`);
   const sql = join(dir, m.name, 'migration.sql');
   if (!existsSync(sql)) fail(`migration.sql missing for ${m.name}`);
-  const sum = createHash('sha256').update(readFileSync(sql)).digest('hex');
+  const bytes = readFileSync(sql);
+  const sum = createHash('sha256').update(bytes).digest('hex');
   if (sum !== m.sha256) fail(`checksum mismatch for ${m.name}`);
+  diskWithCrlf.push({ name: m.name, sha256: sum, crlfSha256: computeCrlfSqlSha256(bytes) });
+}
+try {
+  validateHistoricalChecksumEquivalences(manifest.historicalChecksumEquivalences, diskWithCrlf);
+} catch (err) {
+  fail(err instanceof Error ? err.message : String(err));
 }
 console.log(`manifest ok: ${actual.length} migrations; newest is ${actual[actual.length - 1]}`);

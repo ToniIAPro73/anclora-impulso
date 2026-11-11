@@ -1,4 +1,5 @@
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -55,6 +56,23 @@ try {
   const ver = join(process.cwd(), "scripts/release/verify-release-manifest.mjs");
   const run = (script: string) => { try { execFileSync("node", [script, root], { stdio: "pipe" }); return true; } catch { return false; } };
   assert("generate then verify passes", run(gen) && run(ver));
+  const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+  const mPath = join(root, "scripts/release/release-manifest.json");
+  const curManifest = JSON.parse(readFileSync(mPath, "utf8"));
+  curManifest.historicalChecksumEquivalences = [{
+    name: "20260101000000_one",
+    reason: "legacy-crlf",
+    lineEndingMode: "CRLF",
+    lfSha256: sha("-- one\n"),
+    crlfSha256: sha("-- one\r\n"),
+  }];
+  writeFileSync(mPath, JSON.stringify(curManifest, null, 2) + "\n");
+  assert("valid historicalChecksumEquivalences passes verify and survives generate", run(ver) && run(gen) && run(ver));
+  const afterGen = JSON.parse(readFileSync(mPath, "utf8"));
+  assert("generate preserves valid historicalChecksumEquivalences", Array.isArray(afterGen.historicalChecksumEquivalences) && afterGen.historicalChecksumEquivalences.length === 1);
+  curManifest.historicalChecksumEquivalences[0].crlfSha256 = "f".repeat(64);
+  writeFileSync(mPath, JSON.stringify(curManifest, null, 2) + "\n");
+  assert("tampered equivalence crlfSha256 -> verification fails", !run(ver));
   writeFileSync(join(root, "backend/prisma/migrations/20260101000000_one/migration.sql"), "-- one changed\n");
   assert("edited migration -> manifest verification fails", !run(ver));
   run(gen);

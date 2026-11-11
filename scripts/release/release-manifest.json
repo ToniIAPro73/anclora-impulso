@@ -109,5 +109,70 @@
       "name": "20261111211500_add_modular_health_plan_catalog_and_optional_identity",
       "sha256": "d2ce4036d1c713bd25561d620e077afabaab13872d9ac967f0b72107fbb3ddb6"
     }
+  ],
+  "historicalChecksumEquivalences": [
+    {
+      "name": "20260312215517_add_nutrition_and_gamification",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "4c35425ef0a7facb9e791ae08eac79d919af884672198fc58207b12ec20d8113",
+      "crlfSha256": "8c617375bda6b897dc0a0261bc965325f4c3bbf9aacd303c1d28d32afd445ddd"
+    },
+    {
+      "name": "20260313033000_add_intermittent_fasting_tracking",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "b8c1e49f7d411c407870fdb9bdf0622a591d8573d6b9266b2aa45f65ba1c0762",
+      "crlfSha256": "b32a1af5797465544d2f33087bd9bcffe6d243b531572205addccd24aca3ff78"
+    },
+    {
+      "name": "20260315094500_add_training_environments_to_exercises",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "acd7db4dcf9933d9019677d13466c9f93146296a31ea93ac7ca75f514536d6fc",
+      "crlfSha256": "48619f2f91e36b20456280638bf2f1c2d7e299fc067dcf85b952438e58fc8ecc"
+    },
+    {
+      "name": "20260316205731_add_user_profile_fields",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "0f55d6b11b0e944e33667fdbddfef452b8b55371bd97815248313e8ff369b913",
+      "crlfSha256": "30c8cb120703c9435ddab2e1def3a293c31862386a1807c49515888f9a781afd"
+    },
+    {
+      "name": "20260317044414_add_onboarding_personalization_fields",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "32393301b96650ad5373d417818f6e70cab5e7100f272d78fd929a0cbb538bf1",
+      "crlfSha256": "b302ea69a0648afcade3dfcd6970197d50d0b39c2d1dfa51fb5e7518668ae26f"
+    },
+    {
+      "name": "20260317063733_add_product_events_and_admin_ops",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "023fc296b5bc5952de37391835bfe2c91cda925ffc1e96f3158097c88a5677a6",
+      "crlfSha256": "f96513ea9ba7eaa80efff6144a8922cdfb37963d3ef4b5822bbde977eeed1f27"
+    },
+    {
+      "name": "20260318090000_add_reminder_preferences",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "98e8cd07ddbbe07afd5a3a5bb62bf132fc6506af5e44590ee42a5d4628c66eed",
+      "crlfSha256": "22bb866cd598ce17786b86bd7f508d9a98e465746586c1c8586efe9e8661a1c9"
+    },
+    {
+      "name": "20260318112240_add_notification_deliveries_and_editorial_overrides",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "82fe2d95f2d281e941690cf7119e344b9155cab4f6e8d4d4069ee5a22468d082",
+      "crlfSha256": "3681de3bb32c5baa63affc194c180c963bd2aefbcac9f3eae85b877d0b4e07b7"
+    },
+    {
+      "name": "20260328043000_extend_nutrition_recipe_library",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "c7ad7dfb75dd031cb7e7eacacd33247857330469e13655fc95a90748b647e730",
+      "crlfSha256": "f15659dffff706ef28c8237fc31f9cdc051b53316fc7b66b1c2a35441c580af5"
+    }
   ]
 }

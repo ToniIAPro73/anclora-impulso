@@ -13,7 +13,7 @@
  */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { evaluatePreflight } from "./preflight.js";
 import { computeMigrationChecksum, LedgerEntry } from "./ledger-evaluator.js";
@@ -35,13 +35,40 @@ const maxMinutes = Number(need("max-backup-age-minutes"));
 const baselineCount = Number(need("baseline-count"));
 
 const migrationsDir = join(root, "backend", "prisma", "migrations");
+const manifestFile = join(root, "scripts", "release", "release-manifest.json");
+let manifestJson: {
+  historicalChecksumEquivalences?: Array<{
+    name: string;
+    lfSha256: string;
+    crlfSha256: string;
+    lineEndingMode?: string;
+  }>;
+} = {};
+if (existsSync(manifestFile)) {
+  try {
+    manifestJson = JSON.parse(readFileSync(manifestFile, "utf8"));
+  } catch {
+    manifestJson = {};
+  }
+}
+const equivalenceByName = new Map(
+  (manifestJson.historicalChecksumEquivalences ?? [])
+    .filter((eq) => !eq.lineEndingMode || eq.lineEndingMode === "CRLF")
+    .map((eq) => [eq.name, eq]),
+);
+
 const candidates = readdirSync(migrationsDir)
   .filter((n) => /^[0-9]{14}_[a-z0-9_]+$/.test(n) && statSync(join(migrationsDir, n)).isDirectory())
   .sort()
   .map((name) => {
     const content = readFileSync(join(migrationsDir, name, "migration.sql"), "utf8");
-    const crlf = content.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
-    return { name, checksum: computeMigrationChecksum(content), alternateChecksums: [computeMigrationChecksum(crlf)] };
+    const checksum = computeMigrationChecksum(content);
+    const crlfChecksum = computeMigrationChecksum(content.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n"));
+    const eq = equivalenceByName.get(name);
+    if (eq && eq.lfSha256 === checksum && eq.crlfSha256 === crlfChecksum && eq.lfSha256 !== eq.crlfSha256) {
+      return { name, checksum, alternateChecksums: [eq.crlfSha256] };
+    }
+    return { name, checksum };
   });
 
 const git = (...a: string[]) => execFileSync("git", a, { encoding: "utf8" }).trim();

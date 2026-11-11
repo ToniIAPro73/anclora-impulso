@@ -78,11 +78,13 @@ export function evaluatePrismaLedger(
   let ignoredRolledBack = 0;
   for (const [name, rows] of [...byName.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const good: LedgerEntry[] = [];
+    let sawRolledBack = false;
     for (const r of rows) {
       if (!r.finished_at) {
         if (!r.rolled_back_at) {
           return fail(`ledger contains unfinished migration: ${name} (finished_at is null and not rolled back: failed state)`);
         }
+        sawRolledBack = true;
         ignoredRolledBack += 1;
         continue;
       }
@@ -92,6 +94,9 @@ export function evaluatePrismaLedger(
       good.push(r);
     }
     if (good.length > 1) return fail(`ledger has ${good.length} finished rows for migration ${name}: ambiguous`);
+    if (sawRolledBack && good.length === 0) {
+      return fail(`ledger contains unresolved rolled back migration: ${name}`);
+    }
     if (good.length === 1) appliedRows.push(good[0]);
   }
 

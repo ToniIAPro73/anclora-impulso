@@ -74,6 +74,73 @@ export const parseRuntimeContract = (markdown) => {
   return out
 }
 
+export const computeCrlfSqlSha256 = (bytes) => {
+  const text = Buffer.isBuffer(bytes) ? bytes.toString('utf8') : String(bytes)
+  const normalizedCrlf = text.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')
+  return sha256Hex(Buffer.from(normalizedCrlf, 'utf8'))
+}
+
+const HEX64_RE = /^[a-f0-9]{64}$/
+
+export const validateHistoricalChecksumEquivalences = (rawEquivalences, diskMigrations) => {
+  if (rawEquivalences === undefined) return []
+  if (!Array.isArray(rawEquivalences)) {
+    throw new Error('ATTESTATION_EQUIVALENCE_INVALID: historicalChecksumEquivalences must be an array')
+  }
+  const diskByName = new Map(diskMigrations.map((m) => [m.name, m]))
+  const seen = new Set()
+  const verified = []
+
+  for (const entry of rawEquivalences) {
+    if (
+      !entry ||
+      typeof entry !== 'object' ||
+      typeof entry.name !== 'string' ||
+      !entry.name.trim() ||
+      typeof entry.reason !== 'string' ||
+      !entry.reason.trim() ||
+      typeof entry.lfSha256 !== 'string' ||
+      !HEX64_RE.test(entry.lfSha256) ||
+      typeof entry.crlfSha256 !== 'string' ||
+      !HEX64_RE.test(entry.crlfSha256)
+    ) {
+      throw new Error('ATTESTATION_EQUIVALENCE_INVALID: malformed historicalChecksumEquivalences entry')
+    }
+    if (entry.lineEndingMode !== undefined && entry.lineEndingMode !== 'CRLF') {
+      throw new Error(`ATTESTATION_EQUIVALENCE_INVALID: unsupported lineEndingMode for ${entry.name}`)
+    }
+    if (seen.has(entry.name)) {
+      throw new Error(`ATTESTATION_EQUIVALENCE_DUPLICATE: duplicate equivalence for ${entry.name}`)
+    }
+    seen.add(entry.name)
+
+    const disk = diskByName.get(entry.name)
+    if (!disk) {
+      throw new Error(`ATTESTATION_EQUIVALENCE_UNKNOWN_MIGRATION: ${entry.name} not present on disk`)
+    }
+    if (entry.lfSha256 !== disk.sha256) {
+      throw new Error(`ATTESTATION_EQUIVALENCE_LF_MISMATCH: ${entry.name}`)
+    }
+    if (disk.crlfSha256 && entry.crlfSha256 !== disk.crlfSha256) {
+      throw new Error(`ATTESTATION_EQUIVALENCE_CRLF_MISMATCH: ${entry.name}`)
+    }
+    if (entry.lfSha256 === entry.crlfSha256) {
+      throw new Error(`ATTESTATION_EQUIVALENCE_REDUNDANT: ${entry.name} LF and CRLF hashes are identical`)
+    }
+
+    verified.push({
+      name: entry.name,
+      reason: entry.reason.trim(),
+      lineEndingMode: 'CRLF',
+      lfSha256: entry.lfSha256,
+      crlfSha256: entry.crlfSha256,
+    })
+  }
+
+  verified.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+  return verified
+}
+
 export const collectDiskMigrations = (repoRoot, relDir) => {
   const normalizedDir = relDir.replace(/^\.\//, '').replace(/\/+$/, '')
   const absDir = resolve(repoRoot, normalizedDir)
@@ -92,14 +159,22 @@ export const collectDiskMigrations = (repoRoot, relDir) => {
     const sqlPath = join(absDir, dir.name, 'migration.sql')
     if (existsSync(sqlPath) && statSync(sqlPath).isFile()) {
       const bytes = readFileSync(sqlPath)
-      migrations.push({ name: dir.name, sha256: sha256Hex(bytes) })
+      migrations.push({
+        name: dir.name,
+        sha256: sha256Hex(bytes),
+        crlfSha256: computeCrlfSqlSha256(bytes),
+      })
     }
   }
 
   if (migrations.length === 0 && directSqlFiles.length > 0) {
     for (const file of directSqlFiles) {
       const bytes = readFileSync(join(absDir, file.name))
-      migrations.push({ name: file.name.replace(/\.(sql|py)$/i, ''), sha256: sha256Hex(bytes) })
+      migrations.push({
+        name: file.name.replace(/\.(sql|py)$/i, ''),
+        sha256: sha256Hex(bytes),
+        crlfSha256: computeCrlfSqlSha256(bytes),
+      })
     }
   }
 
@@ -116,7 +191,9 @@ export const collectDiskMigrations = (repoRoot, relDir) => {
 
 export const verifyManifestOnDisk = (repoRoot, manifestRelPath, diskMigrations) => {
   const abs = resolve(repoRoot, manifestRelPath)
-  if (!existsSync(abs)) return { manifestPath: manifestRelPath, manifestSha256: null, present: false }
+  if (!existsSync(abs)) {
+    return { manifestPath: manifestRelPath, manifestSha256: null, present: false, equivalences: [] }
+  }
   const raw = readFileSync(abs)
   const manifestSha256 = sha256Hex(raw)
   const parsed = JSON.parse(raw.toString('utf8'))
@@ -139,7 +216,11 @@ export const verifyManifestOnDisk = (repoRoot, manifestRelPath, diskMigrations) 
       throw new Error(`ATTESTATION_MANIFEST_ENTRY_MISMATCH: ${diskMigrations[i].name}`)
     }
   }
-  return { manifestPath: manifestRelPath, manifestSha256, present: true }
+  const equivalences = validateHistoricalChecksumEquivalences(
+    parsed.historicalChecksumEquivalences,
+    diskMigrations,
+  )
+  return { manifestPath: manifestRelPath, manifestSha256, present: true, equivalences }
 }
 
 const queryPrismaLedgerRows = (databaseUrl) => {
@@ -170,40 +251,80 @@ const queryPrismaLedgerRows = (databaseUrl) => {
     })
 }
 
-export const evaluateLedgerRows = (rows, diskMigrations) => {
+export const evaluateLedgerRows = (rows, diskMigrations, historicalEquivalences = []) => {
   if (!Array.isArray(rows)) {
     throw new Error('ATTESTATION_LEDGER_INVALID: rows must be an array')
   }
+  const verifiedEquivalences = validateHistoricalChecksumEquivalences(
+    historicalEquivalences,
+    diskMigrations,
+  )
+  const equivalenceByName = new Map(verifiedEquivalences.map((eq) => [eq.name, eq]))
   const diskByName = new Map(diskMigrations.map((m) => [m.name, m.sha256]))
   const activeByName = new Map()
   const unresolvedFailed = []
   const unresolvedRolledBack = new Set()
+  const rolledBackRowsByName = new Map()
+  let resolvedRolledBackCount = 0
 
   for (const row of rows) {
     if (!row || typeof row.migration_name !== 'string' || typeof row.checksum !== 'string') {
       throw new Error('ATTESTATION_LEDGER_ROW_MALFORMED')
     }
+    if (row.finished_at && row.rolled_back_at) {
+      unresolvedFailed.push(row.migration_name)
+      continue
+    }
     if (row.rolled_back_at) {
       unresolvedRolledBack.add(row.migration_name)
+      rolledBackRowsByName.set(row.migration_name, (rolledBackRowsByName.get(row.migration_name) ?? 0) + 1)
+      activeByName.delete(row.migration_name)
       continue
     }
     if (!row.finished_at) {
       unresolvedFailed.push(row.migration_name)
       continue
     }
-    unresolvedRolledBack.delete(row.migration_name)
+    if (activeByName.has(row.migration_name)) {
+      unresolvedFailed.push(row.migration_name)
+      continue
+    }
+    if (unresolvedRolledBack.has(row.migration_name)) {
+      resolvedRolledBackCount += rolledBackRowsByName.get(row.migration_name) ?? 1
+      rolledBackRowsByName.set(row.migration_name, 0)
+      unresolvedRolledBack.delete(row.migration_name)
+    }
     activeByName.set(row.migration_name, row.checksum)
   }
 
   let checksumMismatchCount = 0
   let pendingCount = 0
+  const canonicalByName = new Map()
+  const acceptedHistoricalEquivalences = []
+
   for (const m of diskMigrations) {
     const dbChecksum = activeByName.get(m.name)
     if (!dbChecksum) {
       pendingCount += 1
-    } else if (dbChecksum !== m.sha256) {
-      checksumMismatchCount += 1
+      continue
     }
+    if (dbChecksum === m.sha256) {
+      canonicalByName.set(m.name, m.sha256)
+      continue
+    }
+    const eq = equivalenceByName.get(m.name)
+    if (eq && dbChecksum === eq.crlfSha256 && eq.lfSha256 === m.sha256) {
+      canonicalByName.set(m.name, m.sha256)
+      acceptedHistoricalEquivalences.push({
+        name: m.name,
+        reason: eq.reason,
+        lineEndingMode: eq.lineEndingMode,
+        canonicalSha256: eq.lfSha256,
+        recordedChecksum: dbChecksum,
+      })
+      continue
+    }
+    checksumMismatchCount += 1
   }
 
   // Detect extra DB migrations not present on disk (history drift).
@@ -213,7 +334,15 @@ export const evaluateLedgerRows = (rows, diskMigrations) => {
   }
 
   const activeSorted = [...activeByName.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
-  const appliedMigrationsDigest = sha256Hex(activeSorted.map(([name, sum]) => `${name}:${sum}\n`).join(''))
+  const observedLedgerDigest = sha256Hex(activeSorted.map(([name, sum]) => `${name}:${sum}\n`).join(''))
+
+  const canonicalSorted = [...canonicalByName.entries()].sort((a, b) =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
+  )
+  const appliedMigrationsDigest =
+    checksumMismatchCount === 0 && extraDbCount === 0 && canonicalSorted.length === activeSorted.length
+      ? sha256Hex(canonicalSorted.map(([name, sum]) => `${name}:${sum}\n`).join(''))
+      : observedLedgerDigest
 
   const failedCount = unresolvedFailed.length
   const rolledBackCount = unresolvedRolledBack.size
@@ -236,9 +365,12 @@ export const evaluateLedgerRows = (rows, diskMigrations) => {
     pendingCount,
     failedCount,
     rolledBackCount,
+    resolvedRolledBackCount,
     checksumMismatchCount,
     extraDbCount,
+    observedLedgerDigest,
     appliedMigrationsDigest,
+    acceptedHistoricalEquivalences,
   }
 }
 
@@ -276,7 +408,7 @@ export const buildAttestation = (options = {}) => {
   }
 
   const rows = options.ledgerRows ?? queryPrismaLedgerRows(options.databaseUrl)
-  const dbPostCheck = evaluateLedgerRows(rows, disk.migrations)
+  const dbPostCheck = evaluateLedgerRows(rows, disk.migrations, manifest.equivalences)
 
   const payload = {
     schemaVersion: 'MigrationAttestationV1',

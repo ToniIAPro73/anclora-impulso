@@ -195,6 +195,11 @@ const l9 = evaluatePrismaLedger([
 assert("Two finished rows for one migration are ambiguous and fail", !l9.valid && (l9.reason?.includes("ambiguous") ?? false));
 const l10 = evaluatePrismaLedger([entry("20251120020551_init", "zzz999", "2026-03-28T10:56:22Z")], legacyCandidates);
 assert("Unrelated checksum still fails", !l10.valid && (l10.reason?.includes("checksum mismatch") ?? false));
+const l11 = evaluatePrismaLedger([
+  entry("20251120020551_init", "aaa111", "2026-03-28T10:56:22Z"),
+  entry("20261012050000_add_idempotency_quota_reservation", KNOWN_MIGRATION_5_CHECKSUM, null, "2026-03-29T00:00:00Z")
+], legacyCandidates);
+assert("Unresolved rolled_back migration fails fail-closed", !l11.valid && (l11.reason?.includes("unresolved rolled back") ?? false));
 
 // 5. Backup Verification
 console.log("\n--- 5. Backup Verification ---");

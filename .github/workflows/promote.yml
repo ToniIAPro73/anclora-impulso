@@ -542,18 +542,23 @@ jobs:
           const prismaPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)/migration\\.sql$`)
           const directPattern = new RegExp(`^${normalizedDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([^/]+)\\.(sql|py)$`)
 
+          const crlfSqlSha256 = (bytes) =>
+            sha256Hex(Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n').replace(/\n/g, '\r\n'), 'utf8'))
+
           const migrations = []
           for (const filePath of treeFiles) {
             const pm = prismaPattern.exec(filePath)
             if (pm) {
-              migrations.push({ name: pm[1], sha256: sha256Hex(gitBuf(['show', `${sourceSha}:${filePath}`])) })
+              const bytes = gitBuf(['show', `${sourceSha}:${filePath}`])
+              migrations.push({ name: pm[1], sha256: sha256Hex(bytes), crlfSha256: crlfSqlSha256(bytes) })
             }
           }
           if (migrations.length === 0) {
             for (const filePath of treeFiles) {
               const dm = directPattern.exec(filePath)
               if (dm) {
-                migrations.push({ name: dm[1], sha256: sha256Hex(gitBuf(['show', `${sourceSha}:${filePath}`])) })
+                const bytes = gitBuf(['show', `${sourceSha}:${filePath}`])
+                migrations.push({ name: dm[1], sha256: sha256Hex(bytes), crlfSha256: crlfSqlSha256(bytes) })
               }
             }
           }
@@ -561,10 +566,12 @@ jobs:
           const actualCount = migrations.length
           const actualNames = migrations.map((m) => m.name)
           const actualNameSet = new Set(actualNames)
+          const migrationByName = new Map(migrations.map((m) => [m.name, m]))
           const actualTreeSha256 = sha256Hex(migrations.map((m) => `${m.name}:${m.sha256}\n`).join(''))
 
           const manifestPath = declaredManifestPath || (treeFiles.includes('scripts/release/release-manifest.json') ? 'scripts/release/release-manifest.json' : '')
           let actualManifestSha256 = null
+          const authorizedEquivalencesByName = new Map()
           if (manifestPath) {
             if (!treeFiles.includes(manifestPath)) {
               fail('MIGRATION_MANIFEST_MISMATCH', `Declared manifest ${manifestPath} missing at ${sourceSha}.`)
@@ -589,6 +596,49 @@ jobs:
             for (let i = 0; i < actualCount; i += 1) {
               if (sortedManifest[i].name !== migrations[i].name || sortedManifest[i].sha256 !== migrations[i].sha256) {
                 fail('MIGRATION_MANIFEST_MISMATCH', `Manifest mismatch at migration ${migrations[i].name}.`)
+              }
+            }
+            if (manifestJson.historicalChecksumEquivalences !== undefined) {
+              if (!Array.isArray(manifestJson.historicalChecksumEquivalences)) {
+                fail('MIGRATION_MANIFEST_MISMATCH', `Manifest ${manifestPath} historicalChecksumEquivalences must be an array.`)
+              }
+              const hex64 = /^[a-f0-9]{64}$/
+              for (const eq of manifestJson.historicalChecksumEquivalences) {
+                if (
+                  !eq ||
+                  typeof eq !== 'object' ||
+                  typeof eq.name !== 'string' ||
+                  !eq.name.trim() ||
+                  typeof eq.reason !== 'string' ||
+                  !eq.reason.trim() ||
+                  typeof eq.lfSha256 !== 'string' ||
+                  !hex64.test(eq.lfSha256) ||
+                  typeof eq.crlfSha256 !== 'string' ||
+                  !hex64.test(eq.crlfSha256) ||
+                  (eq.lineEndingMode !== undefined && eq.lineEndingMode !== 'CRLF')
+                ) {
+                  fail('MIGRATION_MANIFEST_MISMATCH', `Manifest ${manifestPath} contains malformed historicalChecksumEquivalences entry.`)
+                }
+                if (authorizedEquivalencesByName.has(eq.name)) {
+                  fail('MIGRATION_MANIFEST_MISMATCH', `Manifest ${manifestPath} contains duplicate historical equivalence for ${eq.name}.`)
+                }
+                const treeMigration = migrationByName.get(eq.name)
+                if (!treeMigration) {
+                  fail('MIGRATION_MANIFEST_MISMATCH', `Manifest historical equivalence references missing migration ${eq.name}.`)
+                }
+                if (
+                  eq.lfSha256 !== treeMigration.sha256 ||
+                  eq.crlfSha256 !== treeMigration.crlfSha256 ||
+                  eq.lfSha256 === eq.crlfSha256
+                ) {
+                  fail('MIGRATION_MANIFEST_MISMATCH', `Manifest historical equivalence checksum verification failed for ${eq.name}.`)
+                }
+                authorizedEquivalencesByName.set(eq.name, {
+                  reason: eq.reason.trim(),
+                  lineEndingMode: 'CRLF',
+                  canonicalSha256: eq.lfSha256,
+                  recordedChecksum: eq.crlfSha256,
+                })
               }
             }
           }
@@ -859,6 +909,30 @@ jobs:
           }
           if (post.appliedCount !== actualCount || post.appliedMigrationsDigest !== actualTreeSha256) {
             fail('MIGRATION_STATE_UNKNOWN', 'Database appliedMigrationsDigest does not match candidate migration bytes.')
+          }
+          if (post.acceptedHistoricalEquivalences !== undefined) {
+            if (!Array.isArray(post.acceptedHistoricalEquivalences)) {
+              fail('MIGRATION_STATE_UNKNOWN', 'Attestation acceptedHistoricalEquivalences must be an array.')
+            }
+            const seenAccepted = new Set()
+            for (const acc of post.acceptedHistoricalEquivalences) {
+              if (!acc || typeof acc !== 'object' || typeof acc.name !== 'string' || seenAccepted.has(acc.name)) {
+                fail('MIGRATION_STATE_UNKNOWN', 'Attestation contains malformed or duplicate acceptedHistoricalEquivalences entry.')
+              }
+              seenAccepted.add(acc.name)
+              const auth = authorizedEquivalencesByName.get(acc.name)
+              if (!auth) {
+                fail('MIGRATION_STATE_UNKNOWN', `Attestation contains unauthorized historical checksum equivalence: ${acc.name}.`)
+              }
+              if (
+                acc.lineEndingMode !== auth.lineEndingMode ||
+                acc.reason !== auth.reason ||
+                acc.canonicalSha256 !== auth.canonicalSha256 ||
+                acc.recordedChecksum !== auth.recordedChecksum
+              ) {
+                fail('MIGRATION_STATE_UNKNOWN', `Attestation historical checksum equivalence mismatch for ${acc.name}.`)
+              }
+            }
           }
 
           setOutput('migration_gate_required', 'true')
