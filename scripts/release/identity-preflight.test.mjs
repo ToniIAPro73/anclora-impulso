@@ -110,6 +110,7 @@ test('S1: workflow identity-preflight no contiene DDL, migrate deploy, seed, pro
   assert.match(wf, /workflow_dispatch:/)
   assert.match(wf, /environment:\s*production-migrations/)
   assert.match(wf, /secrets\.PRODUCTION_MIGRATION_DATABASE_URL/)
+  assert.match(wf, /if:\s*\$\{\{\s*!cancelled\(\)\s*&&\s*hashFiles\('identity-preflight\.json'/)
   assert.doesNotMatch(wf, /id-token:\s*write/)
   assert.doesNotMatch(wf, /attestations:\s*write/)
   assert.doesNotMatch(wf, /contents:\s*write/)
@@ -427,6 +428,200 @@ test('S5: parseCliArgs y normalizeOptionalFingerprint validan tipos, cadenas vac
     assert.notEqual(cliEmptyFlags.status, 0)
     assert.doesNotMatch(cliEmptyFlags.stderr, /trim is not a function/)
     assert.match(cliEmptyFlags.stderr, /PREFLIGHT_DATABASE_URL_MISSING/)
+  } finally {
+    fx.cleanup()
+  }
+})
+
+test('S6: preflight clasifica migración pendiente legítima vs historial alterado, huecos, rollback sin resolver y ausencia de identidad Neon', async () => {
+  const fx = makeFixtureRepo()
+  const directUrl = 'postgresql://mig_role:pw1@ep-prod-777.eu-central-1.aws.neon.tech:5432/impulso_prod?sslmode=require'
+  const validFp = computeDatabaseFingerprint(directUrl)
+
+  try {
+    // 1) Migración pendiente legítima (M27) + rollback histórico resuelto + CRLF autorizado, sin fingerprint/Neon -> BLOCKED_OPERATOR_VERIFICATION (ledgerIntegrityClean=true)
+    const cleanPending = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: fx.ledgerRows,
+      expectedPendingMigrations: ['20261111211500_m27'],
+    })
+    assert.equal(cleanPending.report.ledger.integrityClean, true)
+    assert.equal(cleanPending.report.ledger.appliedCount, 2)
+    assert.equal(cleanPending.report.ledger.pendingCount, 1)
+    assert.deepEqual(cleanPending.report.ledger.pendingMigrationNames, ['20261111211500_m27'])
+    assert.equal(cleanPending.report.ledger.pendingIsContiguousSuffix, true)
+    assert.equal(cleanPending.report.ledger.resolvedRolledBackCount, 1)
+    assert.equal(cleanPending.report.ledger.acceptedHistoricalEquivalencesCount, 1)
+    assert.equal(cleanPending.report.status, 'BLOCKED_OPERATOR_VERIFICATION')
+    assert.deepEqual(cleanPending.report.mismatches, [])
+    assert.ok(cleanPending.report.unverified.includes('CONTRACT_FINGERPRINT_UNDECLARED'))
+    assert.ok(cleanPending.report.unverified.includes('NEON_IDENTITY_UNVERIFIED'))
+
+    // 2) CRLF no autorizado en el manifiesto (ej. init con CRLF sin equivalencia declarada) -> checksumMismatchCount=1 -> LEDGER_INTEGRITY_FAILED
+    const sqlInitBytes = readFileSync(join(fx.root, 'backend/prisma/migrations/20251120020551_init/migration.sql'))
+    const unauthorizedCrlfRows = [
+      { ...fx.ledgerRows[0], checksum: computeCrlfSqlSha256(sqlInitBytes) },
+      fx.ledgerRows[1],
+      fx.ledgerRows[2],
+    ]
+    const unauthorizedCrlf = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      expectedFingerprint: validFp,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: unauthorizedCrlfRows,
+    })
+    assert.equal(unauthorizedCrlf.report.ledger.integrityClean, false)
+    assert.equal(unauthorizedCrlf.report.ledger.checksumMismatchCount, 1)
+    assert.equal(unauthorizedCrlf.report.status, 'IDENTITY_MISMATCH_BLOCKED')
+    assert.ok(unauthorizedCrlf.report.mismatches.includes('LEDGER_INTEGRITY_FAILED'))
+
+    // 3) Hueco en historial (falta 20251120020551_init pero 20260312215517_legacy está aplicada) -> pendingIsContiguousSuffix=false -> LEDGER_INTEGRITY_FAILED
+    const gappedRows = [fx.ledgerRows[1], fx.ledgerRows[2]]
+    const gapped = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: gappedRows,
+    })
+    assert.equal(gapped.report.ledger.pendingIsContiguousSuffix, false)
+    assert.equal(gapped.report.ledger.integrityClean, false)
+    assert.ok(gapped.report.mismatches.includes('LEDGER_INTEGRITY_FAILED'))
+
+    // 4) Ledger vacío (appliedCount=0) -> LEDGER_INTEGRITY_FAILED
+    const emptyLedger = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: [],
+    })
+    assert.equal(emptyLedger.report.ledger.appliedCount, 0)
+    assert.equal(emptyLedger.report.ledger.integrityClean, false)
+    assert.ok(emptyLedger.report.mismatches.includes('LEDGER_INTEGRITY_FAILED'))
+
+    // 5) Rollback sin resolver (sin ejecución posterior finalizada) -> rolledBackCount=1 -> LEDGER_INTEGRITY_FAILED
+    const unresolvedRollback = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: [fx.ledgerRows[0], fx.ledgerRows[1]],
+    })
+    assert.equal(unresolvedRollback.report.ledger.rolledBackCount, 1)
+    assert.equal(unresolvedRollback.report.ledger.integrityClean, false)
+    assert.ok(unresolvedRollback.report.mismatches.includes('LEDGER_INTEGRITY_FAILED'))
+
+    // 6) Migración fallida activa (finished_at=null, rolled_back_at=null) -> failedCount=1 -> LEDGER_INTEGRITY_FAILED
+    const activeFailed = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: [
+        fx.ledgerRows[0],
+        { migration_name: '20260312215517_legacy', checksum: sha256Hex('x'), finished_at: null, rolled_back_at: null },
+      ],
+    })
+    assert.equal(activeFailed.report.ledger.failedCount, 1)
+    assert.equal(activeFailed.report.ledger.integrityClean, false)
+    assert.ok(activeFailed.report.mismatches.includes('LEDGER_INTEGRITY_FAILED'))
+
+    // 7) Checksum desconocido y migración extra desconocida en BD -> bloqueados
+    const unknownChecksum = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      expectedFingerprint: validFp,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: [
+        { ...fx.ledgerRows[0], checksum: sha256Hex('altered-sql') },
+        fx.ledgerRows[1],
+        fx.ledgerRows[2],
+      ],
+    })
+    assert.equal(unknownChecksum.report.ledger.checksumMismatchCount, 1)
+    assert.equal(unknownChecksum.report.ledger.integrityClean, false)
+    assert.equal(unknownChecksum.report.status, 'IDENTITY_MISMATCH_BLOCKED')
+
+    const extraDbMig = await runIdentityPreflight({
+      repoRoot: fx.root,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: [
+        ...fx.ledgerRows,
+        {
+          migration_name: '20260401000000_unknown_rogue',
+          checksum: sha256Hex('rogue'),
+          finished_at: '2026-04-01T00:00:00Z',
+          rolled_back_at: null,
+        },
+      ],
+    })
+    assert.equal(extraDbMig.report.ledger.extraDbCount, 1)
+    assert.equal(extraDbMig.report.ledger.integrityClean, false)
+    assert.ok(extraDbMig.report.mismatches.includes('LEDGER_INTEGRITY_FAILED'))
+
+    // 8) Reproducción exacta del manifiesto real de anclora-impulso (27 migraciones, 9 equivalencias CRLF incluyendo 20251120020551_init)
+    const realManifest = JSON.parse(readFileSync(join(IMPULSO_ROOT, 'scripts/release/release-manifest.json'), 'utf8'))
+    assert.equal(realManifest.migrations.length, 27)
+    assert.equal(realManifest.historicalChecksumEquivalences.length, 9)
+    const eqByName = new Map(realManifest.historicalChecksumEquivalences.map((e) => [e.name, e]))
+    assert.ok(eqByName.has('20251120020551_init'))
+    assert.equal(eqByName.has('20260328043000_extend_nutrition_recipe_library'), false)
+
+    const simulatedProdRows = []
+    for (const m of realManifest.migrations.slice(0, 26)) {
+      const eq = eqByName.get(m.name)
+      if (eq) {
+        simulatedProdRows.push({
+          migration_name: m.name,
+          checksum: eq.crlfSha256,
+          finished_at: null,
+          rolled_back_at: '2026-03-28T10:55:00Z',
+        })
+      }
+      simulatedProdRows.push({
+        migration_name: m.name,
+        checksum: eq ? eq.crlfSha256 : m.sha256,
+        finished_at: '2026-03-28T11:00:00Z',
+        rolled_back_at: null,
+      })
+    }
+    const realSim = await runIdentityPreflight({
+      repoRoot: IMPULSO_ROOT,
+      candidateSha: 'a'.repeat(40),
+      databaseUrl: directUrl,
+      renderApiKey: '',
+      neonApiKey: '',
+      ledgerRows: simulatedProdRows,
+    })
+    assert.equal(realSim.report.ledger.declaredCount, 27)
+    assert.equal(realSim.report.ledger.appliedCount, 26)
+    assert.equal(realSim.report.ledger.pendingCount, 1)
+    assert.deepEqual(realSim.report.ledger.pendingMigrationNames, ['20261111211500_add_modular_health_plan_catalog_and_optional_identity'])
+    assert.equal(realSim.report.ledger.pendingIsContiguousSuffix, true)
+    assert.equal(realSim.report.ledger.acceptedHistoricalEquivalencesCount, 9)
+    assert.equal(realSim.report.ledger.checksumMismatchCount, 0)
+    assert.equal(realSim.report.ledger.failedCount, 0)
+    assert.equal(realSim.report.ledger.rolledBackCount, 0)
+    assert.equal(realSim.report.ledger.extraDbCount, 0)
+    assert.equal(realSim.report.ledger.integrityClean, true)
+    assert.equal(realSim.report.status, 'BLOCKED_OPERATOR_VERIFICATION')
   } finally {
     fx.cleanup()
   }

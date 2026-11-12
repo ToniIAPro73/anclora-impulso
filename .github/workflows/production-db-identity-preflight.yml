@@ -116,6 +116,7 @@ jobs:
           node scripts/release/identity-preflight.mjs "${args[@]}"
 
       - name: Upload non-secret identity preflight report
+        if: ${{ !cancelled() && hashFiles('identity-preflight.json', 'identity-preflight.json.sha256') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: identity-preflight-report

@@ -112,6 +112,13 @@
   ],
   "historicalChecksumEquivalences": [
     {
+      "name": "20251120020551_init",
+      "reason": "legacy-2026-03-crlf-baseline",
+      "lineEndingMode": "CRLF",
+      "lfSha256": "ffee5ff13245291713ec0d9bc2fed9e6359525e7b3dea726149f80b3dec8861b",
+      "crlfSha256": "32be2ecfaa05fbfd9aba1de599b2f325c1bcbcfcbeac1540745d6e8512891b3e"
+    },
+    {
       "name": "20260312215517_add_nutrition_and_gamification",
       "reason": "legacy-2026-03-crlf-baseline",
       "lineEndingMode": "CRLF",
@@ -166,13 +173,6 @@
       "lineEndingMode": "CRLF",
       "lfSha256": "82fe2d95f2d281e941690cf7119e344b9155cab4f6e8d4d4069ee5a22468d082",
       "crlfSha256": "3681de3bb32c5baa63affc194c180c963bd2aefbcac9f3eae85b877d0b4e07b7"
-    },
-    {
-      "name": "20260328043000_extend_nutrition_recipe_library",
-      "reason": "legacy-2026-03-crlf-baseline",
-      "lineEndingMode": "CRLF",
-      "lfSha256": "c7ad7dfb75dd031cb7e7eacacd33247857330469e13655fc95a90748b647e730",
-      "crlfSha256": "f15659dffff706ef28c8237fc31f9cdc051b53316fc7b66b1c2a35441c580af5"
     }
   ]
 }

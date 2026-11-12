@@ -573,11 +573,27 @@ export const runIdentityPreflight = async (options = {}) => {
     }
   }
 
+  const expectedPendingSuffix = disk.names.slice(ledgerSummary.appliedCount)
+  const pendingIsContiguousSuffix =
+    ledgerSummary.pendingCount === expectedPendingSuffix.length &&
+    pendingMigrationNames.length === expectedPendingSuffix.length &&
+    pendingMigrationNames.every((name, idx) => name === expectedPendingSuffix[idx])
+
+  let matchesExpectedPending = true
+  if (Array.isArray(options.expectedPendingMigrations)) {
+    matchesExpectedPending =
+      pendingMigrationNames.length === options.expectedPendingMigrations.length &&
+      pendingMigrationNames.every((name, idx) => name === options.expectedPendingMigrations[idx])
+  }
+
   const ledgerIntegrityClean =
+    ledgerSummary.appliedCount > 0 &&
     ledgerSummary.checksumMismatchCount === 0 &&
     ledgerSummary.failedCount === 0 &&
     ledgerSummary.rolledBackCount === 0 &&
-    ledgerSummary.extraDbCount === 0
+    ledgerSummary.extraDbCount === 0 &&
+    pendingIsContiguousSuffix &&
+    matchesExpectedPending
   if (!ledgerIntegrityClean) {
     mismatches.push('LEDGER_INTEGRITY_FAILED')
   }
@@ -633,6 +649,8 @@ export const runIdentityPreflight = async (options = {}) => {
       appliedCount: ledgerSummary.appliedCount,
       pendingCount: ledgerSummary.pendingCount,
       pendingMigrationNames,
+      pendingIsContiguousSuffix,
+      matchesExpectedPending,
       failedCount: ledgerSummary.failedCount,
       rolledBackCount: ledgerSummary.rolledBackCount,
       resolvedRolledBackCount: ledgerSummary.resolvedRolledBackCount,
@@ -705,8 +723,17 @@ if (isMain) {
       renderStatus: result.report.render.status,
       neonStatus: result.report.neon.status,
       ledgerIntegrityClean: result.report.ledger.integrityClean,
+      declaredCount: result.report.ledger.declaredCount,
+      appliedCount: result.report.ledger.appliedCount,
       pendingCount: result.report.ledger.pendingCount,
       pendingMigrationNames: result.report.ledger.pendingMigrationNames,
+      pendingIsContiguousSuffix: result.report.ledger.pendingIsContiguousSuffix,
+      checksumMismatchCount: result.report.ledger.checksumMismatchCount,
+      failedCount: result.report.ledger.failedCount,
+      rolledBackCount: result.report.ledger.rolledBackCount,
+      resolvedRolledBackCount: result.report.ledger.resolvedRolledBackCount,
+      extraDbCount: result.report.ledger.extraDbCount,
+      acceptedHistoricalEquivalencesCount: result.report.ledger.acceptedHistoricalEquivalencesCount,
       unverified: result.report.unverified,
       mismatches: result.report.mismatches,
     }
