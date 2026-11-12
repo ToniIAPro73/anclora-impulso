@@ -839,10 +839,20 @@ jobs:
               if (!subjects.some((s) => s?.digest?.sha256 === subjectHex)) return false
               const wf = stmt?.predicate?.buildDefinition?.externalParameters?.workflow
               if (!wf || wf.repository !== `https://github.com/${repo}` || wf.path !== runnerWorkflow) return false
+              const invocationId = String(stmt?.predicate?.runDetails?.metadata?.invocationId || '')
+              const expectedRunPrefix = `https://github.com/${repo}/actions/runs/${selectedRun.id}/`
+              if (invocationId && !invocationId.startsWith(expectedRunPrefix)) return false
+              const deps = Array.isArray(stmt?.predicate?.buildDefinition?.resolvedDependencies)
+                ? stmt.predicate.buildDefinition.resolvedDependencies
+                : []
+              const hasShaBinding = deps.some((d) => d?.digest?.gitCommit === selectedRun.head_sha)
               const ghMeta = stmt?.predicate?.buildDefinition?.internalParameters?.github
-              if (!ghMeta || ghMeta.environment !== migrationEnv) return false
+              if (!ghMeta) return false
+              if (ghMeta.environment && ghMeta.environment !== migrationEnv) return false
               if (ghMeta.run_id && String(ghMeta.run_id) !== String(selectedRun.id)) return false
               if (ghMeta.sha && ghMeta.sha !== selectedRun.head_sha) return false
+              if (!invocationId && !ghMeta.run_id) return false
+              if (!hasShaBinding && !ghMeta.sha) return false
               return true
             })
             if (!verifiedBundle) {
