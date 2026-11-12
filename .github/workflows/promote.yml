@@ -223,16 +223,23 @@ jobs:
           done
 
           # Optional observed check-runs must be completed and non-failing.
-          # The current workflow execution check-run is excluded by verifiable identity
-          # (GitHub Actions app slug + run ID in details/html URL), never by generic name.
+          # Promotion workflow executions (current and prior promote.yml runs on this SHA)
+          # are excluded by verifiable identity (GitHub Actions app slug + workflow run ID
+          # in details/html URL), never by generic name.
+          if ! promo_runs_json="$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/workflows/promote.yml/runs?head_sha=$SOURCE_SHA&per_page=100")"; then
+            fail "GITHUB_API_ERROR: promotion workflow runs request failed."
+          fi
+          promo_run_ids="$(jq -s -r '[.[].workflow_runs[]?.id | tostring] | unique | join(",")' <<< "$promo_runs_json")"
           current_run_id="${CURRENT_RUN_ID:-${GITHUB_RUN_ID:-}}"
-          bad="$(jq -r --arg current_run_id "$current_run_id" '
-            def is_current_execution:
-              ($current_run_id != "" and ($current_run_id | test("^[0-9]+$")) and
-               .app.slug == "github-actions" and
-               (((.details_url // "") | test("/actions/runs/" + $current_run_id + "(/|$)")) or
-                ((.html_url // "") | test("/actions/runs/" + $current_run_id + "(/|$)"))));
-            [ .[] | select(is_current_execution | not) ] |
+          bad="$(jq -r --arg current_run_id "$current_run_id" --arg promo_run_ids "$promo_run_ids" '
+            ([($current_run_id | select(. != "" and test("^[0-9]+$"))), ($promo_run_ids | split(",")[] | select(. != "" and test("^[0-9]+$")))] | unique) as $excluded_ids |
+            def is_promotion_execution:
+              (.app.slug == "github-actions" and
+               ((.details_url // "") as $du | (.html_url // "") as $hu |
+                any($excluded_ids[]; . as $id |
+                  (($du | test("/actions/runs/" + $id + "(/|$)")) or
+                   ($hu | test("/actions/runs/" + $id + "(/|$)"))))));
+            [ .[] | select(is_promotion_execution | not) ] |
             group_by(.name) | map(max_by(.id)) |
             map(select(
               .status != "completed" or
@@ -241,13 +248,15 @@ jobs:
             .[] | "\(.name) (status=\(.status), conclusion=\(.conclusion))"' <<< "$checks" | tr '\n' ';')"
           [ -z "$bad" ] || fail "PENDING_OR_FAILED_CHECK_RUNS: $bad"
 
-          successes="$(jq -r --arg current_run_id "$current_run_id" '
-            def is_current_execution:
-              ($current_run_id != "" and ($current_run_id | test("^[0-9]+$")) and
-               .app.slug == "github-actions" and
-               (((.details_url // "") | test("/actions/runs/" + $current_run_id + "(/|$)")) or
-                ((.html_url // "") | test("/actions/runs/" + $current_run_id + "(/|$)"))));
-            [ .[] | select(is_current_execution | not) ] |
+          successes="$(jq -r --arg current_run_id "$current_run_id" --arg promo_run_ids "$promo_run_ids" '
+            ([($current_run_id | select(. != "" and test("^[0-9]+$"))), ($promo_run_ids | split(",")[] | select(. != "" and test("^[0-9]+$")))] | unique) as $excluded_ids |
+            def is_promotion_execution:
+              (.app.slug == "github-actions" and
+               ((.details_url // "") as $du | (.html_url // "") as $hu |
+                any($excluded_ids[]; . as $id |
+                  (($du | test("/actions/runs/" + $id + "(/|$)")) or
+                   ($hu | test("/actions/runs/" + $id + "(/|$)"))))));
+            [ .[] | select(is_promotion_execution | not) ] |
             [group_by(.name)[] | max_by(.id) | select(.conclusion == "success")] | length' <<< "$checks")"
           [ "$successes" -gt 0 ] || fail "NO_SUCCESSFUL_CHECK_RUN: at least one check-run must conclude success."
 
