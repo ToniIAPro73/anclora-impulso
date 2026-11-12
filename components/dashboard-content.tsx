@@ -344,7 +344,7 @@ export function DashboardContent() {
   }
 
   return (
-    <div className="flex min-h-full flex-col gap-2.5 p-3 sm:gap-3 sm:p-4 lg:h-full lg:gap-2 lg:overflow-hidden">
+    <div className="flex flex-col gap-2.5 p-3 sm:gap-3 sm:p-4 lg:gap-2">
       <OnboardingDialog open={onboardingOpen} onOpenChange={setOnboardingOpen} />
 
       <Card className="ui-motion-card-subtle border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
@@ -530,8 +530,8 @@ export function DashboardContent() {
       {localizedRecommendedPlan ? (
         <Card className="ui-motion-card-subtle border-0 shadow-lg bg-gradient-to-r from-orange-50 to-rose-50 backdrop-blur-sm dark:from-orange-900/20 dark:to-rose-900/20">
           <CardHeader>
-            <div className="flex items-center justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-orange-500" />
                   {localizedRecommendedPlan.title}
@@ -802,7 +802,7 @@ export function DashboardContent() {
 
       {/* Getting Started */}
       {showGettingStarted && (
-        <Card className="ui-motion-card-subtle min-h-0 border-0 bg-gradient-to-r from-orange-50 to-pink-50 py-0 shadow-lg dark:from-orange-900/20 dark:to-pink-900/20 lg:flex-1 lg:overflow-hidden">
+        <Card className="ui-motion-card-subtle min-h-0 border-0 bg-gradient-to-r from-orange-50 to-pink-50 py-0 shadow-lg dark:from-orange-900/20 dark:to-pink-900/20">
           <CardHeader className="gap-1 px-4 pb-1 pt-3 lg:px-4 lg:pb-0 lg:pt-2.5">
             <CardTitle className="flex items-center gap-2 text-[0.98rem] md:text-[1.02rem] lg:text-[0.96rem]">
               <Target className="h-4 w-4 text-orange-500" />

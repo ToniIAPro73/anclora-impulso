@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 
 import { DashboardHeader } from "@/components/dashboard-header"
+import { LegalFooter } from "@/components/legal-footer"
 import { Navigation } from "@/components/navigation"
 import { cn } from "@/lib/utils"
 
@@ -30,11 +31,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <DashboardHeader />
         <main
           className={cn(
-            "min-h-0 flex-1 overflow-visible overflow-x-clip lg:overflow-y-auto",
-            isDashboardRoute && "lg:overflow-hidden"
+            "flex min-h-0 flex-1 flex-col overflow-visible overflow-x-clip lg:overflow-y-auto",
           )}
         >
           {children}
+          {isDashboardRoute ? (
+            <div className="mt-auto">
+              <LegalFooter />
+            </div>
+          ) : null}
         </main>
       </div>
     </div>
