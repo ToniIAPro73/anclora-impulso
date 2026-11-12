@@ -124,9 +124,9 @@ MIGRATIONS_PRECEDE_BACKEND_DEPLOY=true
 MIGRATION_ENVIRONMENT=production-migrations
 MIGRATION_MANIFEST_PATH=scripts/release/release-manifest.json
 MIGRATION_CRYPTO_ATTESTATION=required
-MIGRATION_BACKUP_GATE_POLICY=OD-03_APPROVED_PENDING_ACTIVATION
-# D-2026-0056 (OD-03) aprobada el 2026-11-12; activar únicamente al publicar e iniciar ventana M27:
-# MIGRATION_MAX_BACKUP_AGE_MINUTES=30
+MIGRATION_BACKUP_GATE_POLICY=OD-03_ENFORCED_MAX_30M
+# D-2026-0056 (OD-03) aprobada el 2026-11-12; activada localmente para M27 (sin autorizar ejecución ni publicación):
+MIGRATION_MAX_BACKUP_AGE_MINUTES=30
 
 All schema migrations apply strictly against the designated production database.
 Destructive drops or resets are strictly prohibited without authorization.

@@ -346,7 +346,7 @@ jobs:
             return out
           }
 
-          const parseSingleZipEntry = (zipBuf, targetFileName) => {
+          const parseZipEntry = (zipBuf, targetFileName, { required = true } = {}) => {
             if (!Buffer.isBuffer(zipBuf) || zipBuf.length < 22) {
               fail('MIGRATION_EVIDENCE_TAMPERED', 'Corrupt or empty attestation artifact archive.')
             }
@@ -388,7 +388,10 @@ jobs:
               }
             }
 
-            if (!foundEntry) fail('MIGRATION_EVIDENCE_TAMPERED', `Artifact missing ${targetFileName}.`)
+            if (!foundEntry) {
+              if (!required) return null
+              fail('MIGRATION_EVIDENCE_TAMPERED', `Artifact missing ${targetFileName}.`)
+            }
             const lfh = foundEntry.localHeaderOffset
             if (lfh + 30 > zipBuf.length || zipBuf.readUInt32LE(lfh) !== 0x04034b50) {
               fail('MIGRATION_EVIDENCE_TAMPERED', 'Corrupt ZIP local file header.')
@@ -410,6 +413,9 @@ jobs:
             }
             return outBuf
           }
+
+          const parseSingleZipEntry = (zipBuf, targetFileName) => parseZipEntry(zipBuf, targetFileName, { required: true })
+          const parseOptionalZipEntry = (zipBuf, targetFileName) => parseZipEntry(zipBuf, targetFileName, { required: false })
 
           const ghJson = (apiPath) => {
             let raw
@@ -931,6 +937,125 @@ jobs:
                 acc.recordedChecksum !== auth.recordedChecksum
               ) {
                 fail('MIGRATION_STATE_UNKNOWN', `Attestation historical checksum equivalence mismatch for ${acc.name}.`)
+              }
+            }
+          }
+
+          // G39: Verify OD-03 BackupVerificationEvidenceV1 embedded in MigrationAttestationV1 (and optional backup-verification.json)
+          const backupArtifactBytes = parseOptionalZipEntry(zipBuf, 'backup-verification.json')
+          let backupVerificationArtifact = null
+          if (backupArtifactBytes !== null) {
+            try {
+              backupVerificationArtifact = JSON.parse(backupArtifactBytes.toString('utf8'))
+            } catch {
+              fail('MIGRATION_BACKUP_TAMPERED', 'backup-verification.json is invalid JSON.')
+            }
+          }
+          const expectedProjectId = (contract.DATABASE_NEON_PROJECT_ID ?? '').trim()
+          const expectedBranchId = (contract.DATABASE_NEON_PRODUCTION_BRANCH_ID ?? '').trim()
+          const expectedEndpointId = (contract.DATABASE_NEON_ENDPOINT_ID ?? '').trim()
+          const maxAgeRaw = (contract.MIGRATION_MAX_BACKUP_AGE_MINUTES ?? '').trim()
+          const od03Active = Boolean(maxAgeRaw) || /^OD-03_ENFORCED/i.test((contract.MIGRATION_BACKUP_GATE_POLICY ?? '').trim())
+          const MAX_OD03_BACKUP_AGE_MINUTES = 30
+          const MAX_OD03_FUTURE_CLOCK_SKEW_MS = 60 * 1000
+          const ISO_TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
+
+          if (od03Active || att.backupVerification || backupVerificationArtifact) {
+            const bv = att.backupVerification
+            if (!bv || typeof bv !== 'object') {
+              fail('MIGRATION_BACKUP_EVIDENCE_MISSING', 'MigrationAttestationV1 missing mandatory backupVerification block under OD-03.')
+            }
+            if (bv.schemaVersion !== 'BackupVerificationEvidenceV1' || bv.policyDecision !== 'OD-03' || bv.evaluatorStatus !== 'VERIFIED') {
+              fail('MIGRATION_BACKUP_TAMPERED', 'Invalid backupVerification schemaVersion, policyDecision, or evaluatorStatus.')
+            }
+            if (bv.verifiedByProvider !== true || bv.providerState !== 'ready') {
+              fail('MIGRATION_BACKUP_NOT_READY', 'backupVerification does not record provider-confirmed ready state.')
+            }
+            if (
+              !bv.backupReference ||
+              typeof bv.backupReference !== 'string' ||
+              bv.backupReference.length < 4 ||
+              (expectedBranchId && bv.backupReference === expectedBranchId) ||
+              bv.backupReference.includes('://')
+            ) {
+              fail('MIGRATION_BACKUP_TAMPERED', 'Invalid or unsafe backupReference in attestation.backupVerification.')
+            }
+            if (bv.candidateSha !== att.workflowRun?.candidateSha || Number(bv.runId) !== Number(att.workflowRun?.runId)) {
+              fail('MIGRATION_BACKUP_SHA_MISMATCH', 'backupVerification candidateSha/runId differs from MigrationAttestationV1 workflowRun.')
+            }
+            if (bv.databaseTargetFingerprint !== expectedFingerprint || bv.databaseTargetFingerprint !== att.database?.targetFingerprint) {
+              fail('MIGRATION_DATABASE_MISMATCH', 'backupVerification targetFingerprint differs from contract or attestation database.')
+            }
+            if (expectedProjectId && bv.neonProjectIdSha256 !== `sha256:${sha256Hex(expectedProjectId)}`) {
+              fail('MIGRATION_BACKUP_PROJECT_MISMATCH', 'backupVerification neonProjectIdSha256 differs from contract project ID.')
+            }
+            if (expectedBranchId) {
+              const expectedBranchHash = `sha256:${sha256Hex(expectedBranchId)}`
+              if (bv.productionBranchIdSha256 !== expectedBranchHash || bv.sourceBranchIdSha256 !== expectedBranchHash) {
+                fail('MIGRATION_BACKUP_BRANCH_MISMATCH', 'backupVerification branch hash differs from contract immutable production branch.')
+              }
+            }
+            if (expectedEndpointId) {
+              const expectedEndpointHash = `sha256:${sha256Hex(expectedEndpointId)}`
+              if (bv.productionEndpointIdSha256 !== expectedEndpointHash || bv.endpointIdSha256 !== expectedEndpointHash) {
+                fail('MIGRATION_BACKUP_ENDPOINT_MISMATCH', 'backupVerification endpoint hash differs from contract endpoint ID.')
+              }
+            }
+
+            const contractMaxAgeMinutes = maxAgeRaw ? Number(maxAgeRaw) : MAX_OD03_BACKUP_AGE_MINUTES
+            if (!Number.isInteger(contractMaxAgeMinutes) || contractMaxAgeMinutes <= 0 || contractMaxAgeMinutes > MAX_OD03_BACKUP_AGE_MINUTES) {
+              fail('MIGRATION_BACKUP_THRESHOLD_INVALID', `Contract MIGRATION_MAX_BACKUP_AGE_MINUTES (${maxAgeRaw}) violates OD-03 limit (1..30).`)
+            }
+            if (
+              typeof bv.maxAllowedAgeMinutes !== 'number' ||
+              bv.maxAllowedAgeMinutes <= 0 ||
+              bv.maxAllowedAgeMinutes > contractMaxAgeMinutes ||
+              bv.maxFutureClockSkewMs !== MAX_OD03_FUTURE_CLOCK_SKEW_MS
+            ) {
+              fail('MIGRATION_BACKUP_POLICY_MISMATCH', 'backupVerification threshold or clock-skew tolerance conflicts with OD-03 policy.')
+            }
+
+            if (
+              !ISO_TS_RE.test(String(bv.verifiedAt ?? '')) ||
+              !ISO_TS_RE.test(String(bv.backupCreatedAt ?? '')) ||
+              !ISO_TS_RE.test(String(att.generatedAt ?? ''))
+            ) {
+              fail('MIGRATION_BACKUP_TAMPERED', 'backupVerification timestamps are missing or malformed ISO 8601 UTC.')
+            }
+            const verifiedMs = Date.parse(bv.verifiedAt)
+            const createdMs = Date.parse(bv.backupCreatedAt)
+            const attGeneratedMs = Date.parse(att.generatedAt)
+            if (!Number.isFinite(verifiedMs) || !Number.isFinite(createdMs) || !Number.isFinite(attGeneratedMs)) {
+              fail('MIGRATION_BACKUP_TAMPERED', 'Unparseable backupVerification timestamps.')
+            }
+            if (createdMs - verifiedMs > MAX_OD03_FUTURE_CLOCK_SKEW_MS) {
+              fail('MIGRATION_BACKUP_TIMESTAMP_FUTURE', 'backupCreatedAt exceeds 60s skew relative to verifiedAt.')
+            }
+            if (attGeneratedMs < verifiedMs || attGeneratedMs < createdMs) {
+              fail('MIGRATION_BACKUP_TIMELINE_INVALID', 'MigrationAttestationV1 generatedAt precedes backup creation/verification.')
+            }
+            const ageMs = verifiedMs - createdMs
+            if (ageMs > contractMaxAgeMinutes * 60_000 || typeof bv.ageSeconds !== 'number' || bv.ageSeconds > contractMaxAgeMinutes * 60) {
+              fail('MIGRATION_BACKUP_EXPIRED', 'Backup exceeded contract freshness window prior to migration execution.')
+            }
+
+            if (backupVerificationArtifact !== null) {
+              if (!backupVerificationArtifact || typeof backupVerificationArtifact !== 'object') {
+                fail('MIGRATION_BACKUP_TAMPERED', 'backup-verification.json must be a JSON object.')
+              }
+              const { evidenceDigest: _ignoredEvDigest, ...evWithoutDigest } = backupVerificationArtifact
+              const recomputedBackupDigest = `sha256:${sha256Hex(JSON.stringify(canonicalSort(evWithoutDigest)))}`
+              if (recomputedBackupDigest !== backupVerificationArtifact.evidenceDigest) {
+                fail('MIGRATION_BACKUP_TAMPERED', 'backup-verification.json evidenceDigest verification failed.')
+              }
+              if (
+                backupVerificationArtifact.evidenceDigest !== bv.evidenceDigest ||
+                backupVerificationArtifact.backup?.reference !== bv.backupReference ||
+                backupVerificationArtifact.backup?.createdAt !== bv.backupCreatedAt ||
+                backupVerificationArtifact.workflowRun?.candidateSha !== bv.candidateSha ||
+                backupVerificationArtifact.contract?.databaseTargetFingerprint !== bv.databaseTargetFingerprint
+              ) {
+                fail('MIGRATION_BACKUP_TAMPERED', 'backup-verification.json artifact disagrees with MigrationAttestationV1.backupVerification.')
               }
             }
           }

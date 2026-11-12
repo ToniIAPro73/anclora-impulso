@@ -101,9 +101,17 @@ const makeNeonFetch = ({
   return fetchImpl
 }
 
-test('OD-03 repo contract stays fail-closed while proposal D-2026-0056 is unapproved', () => {
+test('OD-03 repo contract enforces MAX_BACKUP_AGE_MINUTES=30 and unapproved/commented contracts fail closed', () => {
   const realRuntime = readFileSync(join(REPO_ROOT, '.anclora', 'PRODUCTION_RUNTIME.md'), 'utf8')
-  assert.throws(() => parseBackupGateContract(realRuntime), /BACKUP_GATE_BLOCKED_OD03_UNAPPROVED/)
+  const parsed = parseBackupGateContract(realRuntime)
+  assert.equal(parsed.maxBackupAgeMinutes, 30)
+  assert.equal(parsed.neonProjectId, 'lucky-hat-25002521')
+  assert.equal(parsed.productionBranchId, 'br-gentle-bar-ag3slpph')
+  assert.equal(parsed.productionEndpointId, 'ep-lingering-paper-agjnrga3')
+  assert.match(realRuntime, /^MIGRATION_BACKUP_GATE_POLICY=OD-03_ENFORCED_MAX_30M$/m)
+
+  const unapprovedRuntime = makeRuntimeContract({ maxBackupAgeLine: '# MIGRATION_MAX_BACKUP_AGE_MINUTES=30' })
+  assert.throws(() => parseBackupGateContract(unapprovedRuntime), /BACKUP_GATE_BLOCKED_OD03_UNAPPROVED/)
 })
 
 test('OD-03 boundary passes at exactly 30m00s, uses only GET, and emits non-secret evidence embedded in MigrationAttestationV1', async () => {
