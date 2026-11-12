@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -602,26 +602,79 @@ test('S6: preflight clasifica migración pendiente legítima vs historial altera
         rolled_back_at: null,
       })
     }
-    const realSim = await runIdentityPreflight({
-      repoRoot: IMPULSO_ROOT,
-      candidateSha: 'a'.repeat(40),
-      databaseUrl: directUrl,
-      renderApiKey: '',
-      neonApiKey: '',
-      ledgerRows: simulatedProdRows,
-    })
-    assert.equal(realSim.report.ledger.declaredCount, 27)
-    assert.equal(realSim.report.ledger.appliedCount, 26)
-    assert.equal(realSim.report.ledger.pendingCount, 1)
-    assert.deepEqual(realSim.report.ledger.pendingMigrationNames, ['20261111211500_add_modular_health_plan_catalog_and_optional_identity'])
-    assert.equal(realSim.report.ledger.pendingIsContiguousSuffix, true)
-    assert.equal(realSim.report.ledger.acceptedHistoricalEquivalencesCount, 9)
-    assert.equal(realSim.report.ledger.checksumMismatchCount, 0)
-    assert.equal(realSim.report.ledger.failedCount, 0)
-    assert.equal(realSim.report.ledger.rolledBackCount, 0)
-    assert.equal(realSim.report.ledger.extraDbCount, 0)
-    assert.equal(realSim.report.ledger.integrityClean, true)
-    assert.equal(realSim.report.status, 'BLOCKED_OPERATOR_VERIFICATION')
+    // 8) Reproducción aislada del manifiesto real de anclora-impulso (27 migraciones, 9 equivalencias CRLF) con contrato fixture coherente con directUrl
+    const realSimRoot = mkdtempSync(join(tmpdir(), 'impulso-real-sim-'))
+    try {
+      mkdirSync(join(realSimRoot, '.anclora'), { recursive: true })
+      mkdirSync(join(realSimRoot, 'backend/prisma'), { recursive: true })
+      mkdirSync(join(realSimRoot, 'scripts/release'), { recursive: true })
+      symlinkSync(
+        join(IMPULSO_ROOT, 'backend/prisma/migrations'),
+        join(realSimRoot, 'backend/prisma/migrations'),
+      )
+      symlinkSync(
+        join(IMPULSO_ROOT, 'scripts/release/release-manifest.json'),
+        join(realSimRoot, 'scripts/release/release-manifest.json'),
+      )
+      const writeSimRuntime = (fp) => {
+        writeFileSync(
+          join(realSimRoot, '.anclora/PRODUCTION_RUNTIME.md'),
+          [
+            'DATABASE_PROVIDER=Neon/Postgres',
+            'MIGRATION_SYSTEM=Prisma Migrate (PostgreSQL on Neon)',
+            'MIGRATION_DIRECTORY=backend/prisma/migrations',
+            'MIGRATION_MANIFEST_PATH=scripts/release/release-manifest.json',
+            'BACKEND_RENDER_SERVICE_ID=srv-d6ps41v5r7bs73dvrudg',
+            `DATABASE_TARGET_FINGERPRINT=${fp}`,
+            '',
+          ].join('\n'),
+        )
+      }
+      writeSimRuntime(validFp)
+
+      const realSim = await runIdentityPreflight({
+        repoRoot: realSimRoot,
+        candidateSha: 'a'.repeat(40),
+        databaseUrl: directUrl,
+        renderApiKey: '',
+        neonApiKey: '',
+        ledgerRows: simulatedProdRows,
+      })
+      assert.equal(realSim.report.ledger.declaredCount, 27)
+      assert.equal(realSim.report.ledger.appliedCount, 26)
+      assert.equal(realSim.report.ledger.pendingCount, 1)
+      assert.deepEqual(realSim.report.ledger.pendingMigrationNames, ['20261111211500_add_modular_health_plan_catalog_and_optional_identity'])
+      assert.equal(realSim.report.ledger.pendingIsContiguousSuffix, true)
+      assert.equal(realSim.report.ledger.acceptedHistoricalEquivalencesCount, 9)
+      assert.equal(realSim.report.ledger.checksumMismatchCount, 0)
+      assert.equal(realSim.report.ledger.failedCount, 0)
+      assert.equal(realSim.report.ledger.rolledBackCount, 0)
+      assert.equal(realSim.report.ledger.extraDbCount, 0)
+      assert.equal(realSim.report.ledger.integrityClean, true)
+      assert.equal(realSim.report.contract.declaredFingerprint, validFp)
+      assert.equal(realSim.report.contract.contractFingerprintMatchesObserved, true)
+      assert.deepEqual(realSim.report.mismatches, [])
+      assert.ok(realSim.report.unverified.includes('RENDER_IDENTITY_UNVERIFIED'))
+      assert.ok(realSim.report.unverified.includes('NEON_IDENTITY_UNVERIFIED'))
+      assert.equal(realSim.report.status, 'BLOCKED_OPERATOR_VERIFICATION')
+
+      // Prueba negativa explícita: un fingerprint contractual incorrecto frente al destino observado bloquea con IDENTITY_MISMATCH_BLOCKED
+      writeSimRuntime(`sha256:${'f'.repeat(64)}`)
+      const wrongContractFp = await runIdentityPreflight({
+        repoRoot: realSimRoot,
+        candidateSha: 'a'.repeat(40),
+        databaseUrl: directUrl,
+        renderApiKey: '',
+        neonApiKey: '',
+        ledgerRows: simulatedProdRows,
+      })
+      assert.equal(wrongContractFp.report.ledger.integrityClean, true)
+      assert.equal(wrongContractFp.report.contract.contractFingerprintMatchesObserved, false)
+      assert.ok(wrongContractFp.report.mismatches.includes('CONTRACT_FINGERPRINT_MISMATCH'))
+      assert.equal(wrongContractFp.report.status, 'IDENTITY_MISMATCH_BLOCKED')
+    } finally {
+      rmSync(realSimRoot, { recursive: true, force: true })
+    }
   } finally {
     fx.cleanup()
   }
