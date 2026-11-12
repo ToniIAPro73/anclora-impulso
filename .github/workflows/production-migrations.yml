@@ -134,6 +134,30 @@ jobs:
         working-directory: ./backend
         run: pnpm install --frozen-lockfile --prod=false
 
+      - name: Verify live Neon target identity and backup freshness (OD-03, read-only)
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_MIGRATION_DATABASE_URL }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+          CANDIDATE_SHA: ${{ github.sha }}
+          BACKUP_REFERENCE: ${{ inputs.backup_reference }}
+          BACKUP_CONFIRMED: ${{ inputs.backup_confirmed }}
+          LEDGER_REVIEWED: ${{ inputs.ledger_reviewed }}
+          PREFLIGHT_REPORT_SHA256: ${{ inputs.preflight_report_sha256 }}
+        run: |
+          set -euo pipefail
+          node scripts/release/verify-production-backup.mjs \
+            --repo-root . \
+            --output backup-verification.json \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --environment "production-migrations" \
+            --backup-reference "$BACKUP_REFERENCE" \
+            --backup-confirmed "$BACKUP_CONFIRMED" \
+            --ledger-reviewed "$LEDGER_REVIEWED" \
+            --preflight-report-sha256 "$PREFLIGHT_REPORT_SHA256"
+
       - name: Apply versioned migrations (prisma migrate deploy)
         working-directory: ./backend
         run: pnpm exec prisma migrate deploy
@@ -153,7 +177,9 @@ jobs:
             --output migration-attestation.json \
             --candidate-sha "$CANDIDATE_SHA" \
             --deployment-id "$dep_id" \
-            --approved-by "$approvers"
+            --approved-by "$approvers" \
+            --require-backup-verification \
+            --backup-verification backup-verification.json
 
       - name: Upload immutable MigrationAttestationV1 artifact
         uses: actions/upload-artifact@v4
@@ -162,6 +188,8 @@ jobs:
           path: |
             migration-attestation.json
             migration-attestation.json.sha256
+            backup-verification.json
+            backup-verification.json.sha256
           if-no-files-found: error
           retention-days: 90
 

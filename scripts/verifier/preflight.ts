@@ -17,6 +17,8 @@ export interface PreflightInput {
   backup: BackupMetadata | null;
   expectedProjectId: string;
   expectedSourceBranch: string;
+  expectedEndpointId?: string;
+  requireProviderVerification?: boolean;
   dispatchTimeIso: string;
   maxBackupAgeMs: number | undefined;
 }
@@ -25,6 +27,11 @@ export interface PreflightReport {
   status: "READY_FOR_HUMAN_AUTHORIZATION" | "NOT_READY";
   candidateSha: string;
   generatedAt: string;
+  targetIdentity: {
+    projectId: string;
+    sourceBranch: string;
+    endpointId: string | null;
+  };
   checks: Record<string, boolean>;
   reasons: string[];
   ledger: LedgerEvaluationResult;
@@ -37,6 +44,7 @@ export function evaluatePreflight(input: PreflightInput): PreflightReport {
   const limitations: string[] = [
     "A backup snapshot's metadata does not prove it can be restored.",
     "Evidence comes from files exported by the operator; this tool does not authenticate their origin.",
+    "Offline preflight does not contact Neon API directly; production-migrations enforces live Neon API, fingerprint, and clock verification.",
     "This report is not an authorization to migrate or deploy.",
   ];
 
@@ -51,22 +59,40 @@ export function evaluatePreflight(input: PreflightInput): PreflightReport {
   const ledger = evaluatePrismaLedger(input.ledger, input.candidates, { minimumAppliedMigrations: baselineOk ? input.baselineCount : 1 });
   if (!ledger.valid) reasons.push(`ledger: ${ledger.reason ?? "invalid"}`);
 
-  const backup = evaluateBackupMetadata(input.backup, input.expectedProjectId, input.expectedSourceBranch, input.dispatchTimeIso, input.maxBackupAgeMs);
+  const backup = evaluateBackupMetadata(
+    input.backup,
+    input.expectedProjectId,
+    input.expectedSourceBranch,
+    input.dispatchTimeIso,
+    input.maxBackupAgeMs,
+    {
+      expectedEndpointId: input.expectedEndpointId,
+      requireImmutableBranchId: true,
+      enforceOd03PolicyCap: true,
+      requireProviderVerification: input.requireProviderVerification,
+    },
+  );
   if (!backup.valid) reasons.push(`backup: ${backup.reason ?? "invalid"}`);
 
-  const checks = {
+  const checks: Record<string, boolean> = {
     candidateSha: shaOk,
     cleanTree: input.workingTreeClean,
     manifest: input.manifestOk,
     baselineConfigured: baselineOk,
     ledger: ledger.valid,
     backup: backup.valid,
+    ...(input.expectedEndpointId !== undefined ? { endpointBound: backup.valid } : {}),
   };
   const ready = Object.values(checks).every(Boolean);
   return {
     status: ready ? "READY_FOR_HUMAN_AUTHORIZATION" : "NOT_READY",
     candidateSha: input.candidateSha,
     generatedAt: new Date().toISOString(),
+    targetIdentity: {
+      projectId: input.expectedProjectId,
+      sourceBranch: input.expectedSourceBranch,
+      endpointId: input.expectedEndpointId ?? null,
+    },
     checks,
     reasons: ready ? [] : reasons,
     ledger,

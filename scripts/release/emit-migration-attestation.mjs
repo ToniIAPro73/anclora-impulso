@@ -374,6 +374,91 @@ export const evaluateLedgerRows = (rows, diskMigrations, historicalEquivalences 
   }
 }
 
+export const validateBackupVerificationBinding = (
+  backupVerification,
+  { candidateSha, runId, observedFingerprint },
+) => {
+  if (!backupVerification || typeof backupVerification !== 'object') {
+    throw new Error('ATTESTATION_BACKUP_VERIFICATION_MISSING: BackupVerificationEvidenceV1 is required.')
+  }
+  if (backupVerification.schemaVersion !== 'BackupVerificationEvidenceV1') {
+    throw new Error(`ATTESTATION_BACKUP_SCHEMA_INVALID: unexpected ${backupVerification.schemaVersion ?? 'unknown'}.`)
+  }
+  if (backupVerification.evaluatorStatus !== 'VERIFIED') {
+    throw new Error(`ATTESTATION_BACKUP_STATUS_INVALID: evaluatorStatus=${backupVerification.evaluatorStatus ?? 'unknown'}.`)
+  }
+  const { evidenceDigest: recordedDigest, ...unsignedEvidence } = backupVerification
+  const expectedDigest = `sha256:${sha256Hex(JSON.stringify(canonicalSort(unsignedEvidence)))}`
+  if (!recordedDigest || recordedDigest !== expectedDigest) {
+    throw new Error('ATTESTATION_BACKUP_DIGEST_MISMATCH: backup verification evidenceDigest does not match canonical payload.')
+  }
+  if (backupVerification.workflowRun?.candidateSha !== candidateSha) {
+    throw new Error('ATTESTATION_BACKUP_SHA_MISMATCH: backup verification candidateSha does not match migration run.')
+  }
+  if (Number(backupVerification.workflowRun?.runId) !== Number(runId)) {
+    throw new Error('ATTESTATION_BACKUP_RUN_MISMATCH: backup verification runId does not match migration run.')
+  }
+  if (backupVerification.contract?.databaseTargetFingerprint !== observedFingerprint) {
+    throw new Error('ATTESTATION_BACKUP_FINGERPRINT_MISMATCH: backup verification targetFingerprint does not match database.')
+  }
+  if (backupVerification.backup?.verifiedByProvider !== true || backupVerification.backup?.providerState !== 'ready') {
+    throw new Error('ATTESTATION_BACKUP_NOT_PROVIDER_READY: backup state must be verified ready by provider.')
+  }
+  if (
+    typeof backupVerification.maxAllowedAgeMinutes !== 'number' ||
+    backupVerification.maxAllowedAgeMinutes <= 0 ||
+    backupVerification.maxAllowedAgeMinutes > 30
+  ) {
+    throw new Error('ATTESTATION_BACKUP_THRESHOLD_INVALID: maxAllowedAgeMinutes must satisfy OD-03 (1..30 minutes).')
+  }
+  if (backupVerification.maxFutureClockSkewMs !== 60_000) {
+    throw new Error('ATTESTATION_BACKUP_SKEW_INVALID: maxFutureClockSkewMs must equal 60000 per OD-03.')
+  }
+  const shaPrefixRe = /^sha256:[0-9a-f]{64}$/
+  const requiredHashes = [
+    backupVerification.contract?.neonProjectIdSha256,
+    backupVerification.contract?.productionBranchIdSha256,
+    backupVerification.contract?.productionEndpointIdSha256,
+    backupVerification.backup?.sourceBranchIdSha256,
+    backupVerification.backup?.endpointIdSha256,
+  ]
+  if (!requiredHashes.every((h) => typeof h === 'string' && shaPrefixRe.test(h))) {
+    throw new Error('ATTESTATION_BACKUP_IDENTITY_HASH_MISSING: project, branch, or endpoint hashes are missing or malformed.')
+  }
+  const verifiedMs = Date.parse(String(backupVerification.verifiedAt ?? ''))
+  const createdMs = Date.parse(String(backupVerification.backup?.createdAt ?? ''))
+  if (!Number.isFinite(verifiedMs) || !Number.isFinite(createdMs)) {
+    throw new Error('ATTESTATION_BACKUP_TIMESTAMP_INVALID: verifiedAt or backup.createdAt is not a valid timestamp.')
+  }
+  if (createdMs - verifiedMs > 60_000 || verifiedMs - createdMs > backupVerification.maxAllowedAgeMinutes * 60_000) {
+    throw new Error('ATTESTATION_BACKUP_EXPIRED: backup creation timestamp falls outside authorized OD-03 window.')
+  }
+  return {
+    schemaVersion: backupVerification.schemaVersion,
+    policyDecision: backupVerification.policyDecision ?? 'OD-03',
+    evaluatorStatus: backupVerification.evaluatorStatus,
+    candidateSha,
+    runId: Number(runId),
+    databaseTargetFingerprint: observedFingerprint,
+    neonProjectIdSha256: backupVerification.contract.neonProjectIdSha256,
+    productionBranchIdSha256: backupVerification.contract.productionBranchIdSha256,
+    productionEndpointIdSha256: backupVerification.contract.productionEndpointIdSha256,
+    sourceBranchIdSha256: backupVerification.backup.sourceBranchIdSha256,
+    endpointIdSha256: backupVerification.backup.endpointIdSha256,
+    backupReference: backupVerification.backup.reference,
+    backupKind: backupVerification.backup.kind,
+    verifiedAt: backupVerification.verifiedAt,
+    backupCreatedAt: backupVerification.backup.createdAt,
+    ageSeconds: backupVerification.backup.ageSeconds,
+    maxAllowedAgeMinutes: backupVerification.maxAllowedAgeMinutes,
+    maxFutureClockSkewMs: backupVerification.maxFutureClockSkewMs,
+    verifiedByProvider: true,
+    providerState: backupVerification.backup.providerState,
+    preflightReportSha256: backupVerification.preflightReportSha256,
+    evidenceDigest: recordedDigest,
+  }
+}
+
 export const buildAttestation = (options = {}) => {
   const repoRoot = resolve(options.repoRoot ?? '.')
   const runtimePath = join(repoRoot, '.anclora/PRODUCTION_RUNTIME.md')
@@ -409,6 +494,15 @@ export const buildAttestation = (options = {}) => {
 
   const rows = options.ledgerRows ?? queryPrismaLedgerRows(options.databaseUrl)
   const dbPostCheck = evaluateLedgerRows(rows, disk.migrations, manifest.equivalences)
+
+  const requireBackupVerification = options.requireBackupVerification === true || Boolean(options.backupVerification)
+  const backupVerificationSummary = requireBackupVerification
+    ? validateBackupVerificationBinding(options.backupVerification, {
+        candidateSha: options.candidateSha,
+        runId: options.runId,
+        observedFingerprint,
+      })
+    : undefined
 
   const payload = {
     schemaVersion: 'MigrationAttestationV1',
@@ -448,6 +542,7 @@ export const buildAttestation = (options = {}) => {
       command: contract.MIGRATION_RUNNER ?? 'prisma migrate deploy',
     },
     dbPostCheck,
+    ...(backupVerificationSummary ? { backupVerification: backupVerificationSummary } : {}),
   }
 
   payload.attestationDigest = computeAttestationDigest(payload)
@@ -483,6 +578,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     ? args['approved-by'].split(',').map((s) => s.trim()).filter(Boolean)
     : []
 
+  const backupVerification = args['backup-verification']
+    ? JSON.parse(readFileSync(resolve(args['backup-verification']), 'utf8'))
+    : undefined
+
   const attestation = buildAttestation({
     repoRoot,
     repository: args.repository ?? process.env.GITHUB_REPOSITORY,
@@ -494,6 +593,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     approvedBy,
     databaseUrl: process.env.DATABASE_URL,
     ledgerRows,
+    backupVerification,
+    requireBackupVerification: Boolean(args['require-backup-verification']),
   })
 
   if (attestation.dbPostCheck.status !== 'verified') {

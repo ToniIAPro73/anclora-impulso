@@ -202,35 +202,76 @@ const l11 = evaluatePrismaLedger([
 assert("Unresolved rolled_back migration fails fail-closed", !l11.valid && (l11.reason?.includes("unresolved rolled back") ?? false));
 
 // 5. Backup Verification
-console.log("\n--- 5. Backup Verification ---");
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000; // test fixture only: the real threshold is the open decision OD-03
-const nowIso = new Date().toISOString();
-const tenMinAgoIso = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-const threeHoursAgoIso = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+console.log("\n--- 5. Backup Verification (OD-03) ---");
+const THIRTY_MIN_MS = 30 * 60 * 1000;
+const nowMs = Date.now();
+const nowIso = new Date(nowMs).toISOString();
+const tenMinAgoIso = new Date(nowMs - 10 * 60 * 1000).toISOString();
+const exactlyThirtyMinAgoIso = new Date(nowMs - THIRTY_MIN_MS).toISOString();
+const thirtyMinPlusOneMsAgoIso = new Date(nowMs - (THIRTY_MIN_MS + 1)).toISOString();
+const ninetySecondsFutureIso = new Date(nowMs + 90 * 1000).toISOString();
+const thirtySecondsFutureIso = new Date(nowMs + 30 * 1000).toISOString();
 
 const validBackup: BackupMetadata = {
-  id: "neon-snap-test-20261012-001",
+  id: "br-backup-pre-m27-001",
+  kind: "branch",
   projectId: "proj-anclora-prod-1234",
-  sourceBranch: "main",
+  sourceBranch: "br-gentle-bar-ag3slpph",
+  endpointId: "ep-lingering-paper-agjnrga3",
   createdAt: tenMinAgoIso,
-  status: "ready"
+  status: "ready",
+  verifiedByProvider: true,
 };
 
-const b1 = evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "main", nowIso, TWO_HOURS_MS);
-assert("Valid recent ready backup passes", b1.valid);
+const b1 = evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS, {
+  expectedEndpointId: "ep-lingering-paper-agjnrga3",
+  requireProviderVerification: true,
+});
+assert("Valid recent ready backup passes (<=30m, br-..., endpoint bound, provider verified)", b1.valid);
 
-const bOld = evaluateBackupMetadata({ ...validBackup, createdAt: threeHoursAgoIso }, "proj-anclora-prod-1234", "main", nowIso, TWO_HOURS_MS);
-assert("Stale backup (>2h) fails", !bOld.valid);
+const bBoundaryPass = evaluateBackupMetadata({ ...validBackup, createdAt: exactlyThirtyMinAgoIso }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Exact OD-03 boundary (30m + 0ms) passes", bBoundaryPass.valid);
 
-const bNotReady = evaluateBackupMetadata({ ...validBackup, status: "creating" }, "proj-anclora-prod-1234", "main", nowIso, TWO_HOURS_MS);
-assert("Backup not in ready state fails", !bNotReady.valid);
+const bOld = evaluateBackupMetadata({ ...validBackup, createdAt: thirtyMinPlusOneMsAgoIso }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Backup older than 30m (30m + 1ms) fails (BACKUP_STALE)", !bOld.valid && bOld.code === "BACKUP_STALE");
 
-const bUrlRef = evaluateBackupMetadata({ ...validBackup, id: "postgres://user:pass@host/db" }, "proj-anclora-prod-1234", "main", nowIso, TWO_HOURS_MS);
+const bNotReady = evaluateBackupMetadata({ ...validBackup, status: "creating" }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Backup not in ready state fails", !bNotReady.valid && bNotReady.code === "BACKUP_NOT_READY");
+
+const bMissingStatus = evaluateBackupMetadata({ ...validBackup, status: undefined }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Missing provider status fails closed without fabricating 'ready'", !bMissingStatus.valid && bMissingStatus.code === "BACKUP_STATUS_UNVERIFIABLE_FROM_PROVIDER");
+
+const bMutableBranch = evaluateBackupMetadata({ ...validBackup, sourceBranch: "main" }, "proj-anclora-prod-1234", "main", nowIso, THIRTY_MIN_MS);
+assert("Mutable sourceBranch='main' without br-... fails closed", !bMutableBranch.valid && bMutableBranch.code === "BACKUP_SOURCE_BRANCH_NOT_IMMUTABLE");
+
+const bOldBranch = evaluateBackupMetadata({ ...validBackup, sourceBranch: "br-empty-forest-ag9p7l45" }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Previous replaced branch (br-empty-forest-ag9p7l45) fails", !bOldBranch.valid && bOldBranch.code === "BACKUP_SOURCE_BRANCH_MISMATCH");
+
+const bWrongEndpoint = evaluateBackupMetadata({ ...validBackup, endpointId: "ep-swapped-999" }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS, {
+  expectedEndpointId: "ep-lingering-paper-agjnrga3",
+});
+assert("Mismatched endpointId fails", !bWrongEndpoint.valid && bWrongEndpoint.code === "BACKUP_ENDPOINT_MISMATCH");
+
+const bManualMeta = evaluateBackupMetadata({ ...validBackup, verifiedByProvider: undefined }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS, {
+  requireProviderVerification: true,
+});
+assert("Unverified synthetic metadata fails when provider verification is required", !bManualMeta.valid && bManualMeta.code === "BACKUP_PROVIDER_VERIFICATION_REQUIRED");
+
+const bFuture90s = evaluateBackupMetadata({ ...validBackup, createdAt: ninetySecondsFutureIso }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Future timestamp (>60s NTP skew tolerance, replaces old 5m tolerance) fails", !bFuture90s.valid && bFuture90s.code === "BACKUP_TIMESTAMP_IN_FUTURE");
+
+const bFuture30s = evaluateBackupMetadata({ ...validBackup, createdAt: thirtySecondsFutureIso }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
+assert("Sub-minute NTP skew (<=60s) passes", bFuture30s.valid);
+
+const bUrlRef = evaluateBackupMetadata({ ...validBackup, id: "postgres://user:pass@host/db" }, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, THIRTY_MIN_MS);
 assert("Backup containing connection URL fails", !bUrlRef.valid);
 
-const bNoThreshold = evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "main", nowIso);
+const bNoThreshold = evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso);
 assert("H8: missing freshness threshold fails closed (no default)", !bNoThreshold.valid && (bNoThreshold.reason?.includes("not configured") ?? false));
-assert("H8: zero / negative / NaN threshold fails", ![0, -1, NaN].some((t) => evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "main", nowIso, t).valid));
+assert("H8: zero / negative / NaN threshold fails", ![0, -1, NaN].some((t) => evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, t).valid));
+
+const bExceedsOd03Cap = evaluateBackupMetadata(validBackup, "proj-anclora-prod-1234", "br-gentle-bar-ag3slpph", nowIso, 60 * 60 * 1000);
+assert("Threshold exceeding OD-03 30-minute policy cap fails closed", !bExceedsOd03Cap.valid && bExceedsOd03Cap.code === "OD03_THRESHOLD_EXCEEDS_MAX_30M");
 
 // 5b. Ledger floor (H4)
 console.log("\n--- 5b. Ledger baseline floor (H4) ---");

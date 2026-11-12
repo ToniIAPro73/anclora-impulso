@@ -22,8 +22,8 @@ const base: PreflightInput = {
   candidateSha: SHA, workingTreeClean: true, manifestOk: true, candidates,
   ledger: [ledgerRow("20251120020551_init", "c1"), ledgerRow("20260101000000_second", "c2")],
   baselineCount: 2,
-  backup: { id: "snap-0001", projectId: "proj-1", sourceBranch: "main", createdAt: new Date(now.getTime() - 10 * 60_000).toISOString(), status: "ready" },
-  expectedProjectId: "proj-1", expectedSourceBranch: "main", dispatchTimeIso: now.toISOString(), maxBackupAgeMs: 60 * 60_000,
+  backup: { id: "br-backup-pre-m27-01", kind: "branch", projectId: "proj-1", sourceBranch: "br-gentle-bar-ag3slpph", endpointId: "ep-lingering-paper-agjnrga3", createdAt: new Date(now.getTime() - 10 * 60_000).toISOString(), status: "ready", verifiedByProvider: true },
+  expectedProjectId: "proj-1", expectedSourceBranch: "br-gentle-bar-ag3slpph", expectedEndpointId: "ep-lingering-paper-agjnrga3", dispatchTimeIso: now.toISOString(), maxBackupAgeMs: 30 * 60_000,
 };
 
 console.log("=== Operator preflight (P1) ===");
@@ -44,6 +44,10 @@ assert("backup of another project -> NOT_READY", evaluatePreflight({ ...base, ba
 assert("dirty working tree -> NOT_READY", evaluatePreflight({ ...base, workingTreeClean: false }).status === "NOT_READY");
 assert("manifest mismatch -> NOT_READY", evaluatePreflight({ ...base, manifestOk: false, manifestReason: "x" }).status === "NOT_READY");
 assert("short candidate SHA -> NOT_READY", evaluatePreflight({ ...base, candidateSha: "abc123" }).status === "NOT_READY");
+assert("mutable 'main' sourceBranch -> NOT_READY", evaluatePreflight({ ...base, expectedSourceBranch: "main", backup: { ...base.backup!, sourceBranch: "main" } }).status === "NOT_READY");
+assert("threshold > 30m -> NOT_READY", evaluatePreflight({ ...base, maxBackupAgeMs: 60 * 60_000 }).status === "NOT_READY");
+assert("endpoint mismatch -> NOT_READY", evaluatePreflight({ ...base, expectedEndpointId: "ep-other-123" }).status === "NOT_READY");
+assert("missing provider verification when required -> NOT_READY", evaluatePreflight({ ...base, requireProviderVerification: true, backup: { ...base.backup!, verifiedByProvider: undefined } }).status === "NOT_READY");
 assert("report never contains connection URLs", !JSON.stringify(ok).includes("postgres"));
 
 console.log("\n=== Release manifest scripts ===");

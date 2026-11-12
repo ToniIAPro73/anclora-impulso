@@ -26,14 +26,23 @@ yaml_check() {
     abort "triggers" unless on.keys == ["workflow_dispatch"]
     inputs = on["workflow_dispatch"]["inputs"].keys.sort
     abort "inputs: #{inputs}" unless inputs == %w[backup_confirmed backup_reference ledger_reviewed preflight_report_sha256]
-    abort "perm" unless d["permissions"] == {"contents"=>"read"}
+    abort "perm" unless d["permissions"] == {"contents"=>"read", "actions"=>"read", "deployments"=>"read", "id-token"=>"write", "attestations"=>"write"}
     abort "conc" unless d["concurrency"]["group"] == "production-migrations" && d["concurrency"]["cancel-in-progress"] == false
     abort "migrate env" unless d["jobs"]["migrate"]["environment"] == "production-migrations" && d["jobs"]["migrate"]["needs"] == "validate"
     abort "validate has env/secrets" if d["jobs"]["validate"]["environment"] || d["jobs"]["validate"]["env"]
     abort "timeouts" unless d["jobs"].values.all? { |j| j["timeout-minutes"] }
+    steps = d["jobs"]["migrate"]["steps"].map { |s| s["name"].to_s }
+    backup_idx = steps.index { |n| n.include?("Verify live Neon target identity and backup freshness") }
+    migrate_idx = steps.index { |n| n.include?("Apply versioned migrations") }
+    abort "backup gate missing or after migrate deploy" unless backup_idx && migrate_idx && backup_idx < migrate_idx
+    backup_step = d["jobs"]["migrate"]["steps"][backup_idx]
+    abort "missing NEON_API_KEY env" unless backup_step.dig("env", "NEON_API_KEY") == "${{ secrets.NEON_API_KEY }}"
+    abort "missing NEON_PROJECT_ID env" unless backup_step.dig("env", "NEON_PROJECT_ID") == "${{ vars.NEON_PROJECT_ID }}"
+    attest_step = d["jobs"]["migrate"]["steps"].find { |s| s["name"].to_s.include?("Verify post-migration ledger") }
+    abort "attestation missing --require-backup-verification" unless attest_step && attest_step["run"].to_s.include?("--require-backup-verification")
   ' "$WF"
 }
-assert_ok "triggers, inputs (no sha input), permissions, concurrency, environment, needs, timeouts" yaml_check
+assert_ok "triggers, inputs (no sha input), permissions, concurrency, environment, needs, timeouts, OD-03 live backup gate order" yaml_check
 assert_fail "no sha / expected_last_migration input remains" grep -nE "^\s+(sha|expected_last_migration):" "$WF"
 assert_fail "no forbidden Prisma command is executed (comments excluded)" bash -c "grep -vE '^\s*#' '$WF' | grep -E 'migrate (dev|reset|resolve)|db push'"
 assert_ok "the validator is read from the default branch tip (git show origin/<default>)" grep -q 'git show "origin/${DEFAULT_BRANCH}:scripts/release/validate-candidate.sh"' "$WF"

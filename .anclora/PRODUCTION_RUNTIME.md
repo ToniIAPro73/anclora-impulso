@@ -102,6 +102,9 @@ Render (Express API, backend/)
 DATABASE_PROVIDER=Neon/Postgres
 DATABASE_SCOPE=production
 DATABASE_TARGET_FINGERPRINT=sha256:29eb57cb9705d468d83e82fb873f7cc9c40fe0a4fdfad7840def716a538b9cb6
+DATABASE_NEON_PROJECT_ID=lucky-hat-25002521
+DATABASE_NEON_PRODUCTION_BRANCH_ID=br-gentle-bar-ag3slpph
+DATABASE_NEON_ENDPOINT_ID=ep-lingering-paper-agjnrga3
 LOCAL_DATABASE_SCOPE=production
 
 Local development intentionally connects to the Production database.
@@ -121,6 +124,9 @@ MIGRATIONS_PRECEDE_BACKEND_DEPLOY=true
 MIGRATION_ENVIRONMENT=production-migrations
 MIGRATION_MANIFEST_PATH=scripts/release/release-manifest.json
 MIGRATION_CRYPTO_ATTESTATION=required
+MIGRATION_BACKUP_GATE_POLICY=OD-03_APPROVED_PENDING_ACTIVATION
+# D-2026-0056 (OD-03) aprobada el 2026-11-12; activar únicamente al publicar e iniciar ventana M27:
+# MIGRATION_MAX_BACKUP_AGE_MINUTES=30
 
 All schema migrations apply strictly against the designated production database.
 Destructive drops or resets are strictly prohibited without authorization.

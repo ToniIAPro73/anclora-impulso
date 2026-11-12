@@ -3,8 +3,9 @@
  *
  *   tsx scripts/verifier/operator-preflight.ts \
  *     --ledger ledger.json --backup backup.json \
- *     --project-id <neon-project-id> --source-branch <branch> \
- *     --max-backup-age-minutes <N> --baseline-count <N> [--dispatch-time <ISO>]
+ *     --project-id <neon-project-id> --source-branch <br-immutable-branch-id> \
+ *     [--endpoint-id <ep-endpoint-id>] \
+ *     --max-backup-age-minutes <N<=30> --baseline-count <N> [--dispatch-time <ISO>]
  *
  * ledger.json: array of {migration_name, checksum, finished_at[, rolled_back_at]} exported manually with a read-only credential.
  * backup.json: {id, projectId, sourceBranch, createdAt, status} copied from the provider console/API.
@@ -106,6 +107,7 @@ const report = evaluatePreflight({
   backup,
   expectedProjectId: need("project-id"),
   expectedSourceBranch: need("source-branch"),
+  expectedEndpointId: arg("endpoint-id"),
   dispatchTimeIso: arg("dispatch-time") ?? new Date().toISOString(),
   maxBackupAgeMs: Number.isFinite(maxMinutes) ? maxMinutes * 60_000 : undefined,
 });
