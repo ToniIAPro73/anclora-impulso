@@ -101,6 +101,7 @@ Render (Express API, backend/)
 
 DATABASE_PROVIDER=Neon/Postgres
 DATABASE_SCOPE=production
+DATABASE_TARGET_FINGERPRINT=sha256:29eb57cb9705d468d83e82fb873f7cc9c40fe0a4fdfad7840def716a538b9cb6
 LOCAL_DATABASE_SCOPE=production
 
 Local development intentionally connects to the Production database.
