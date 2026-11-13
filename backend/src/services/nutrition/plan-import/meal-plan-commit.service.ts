@@ -141,7 +141,7 @@ async function resolveOrCreateUserRecipe(
       fat: recipe.nutrition.fatG ?? null,
       fiber: recipe.nutrition.fiberG ?? null,
       tags: recipe.cookingMethods,
-      source: 'imported',
+      source: 'user',
       isPublic: false,
       isEditable: true,
       mealTypes: [mealType],

@@ -445,18 +445,18 @@
 - **Resultado esperado:** DTO `meal-plan-import-v1` (Zod + JSON Schema sincronizados), catálogo único de protocolos en `shared/nutrition-protocols.json` / `protocol-catalog.ts` sin habilitar dietas sin soporte en el generador actual, validadores de estructura, unidades, duplicados, restricciones, cribado 4-4-9, procedencia e inyección de contenido no confiable, y fixtures reproducibles.
 
 ### TASK-033 · Spike de persistencia y decisión condicional M28
-- **Entrega:** N1 · **Prioridad:** P1 condicional · **Estado:** **Implementada localmente** (`M28_LOCAL_IMPLEMENTED`, migración `20261113060000_add_meal_plan_import_persistence` + enum `MealPlanLifecycleStatus` + manifiesto 28 migraciones + compatibilidad bidireccional pre-M28 en `pre-m28-selects.ts`; **no aplicada a Neon** `M28_PRODUCTION_NOT_EXECUTED`).
+- **Entrega:** N1 · **Prioridad:** P1 condicional · **Estado:** **Aplicada y verificada en Neon (`M28_PRODUCTION_APPLIED`, `M28_LEDGER_VERIFIED`, `M28_SCHEMA_VERIFIED`)** — run `43374077232`, `finished_at: 2026-11-13T05:46:31.676Z`, `28` aplicadas / `0` pendientes, `18` columnas + `MealPlanLifecycleStatus` + índices únicos verificados.
 - **Dependencias:** `TASK-032`.
 
 ### TASK-034 · Pipeline `preview`/`commit` JSON, unidades e idempotencia
-- **Entrega:** N1 · **Prioridad:** P0 · **Estado:** **Implementada localmente** (`TASK-034_IMPLEMENTED_LOCAL` — `preview` y `POST /api/nutrition/meal-plans/import/commit` con transacción atómica, idempotencia `(userId, importFingerprint)`, aislamiento de usuario, compatibilidad `PRE_M28_*` verificada sobre Neon M27 y feature flag `NUTRITION_PLAN_IMPORT_COMMIT_ENABLED=false` por defecto; pendiente integración PostgreSQL real post-M28 y activación controlada).
+- **Entrega:** N1 · **Prioridad:** P0 · **Estado:** **QA funcional e idempotencia PASS sobre Neon M28 (`N1_COMMIT_FUNCTIONAL_QA_PASS`, `N1_IDEMPOTENCY_PASS`, `N1_OWNERSHIP_PASS`)** — fix local `source: 'user'` en `meal-plan-commit.service.ts` para `recipes_source_check`; pendiente de publicación/promoción (`PROMOTE=FULL`) y activación de `NUTRITION_PLAN_IMPORT_COMMIT_ENABLED` en Render (`N1_ACTIVATION_PENDING_AUTHORIZATION`).
 - **Dependencias:** `TASK-032`, `TASK-033`, tests de caracterización `TASK-014`.
 
 ### TASK-035 · Importación de texto libre / documentos ODT-DOCX
 - **Entrega:** N3 · **Prioridad:** P3 · **Estado:** Pendiente.
 
 ### TASK-036 · UI «Nuevo plan» + preview (N1) y Preparación/Compra (N2)
-- **Entrega:** N1/N2 · **Prioridad:** P0 → P1 · **Estado:** **N1 implementado localmente** (`TASK-036_IMPLEMENTED_LOCAL` — `components/nutrition/meal-plan-import-panel.tsx` con confirmación condicionada a `canCommitToDatabase`, guardado `DRAFT`/`ACTIVE`, reintento seguro y enlace al plan); N2 (Preparación/Compra persistida) pendiente.
+- **Entrega:** N1/N2 · **Prioridad:** P0 → P1 · **Estado:** **N1 implementado y validado en desarrollo (`168/168` tests frontend PASS)**; pendiente promoción a `main`/`production` (`PROMOTE=FULL`) y activación controlada del flag; N2 (Preparación/Compra persistida) pendiente.
 
 ### TASK-037 · Adaptación de la skill `planificador-nutricion-mealprep-50` a JSON v2
 - **Entrega:** N0 · **Prioridad:** P0 · **Estado:** Adaptación v2 preparada en repositorio (`docs/sdd/nutrition/planificador-nutricion-mealprep-v2/SKILL.md` + `skill-adapter.ts`); ejecución generativa no verificada en este entorno (`SKILL_GENERATION_NOT_VERIFIED`).
