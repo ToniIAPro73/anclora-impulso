@@ -15,6 +15,7 @@ import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
 import { getMuscleGroupLabel, type AppLanguage } from "@/lib/workout-domain-labels"
 import { getWorkoutDisplayName } from "@/lib/workout-display-name"
 import { useWorkouts } from "@/hooks/use-workouts"
+import { formatExplanationSignalValue } from "@/lib/explanation-signals"
 
 function WorkoutDetailContent() {
   const params = useParams<{ id: string }>()
@@ -167,7 +168,7 @@ function WorkoutDetailContent() {
                   {workout.explanation.signals.map((signal) => (
                     <div key={`${signal.label}-${signal.value}`} className="rounded-2xl border border-orange-100 bg-white/80 px-3 py-3 text-sm text-slate-700 dark:border-orange-500/10 dark:bg-slate-950/40 dark:text-slate-200">
                       <p className="text-xs uppercase tracking-[0.16em] text-slate-400">{signal.label}</p>
-                      <p className="mt-2 font-semibold">{signal.value}</p>
+                      <p className="mt-2 font-semibold">{formatExplanationSignalValue(signal.value, isSpanish)}</p>
                     </div>
                   ))}
                 </div>

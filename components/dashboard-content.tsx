@@ -17,6 +17,7 @@ import { uiMotion } from "@/lib/ui-motion"
 import { cn } from "@/lib/utils"
 import { buildRecommendedPlan, getProfileCompletion } from "@/lib/user-profile"
 import { OnboardingDialog } from "@/components/onboarding-dialog"
+import { formatExplanationSignalValue } from "@/lib/explanation-signals"
 import { buildDismissedNudgeKey, trackProductEvent } from "@/lib/product-events"
 import { engagementApi, type EngagementNudge } from "@/lib/api"
 
@@ -347,14 +348,14 @@ export function DashboardContent() {
     <div className="flex flex-col gap-2.5 p-3 sm:gap-3 sm:p-4 lg:gap-2">
       <OnboardingDialog open={onboardingOpen} onOpenChange={setOnboardingOpen} />
 
-      <Card className="ui-motion-card-subtle border-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white shadow-xl">
+      <Card className="ui-motion-card-subtle border border-orange-200/75 bg-[linear-gradient(135deg,rgba(255,251,245,0.98),rgba(255,247,237,0.94),rgba(255,255,255,0.98))] text-slate-900 shadow-xl dark:border-0 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-white">
         <CardContent className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.9fr)] lg:items-center">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="rounded-full border-0 bg-white/12 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white">
+              <Badge className="rounded-full border border-slate-200 bg-slate-900/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-800 dark:border-0 dark:bg-white/12 dark:text-white">
                 {language === "es" ? "Centro de acción" : "Action hub"}
               </Badge>
-              <Badge className="rounded-full border-0 bg-orange-500/20 px-3 py-1 text-[11px] text-orange-100">
+              <Badge className="rounded-full border border-orange-200 bg-orange-100/90 px-3 py-1 text-[11px] text-orange-800 dark:border-0 dark:bg-orange-500/20 dark:text-orange-100">
                 {weeklyTarget ? `${stats.workoutsThisWeek}/${weeklyTarget} ${language === "es" ? "sesiones esta semana" : "sessions this week"}` : (language === "es" ? "Sin objetivo semanal" : "No weekly target")}
               </Badge>
             </div>
@@ -369,13 +370,13 @@ export function DashboardContent() {
                     ? "Tu siguiente mejor acción ya está preparada"
                     : "Your next best action is ready"}
               </h3>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
                 {primaryAction.description}
               </p>
             </div>
 
             {primaryAction.href ? (
-              <Button asChild className="h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 text-sm font-semibold hover:from-orange-600 hover:to-pink-600">
+              <Button asChild className="h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 text-sm font-semibold text-white hover:from-orange-600 hover:to-pink-600">
                 <Link href={primaryAction.href}>
                   <PrimaryActionIcon className="mr-2 h-4 w-4" />
                   {primaryAction.label}
@@ -383,7 +384,7 @@ export function DashboardContent() {
                 </Link>
               </Button>
             ) : (
-              <Button onClick={primaryAction.onClick} className="h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 text-sm font-semibold hover:from-orange-600 hover:to-pink-600">
+              <Button onClick={primaryAction.onClick} className="h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 text-sm font-semibold text-white hover:from-orange-600 hover:to-pink-600">
                 <PrimaryActionIcon className="mr-2 h-4 w-4" />
                 {primaryAction.label}
               </Button>
@@ -391,30 +392,30 @@ export function DashboardContent() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-white/6 p-4 backdrop-blur-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-none">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {language === "es" ? "Perfil" : "Profile"}
               </p>
               <p className="mt-2 text-3xl font-semibold">{profileCompletion.percentage}%</p>
-              <Progress value={profileCompletion.percentage} className="mt-3 h-2.5 bg-white/10" />
+              <Progress value={profileCompletion.percentage} className="mt-3 h-2.5 bg-slate-200 dark:bg-white/10" />
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/6 p-4 backdrop-blur-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-none">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {language === "es" ? "Adherencia semanal" : "Weekly adherence"}
               </p>
               <p className="mt-2 text-3xl font-semibold">{weeklyConsistency}%</p>
-              <p className="mt-2 text-xs text-slate-300">
+              <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                 {language === "es"
                   ? "Mide si tu ritmo reciente coincide con el objetivo semanal."
                   : "Measures whether your recent pace matches your weekly target."}
               </p>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/6 p-4 backdrop-blur-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-none">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {language === "es" ? "Registro nutricional" : "Nutrition logging"}
               </p>
               <p className="mt-2 text-3xl font-semibold">{nutritionConsistency}%</p>
-              <p className="mt-2 text-xs text-slate-300">
+              <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                 {language === "es"
                   ? "Días con registros en la última semana."
                   : "Days with logs during the last week."}
@@ -703,22 +704,22 @@ export function DashboardContent() {
         </Card>
 
         {latestRecommendation ? (
-          <Card className="ui-motion-card-subtle border-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-lg">
+          <Card className="ui-motion-card-subtle border border-orange-200/75 bg-[linear-gradient(155deg,rgba(255,251,245,0.98),rgba(255,247,237,0.92),rgba(255,255,255,0.98))] text-slate-900 shadow-lg dark:border-0 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-white">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-orange-300" />
+                <Sparkles className="h-5 w-5 text-orange-500 dark:text-orange-300" />
                 {t.dashboard.latestRecommendation}
               </CardTitle>
-              <CardDescription className="text-slate-300">{latestRecommendation.summary}</CardDescription>
+              <CardDescription className="text-slate-600 dark:text-slate-300">{latestRecommendation.summary}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                   {t.dashboard.recommendationWhy}
                 </p>
                 <div className="mt-3 space-y-2">
                   {latestRecommendation.reasons.map((reason) => (
-                    <div key={reason} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100">
+                    <div key={reason} className="rounded-2xl border border-slate-200/80 bg-white/85 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
                       {reason}
                     </div>
                   ))}
@@ -727,19 +728,19 @@ export function DashboardContent() {
               {latestRecommendation.signals?.length ? (
                 <div className="grid gap-2 sm:grid-cols-3">
                   {latestRecommendation.signals.map((signal) => (
-                    <div key={`${signal.label}-${signal.value}`} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-400">{signal.label}</p>
-                      <p className="mt-2 text-sm font-semibold text-white">{signal.value}</p>
+                    <div key={`${signal.label}-${signal.value}`} className="rounded-2xl border border-slate-200/80 bg-white/85 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{signal.label}</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{formatExplanationSignalValue(signal.value, language === "es")}</p>
                     </div>
                   ))}
                 </div>
               ) : null}
               {latestRecommendation.adjustment ? (
-                <div className="rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-200">
+                <div className="rounded-2xl border border-orange-200 bg-orange-50/90 px-4 py-3 dark:border-orange-400/20 dark:bg-orange-500/10">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-200">
                     {t.dashboard.recommendationAdjustment}
                   </p>
-                  <p className="mt-2 text-sm text-orange-50">{latestRecommendation.adjustment}</p>
+                  <p className="mt-2 text-sm text-orange-900 dark:text-orange-50">{latestRecommendation.adjustment}</p>
                 </div>
               ) : null}
               {latestRecommendation.nextBestAction ? (
@@ -790,8 +791,12 @@ export function DashboardContent() {
                       </p>
                     </div>
                   </div>
-                  <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500">
-                    {record.max_weight} kg
+                  <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white">
+                    {record.max_weight > 0
+                      ? `${record.max_weight} kg`
+                      : language === "es"
+                        ? "Sin marca de peso"
+                        : "No weight logged"}
                   </Badge>
                 </div>
               ))}

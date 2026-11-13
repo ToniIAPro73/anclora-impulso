@@ -20,6 +20,7 @@ import { useProgress } from "@/hooks/use-progress"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { TrendingUp, TrendingDown, Calendar, Trophy, Target, Plus, Scale, Ruler, Activity, Clock, Loader2, Flame, BrainCircuit, DumbbellIcon } from "lucide-react"
 import { useLanguage } from "@/lib/contexts/language-context"
+import { formatExplanationSignalValue } from "@/lib/explanation-signals"
 
 export function ProgressTracker() {
   const { language } = useLanguage()
@@ -203,7 +204,11 @@ export function ProgressTracker() {
             <p className="text-xs uppercase tracking-[0.16em] text-slate-400">{isSpanish ? "Mejor PR" : "Best PR"}</p>
             <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{topRecord?.exerciseName ?? "--"}</p>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {topRecord ? `${topRecord.maxWeight} kg · e1RM ${topRecord.bestEstimatedOneRepMax} kg` : isSpanish ? "Sin registros todavía" : "No records yet"}
+              {topRecord && topRecord.maxWeight > 0
+                ? `${topRecord.maxWeight} kg · e1RM ${topRecord.bestEstimatedOneRepMax} kg`
+                : topRecord
+                  ? isSpanish ? "Sin marca de peso registrada" : "No weight logged"
+                  : isSpanish ? "Sin registros todavía" : "No records yet"}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50/90 p-4 dark:bg-slate-900/50">
@@ -217,40 +222,40 @@ export function ProgressTracker() {
       </Card>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-white">
+        <Card className="border border-orange-200/75 bg-[linear-gradient(135deg,rgba(255,251,245,0.98),rgba(255,247,237,0.92),rgba(255,255,255,0.98))] text-slate-900 shadow-lg dark:border-0 dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BrainCircuit className="h-5 w-5 text-orange-400" />
+              <BrainCircuit className="h-5 w-5 text-orange-500 dark:text-orange-400" />
               {isSpanish ? "Resumen de progreso" : "Progress summary"}
             </CardTitle>
-            <CardDescription className="text-slate-300">
+            <CardDescription className="text-slate-600 dark:text-slate-300">
               {isSpanish
                 ? "Señales de adherencia, tendencia y recomendación operativa."
                 : "Adherence, trend and next-step guidance."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/10 dark:bg-white/6">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {isSpanish ? "Adherencia semanal" : "Weekly adherence"}
               </p>
               <p className="mt-2 text-3xl font-semibold">
                 {insights.adherenceRate !== null ? `${Math.round(insights.adherenceRate * 100)}%` : "--"}
               </p>
-              <p className="mt-2 text-sm text-slate-300">
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                 {insights.weeklyTarget
                   ? `${insights.workoutsLast7Days}/${insights.weeklyTarget} ${isSpanish ? "sesiones" : "sessions"}`
                   : isSpanish ? "Define un objetivo semanal en onboarding." : "Set a weekly target in onboarding."}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/10 dark:bg-white/6">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {isSpanish ? "Tendencia de peso" : "Weight trend"}
               </p>
               <p className="mt-2 text-3xl font-semibold">
                 {insights.weightTrend.deltaKg !== null ? `${insights.weightTrend.deltaKg > 0 ? "+" : ""}${insights.weightTrend.deltaKg} kg` : "--"}
               </p>
-              <p className="mt-2 text-sm text-slate-300">
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                 {insights.weightTrend.direction === "down"
                   ? isSpanish ? "La tendencia reciente va hacia abajo." : "Recent trend is moving down."
                   : insights.weightTrend.direction === "up"
@@ -260,17 +265,25 @@ export function ProgressTracker() {
                       : isSpanish ? "Aún faltan datos recientes." : "You still need more recent data."}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/85 p-4 dark:border-white/10 dark:bg-white/6">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                 {isSpanish ? "Riesgo de estancamiento" : "Stagnation risk"}
               </p>
-              <p className="mt-2 text-3xl font-semibold">
-                {insights.stagnationRisk === "high" ? (isSpanish ? "Alto" : "High") : insights.stagnationRisk === "medium" ? (isSpanish ? "Medio" : "Medium") : (isSpanish ? "Bajo" : "Low")}
+              <p className="mt-2 text-2xl font-semibold">
+                {insights.workoutsLast7Days === 0 && insights.adherenceRate === null
+                  ? isSpanish ? "Sin datos" : "No data"
+                  : insights.stagnationRisk === "high"
+                    ? isSpanish ? "Alto" : "High"
+                    : insights.stagnationRisk === "medium"
+                      ? isSpanish ? "Medio" : "Medium"
+                      : isSpanish ? "Bajo" : "Low"}
               </p>
-              <p className="mt-2 text-sm text-slate-300">
-                {insights.stagnationRisk === "high"
-                  ? isSpanish ? "Conviene simplificar o ajustar volumen y nutrición." : "It is worth simplifying or adjusting volume and nutrition."
-                  : isSpanish ? "La señal actual no apunta a bloqueo fuerte." : "Current signals do not show a strong plateau."}
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                {insights.workoutsLast7Days === 0 && insights.adherenceRate === null
+                  ? isSpanish ? "Registra sesiones para evaluar si hay bloqueo." : "Log sessions to evaluate plateau risk."
+                  : insights.stagnationRisk === "high"
+                    ? isSpanish ? "Conviene simplificar o ajustar volumen y nutrición." : "It is worth simplifying or adjusting volume and nutrition."
+                    : isSpanish ? "La señal actual no apunta a bloqueo fuerte." : "Current signals do not show a strong plateau."}
               </p>
             </div>
           </CardContent>
@@ -307,7 +320,7 @@ export function ProgressTracker() {
                 {insights.explanation.signals.map((signal) => (
                   <div key={`${signal.label}-${signal.value}`} className="rounded-2xl bg-slate-50/90 p-4 dark:bg-slate-900/50">
                     <p className="text-xs uppercase tracking-[0.16em] text-slate-400">{signal.label}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{signal.value}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{formatExplanationSignalValue(signal.value, isSpanish)}</p>
                   </div>
                 ))}
               </div>
@@ -650,8 +663,12 @@ export function ProgressTracker() {
                           {new Date(record.date).toLocaleDateString('es-ES')}
                         </p>
                       </div>
-                      <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500">
-                        {record.max_weight} kg
+                      <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white">
+                        {record.max_weight > 0
+                          ? `${record.max_weight} kg`
+                          : isSpanish
+                            ? "Sin marca de peso"
+                            : "No weight logged"}
                       </Badge>
                     </div>
                   ))}

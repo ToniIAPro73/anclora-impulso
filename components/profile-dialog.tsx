@@ -35,6 +35,7 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
   const { language } = useLanguage()
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : uncontrolledOpen
   const [form, setForm] = useState({
@@ -96,6 +97,7 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveError(false)
 
     try {
       await updateProfile({
@@ -110,6 +112,9 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
         recommendedPlan,
       })
       handleOpenChange(false)
+    } catch {
+      // Keep the dialog open with the entered data and tell the user; never fail silently.
+      setSaveError(true)
     } finally {
       setIsSaving(false)
     }
@@ -124,12 +129,15 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
   const objectiveMetrics = [
     { id: "profile-target-weight", label: "Peso objetivo", suffix: "kg", value: form.targetWeightKg, inputMode: "decimal" as const, onChange: (value: string) => setForm((current) => ({ ...current, targetWeightKg: value })) },
     { id: "profile-timeframe", label: "Plazo", suffix: "semanas", value: form.timeframeWeeks, inputMode: "numeric" as const, onChange: (value: string) => setForm((current) => ({ ...current, timeframeWeeks: value })) },
-    { id: "profile-days", label: "Entrenos", suffix: "dias/sem", value: form.trainingDaysPerWeek, inputMode: "numeric" as const, onChange: (value: string) => setForm((current) => ({ ...current, trainingDaysPerWeek: value })) },
+    { id: "profile-days", label: "Entrenos", suffix: "días/sem", value: form.trainingDaysPerWeek, inputMode: "numeric" as const, onChange: (value: string) => setForm((current) => ({ ...current, trainingDaysPerWeek: value })) },
   ]
 
   const weeklyPreview = recommendedPlan?.weeklySplit.slice(0, 4) ?? []
 
   const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setSaveError(false)
+    }
     if (!isControlled) {
       setUncontrolledOpen(nextOpen)
     }
@@ -141,8 +149,7 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent
-        showCloseButton={false}
-        className="h-[calc(100dvh-0.75rem)] w-[calc(100vw-0.75rem)] max-h-[960px] max-w-[1200px] overflow-hidden rounded-[24px] border border-orange-200/60 bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,255,255,0.96))] p-0 shadow-[0_30px_120px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:h-[calc(100dvh-1.5rem)] sm:w-[calc(100vw-2rem)] lg:h-[calc(100dvh-2rem)] lg:w-[calc(100vw-3rem)] lg:max-h-none lg:max-w-[1440px] dark:border-orange-400/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,0.98))]"
+        className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1rem)] max-w-4xl overflow-hidden rounded-[24px] border border-orange-200/60 bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,255,255,0.96))] p-0 shadow-[0_30px_120px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:w-[calc(100vw-2rem)] dark:border-orange-400/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,0.98))]"
       >
         <div className="grid h-full min-h-0 grid-cols-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
           <div className="flex min-h-0 flex-col overflow-y-auto border-b border-orange-100/80 bg-[radial-gradient(circle_at_top,_rgba(251,146,60,0.22),_transparent_48%),linear-gradient(180deg,_rgba(255,247,237,0.92),_rgba(255,237,213,0.56))] px-3 py-3 lg:min-h-0 lg:border-r lg:border-b-0 lg:py-2.5 dark:border-orange-400/10 dark:bg-[radial-gradient(circle_at_top,_rgba(251,146,60,0.12),_transparent_45%),linear-gradient(180deg,_rgba(15,23,42,0.98),_rgba(15,23,42,0.88))]">
@@ -184,7 +191,7 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-[1.2rem] font-semibold tracking-tight text-slate-900 dark:text-white">{bmi ?? "--"}</p>
-                      <p className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Indice estimado</p>
+                      <p className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Índice estimado</p>
                       {bmiInterpretation ? (
                         <p className="mt-1 text-[11px] font-medium leading-4 text-orange-700 dark:text-orange-300">
                           {bmiInterpretation}
@@ -217,7 +224,7 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
                     </>
                   ) : (
                     <p className="text-[12px] leading-4.5 text-slate-300 max-lg:text-slate-600 dark:text-slate-300">
-                      Completa tus metricas para generar una propuesta inicial.
+                      Completa tus métricas para generar una propuesta inicial.
                     </p>
                   )}
                 </div>
@@ -225,18 +232,7 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
             </div>
           </div>
 
-          <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.94))] px-3 py-3 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.3),rgba(15,23,42,0.12))] lg:flex lg:min-h-0 lg:flex-col lg:py-2">
-            <div className="mb-0.5 flex items-center justify-end max-lg:sticky max-lg:top-0 max-lg:z-10 max-lg:-mx-3 max-lg:mb-2 max-lg:border-b max-lg:border-orange-100/70 max-lg:bg-[linear-gradient(180deg,rgba(255,251,245,0.96),rgba(255,255,255,0.92))] max-lg:px-3 max-lg:pb-2 max-lg:pt-1 dark:max-lg:border-orange-400/10 dark:max-lg:bg-[linear-gradient(180deg,rgba(2,6,23,0.98),rgba(15,23,42,0.92))] lg:-mt-1 lg:mb-1.5 lg:px-0 lg:pb-0 lg:pt-0">
-              <DialogClose asChild>
-                <button
-                  type="button"
-                  className="inline-flex h-8 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 px-3 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400/60 dark:border-slate-800/80 dark:bg-slate-950/50 dark:text-slate-400 dark:hover:text-white"
-                  aria-label="Cerrar perfil"
-                >
-                  Cerrar
-                </button>
-              </DialogClose>
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,250,252,0.94))] px-3 py-3 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.3),rgba(15,23,42,0.12))] lg:py-4 lg:pr-10">
 
             <div className="min-h-0 overflow-y-auto pr-0.5 max-lg:pb-2">
               <div className="grid gap-1 max-lg:gap-2 xl:grid-cols-[minmax(0,1fr)_192px]">
@@ -339,60 +335,65 @@ export function ProfileDialog({ children, open: controlledOpen, onOpenChange }: 
                       </div>
                     </div>
                     <div className="grid content-start gap-1 self-start">
-                      <div className="overflow-hidden rounded-[14px] border border-slate-200/80 bg-slate-50/85 p-1.5 dark:border-slate-800/80 dark:bg-slate-900/75">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Parametros</p>
-                        <div className="mt-1 space-y-0.5 text-[10px] text-slate-600 dark:text-slate-300">
+                      <div className="overflow-hidden rounded-[14px] border border-slate-200/80 bg-slate-50/85 p-2.5 dark:border-slate-800/80 dark:bg-slate-900/75">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Parámetros</p>
+                        <div className="mt-1 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-300">
                           <p className="flex items-center gap-1 truncate" title={`${recommendedPlan.duration} min`}><Weight className="h-3 w-3 shrink-0 text-orange-500" /> <span className="truncate">{recommendedPlan.duration} min</span></p>
                           <p className="flex items-center gap-1 truncate" title={recommendedPlan.difficulty}><Ruler className="h-3 w-3 shrink-0 text-orange-500" /> <span className="truncate">{recommendedPlan.difficulty}</span></p>
                           <p className="flex items-center gap-1 truncate" title={recommendedPlan.workoutType}><Target className="h-3 w-3 shrink-0 text-orange-500" /> <span className="truncate">{recommendedPlan.workoutType}</span></p>
                         </div>
                       </div>
-                      <Button asChild className="h-6.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-2 text-[10px] hover:from-orange-600 hover:to-rose-600">
+                      <Button asChild className="h-9 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-3 text-xs text-white hover:from-orange-600 hover:to-rose-600">
                         <Link href="/workouts/generate">Usar esta propuesta</Link>
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex min-h-[88px] items-center rounded-[15px] border border-dashed border-orange-200/80 bg-orange-50/55 p-2 text-[10px] leading-4 text-slate-600 dark:border-orange-400/10 dark:bg-orange-500/5 dark:text-slate-400">
-                    Completa peso actual, peso objetivo, plazo y dias de entreno para generar una propuesta automatica.
+                  <div className="flex min-h-[88px] items-center rounded-[15px] border border-dashed border-orange-200/80 bg-orange-50/55 p-3 text-[11px] leading-4 text-slate-600 dark:border-orange-400/10 dark:bg-orange-500/5 dark:text-slate-400">
+                    Completa peso actual, peso objetivo, plazo y días de entreno para generar una propuesta automática.
                   </div>
                 )}
                 </div>
               </section>
             </div>
 
-            <div className="mt-1 rounded-[18px] border border-slate-200/80 bg-[linear-gradient(160deg,rgba(255,255,255,0.96),rgba(241,245,249,0.96))] p-1.5 shadow-sm dark:border-slate-800/80 dark:bg-[linear-gradient(160deg,rgba(15,23,42,0.95),rgba(30,41,59,0.86))] max-lg:sticky max-lg:bottom-0 max-lg:z-10 max-lg:-mx-1 max-lg:border-t max-lg:border-slate-200/80 max-lg:pb-[calc(env(safe-area-inset-bottom,0px)+0.375rem)] dark:max-lg:border-slate-800/80">
+            <div className="mt-2 rounded-[18px] border border-slate-200/80 bg-[linear-gradient(160deg,rgba(255,255,255,0.96),rgba(241,245,249,0.96))] p-3 shadow-sm dark:border-slate-800/80 dark:bg-[linear-gradient(160deg,rgba(15,23,42,0.95),rgba(30,41,59,0.86))] max-lg:sticky max-lg:bottom-0 max-lg:z-10 max-lg:-mx-1 max-lg:border-t max-lg:border-slate-200/80 max-lg:pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] dark:max-lg:border-slate-800/80">
                 <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Resumen</p>
-                    <p className="mt-0.5 text-[10px] leading-3.5 text-slate-600 dark:text-slate-400">
-                      Ajusta tus metricas clave y guarda los cambios.
+                    <p className="mt-0.5 text-[11px] leading-4 text-slate-600 dark:text-slate-400">
+                      Ajusta tus métricas clave y guarda los cambios.
                     </p>
                   </div>
-                  <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px]">
+                  <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px]">
                     Perfil activo
                   </Badge>
                 </div>
-                <div className="mt-1 grid gap-1 sm:grid-cols-2">
-                  <div className="overflow-hidden rounded-[12px] bg-slate-50/85 p-1.5 dark:bg-slate-900/75">
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="overflow-hidden rounded-[12px] bg-slate-50/85 p-2.5 dark:bg-slate-900/75">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Meta de peso</p>
-                    <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-900 dark:text-white">
+                    <p className="mt-0.5 truncate text-[13px] font-semibold text-slate-900 dark:text-white">
                       {form.targetWeightKg || "--"} <span className="text-[12px] font-medium text-slate-400">kg</span>
                     </p>
                   </div>
-                  <div className="overflow-hidden rounded-[12px] bg-slate-50/85 p-1.5 dark:bg-slate-900/75">
+                  <div className="overflow-hidden rounded-[12px] bg-slate-50/85 p-2.5 dark:bg-slate-900/75">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Frecuencia</p>
-                    <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-900 dark:text-white">
-                      {form.trainingDaysPerWeek || "--"} <span className="text-[12px] font-medium text-slate-400">dias/sem</span>
+                    <p className="mt-0.5 truncate text-[13px] font-semibold text-slate-900 dark:text-white">
+                      {form.trainingDaysPerWeek || "--"} <span className="text-[12px] font-medium text-slate-400">días/sem</span>
                     </p>
                   </div>
                 </div>
-                <div className="mt-1 flex flex-col gap-1 sm:flex-row">
-                  <Button variant="outline" className="h-6.5 flex-1 rounded-2xl px-2 text-[10px]" onClick={() => handleOpenChange(false)}>
+                {saveError ? (
+                  <p role="alert" className="mt-2.5 text-xs font-medium text-red-700 dark:text-red-300">
+                    No se pudo guardar tu perfil. Inténtalo de nuevo.
+                  </p>
+                ) : null}
+                <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
+                  <Button variant="outline" className="h-9 flex-1 rounded-2xl px-3 text-xs" onClick={() => handleOpenChange(false)}>
                     Cancelar
                   </Button>
                   <Button
-                    className="h-6.5 flex-1 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-2 text-[10px] hover:from-orange-600 hover:to-rose-600"
+                    className="h-9 flex-1 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 px-3 text-xs text-white hover:from-orange-600 hover:to-rose-600"
                     onClick={handleSave}
                     disabled={isSaving}
                   >

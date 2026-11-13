@@ -10,5 +10,5 @@ export const ANCLORA_MODAL_ACTIONS_CLASS =
   "grid grid-cols-1 gap-2 border-t border-slate-200/70 pt-3 dark:border-slate-800/80 sm:grid-cols-2"
 
 export function buildResponsiveModalClass(maxWidthClass: string) {
-  return `w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] ${maxWidthClass} ${ANCLORA_MODAL_SURFACE_CLASS}`
+  return `w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] ${maxWidthClass} ${ANCLORA_MODAL_SURFACE_CLASS}`
 }

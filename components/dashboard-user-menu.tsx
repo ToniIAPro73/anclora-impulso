@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { LogOut, UserCircle, ChevronDown, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 
@@ -24,6 +24,16 @@ export function DashboardUserMenu() {
   const { t } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  // The profile dialog is opened from a menu item that unmounts with the menu, so there is no element for the
+  // dialog to hand focus back to. Return it to the menu button instead of dropping it on <body>.
+  const handleProfileOpenChange = (nextOpen: boolean) => {
+    setProfileOpen(nextOpen)
+    if (!nextOpen) {
+      window.requestAnimationFrame(() => triggerRef.current?.focus())
+    }
+  }
 
   const displayName = user?.fullName || user?.email?.split("@")[0] || "Usuario"
 
@@ -31,6 +41,7 @@ export function DashboardUserMenu() {
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <Button
+          ref={triggerRef}
           data-testid="user-menu"
           variant="outline"
           aria-label={`${t.navigation.profile}: ${displayName}`}
@@ -83,7 +94,7 @@ export function DashboardUserMenu() {
           <span className="text-sm">{t.navigation.logout}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <ProfileDialog open={profileOpen} onOpenChange={handleProfileOpenChange} />
     </DropdownMenu>
   )
 }

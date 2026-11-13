@@ -19,6 +19,7 @@ import { isProfileReadyForPlanGeneration } from "@/lib/user-profile"
 import { HealthPlanCrossLink } from "@/components/health-plan-cross-link"
 import { MealPlanImportPanel } from "@/components/nutrition/meal-plan-import-panel"
 import { trackProductEvent } from "@/lib/product-events"
+import { formatExplanationSignalValue } from "@/lib/explanation-signals"
 import {
   ANCLORA_MODAL_ACTIONS_CLASS,
   ANCLORA_MODAL_HEADER_CLASS,
@@ -492,7 +493,7 @@ function NutritionPageContent() {
                   {latestPlan.explanation.signals.map((signal) => (
                     <div key={`${signal.label}-${signal.value}`} className="rounded-2xl border border-emerald-100 bg-white/80 px-3 py-2.5 text-xs text-slate-700 dark:border-emerald-500/10 dark:bg-slate-950/40 dark:text-slate-200 sm:py-3 sm:text-sm">
                       <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 sm:text-xs">{signal.label}</p>
-                      <p className="mt-1.5 font-semibold sm:mt-2">{signal.value}</p>
+                      <p className="mt-1.5 font-semibold sm:mt-2">{formatExplanationSignalValue(signal.value, t)}</p>
                     </div>
                   ))}
                 </div>

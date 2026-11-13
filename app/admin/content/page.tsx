@@ -37,6 +37,27 @@ import { engagementApi, type NotificationDelivery } from "@/lib/api"
 function AdminContentInner() {
   const { user } = useAuth()
   const { language, t } = useLanguage()
+  const isSpanish = language === "es"
+  const editorialStatusLabel = (status?: string | null) => {
+    switch (status) {
+      case "ready":
+        return isSpanish ? "Listo" : "Ready"
+      case "needs_work":
+        return isSpanish ? "Necesita revisión" : "Needs work"
+      default:
+        return isSpanish ? "En revisión" : "In review"
+    }
+  }
+  const deliveryStatusLabel = (status: NotificationDelivery["status"]) => {
+    switch (status) {
+      case "sent":
+        return isSpanish ? "Enviado" : "Sent"
+      case "failed":
+        return isSpanish ? "Fallido" : "Failed"
+      default:
+        return isSpanish ? "Pendiente" : "Pending"
+    }
+  }
   const {
     summary,
     recipesSummary,
@@ -470,16 +491,18 @@ function AdminContentInner() {
                   />
                 </div>
                 <select
+                  aria-label={isSpanish ? "Filtrar por estado" : "Filter by status"}
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
                   className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                 >
                   <option value="all">{language === "es" ? "Todos los estados" : "All statuses"}</option>
-                  <option value="ready">ready</option>
-                  <option value="review">review</option>
-                  <option value="needs_work">needs_work</option>
+                  <option value="ready">{editorialStatusLabel("ready")}</option>
+                  <option value="review">{editorialStatusLabel("review")}</option>
+                  <option value="needs_work">{editorialStatusLabel("needs_work")}</option>
                 </select>
                 <select
+                  aria-label={isSpanish ? "Filtrar por incidencia" : "Filter by issue"}
                   value={issueFilter}
                   onChange={(event) => setIssueFilter(event.target.value as typeof issueFilter)}
                   className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
@@ -491,6 +514,7 @@ function AdminContentInner() {
                   <option value="missing_macros">{t.admin.missingMacros}</option>
                 </select>
                 <select
+                  aria-label={isSpanish ? "Ordenar" : "Sort"}
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
                   className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
@@ -515,9 +539,9 @@ function AdminContentInner() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="outline" className="rounded-xl" disabled={isBulkUpdating || isBulkUpdatingRecipe} onClick={() => void handleBulkStatusUpdate("ready")}>ready</Button>
-                    <Button type="button" size="sm" variant="outline" className="rounded-xl" disabled={isBulkUpdating || isBulkUpdatingRecipe} onClick={() => void handleBulkStatusUpdate("review")}>review</Button>
-                    <Button type="button" size="sm" variant="outline" className="rounded-xl" disabled={isBulkUpdating || isBulkUpdatingRecipe} onClick={() => void handleBulkStatusUpdate("needs_work")}>needs_work</Button>
+                    <Button type="button" size="sm" variant="outline" className="rounded-xl" disabled={isBulkUpdating || isBulkUpdatingRecipe} onClick={() => void handleBulkStatusUpdate("ready")}>{editorialStatusLabel("ready")}</Button>
+                    <Button type="button" size="sm" variant="outline" className="rounded-xl" disabled={isBulkUpdating || isBulkUpdatingRecipe} onClick={() => void handleBulkStatusUpdate("review")}>{editorialStatusLabel("review")}</Button>
+                    <Button type="button" size="sm" variant="outline" className="rounded-xl" disabled={isBulkUpdating || isBulkUpdatingRecipe} onClick={() => void handleBulkStatusUpdate("needs_work")}>{editorialStatusLabel("needs_work")}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -548,7 +572,7 @@ function AdminContentInner() {
               </div>
             ) : null}
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
               <Card className="ui-motion-card-static overflow-hidden border-0 bg-white/95 shadow-lg backdrop-blur-sm dark:bg-slate-900">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -571,7 +595,7 @@ function AdminContentInner() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-slate-900 dark:text-white">{exercise.name}</p>
+                              <p className="line-clamp-2 break-words font-semibold text-slate-900 dark:text-white">{exercise.name}</p>
                               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                                 {exercise.category} · {exercise.muscleGroup} · {exercise.equipment}
                               </p>
@@ -579,6 +603,7 @@ function AdminContentInner() {
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
+                                aria-label={`${isSpanish ? "Seleccionar" : "Select"} ${exercise.name}`}
                                 checked={selectedIds.includes(exercise.id)}
                                 onChange={() => toggleItemSelection(exercise.id)}
                                 className="h-4 w-4 rounded border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950"
@@ -600,7 +625,7 @@ function AdminContentInner() {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <Badge className="rounded-full border-0 bg-slate-900/5 text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                              {exercise.editorial?.editorialStatus ?? "review"}
+                              {editorialStatusLabel(exercise.editorial?.editorialStatus)}
                             </Badge>
                             {!exercise.editorial?.checks.hasImage ? (
                               <Badge variant="destructive" className="rounded-full">
@@ -625,7 +650,7 @@ function AdminContentInner() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-slate-900 dark:text-white">{recipe.name}</p>
+                              <p className="line-clamp-2 break-words font-semibold text-slate-900 dark:text-white">{recipe.name}</p>
                               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                                 {(recipe.tags ?? []).slice(0, 3).join(" · ") || "—"}
                               </p>
@@ -633,6 +658,7 @@ function AdminContentInner() {
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
+                                aria-label={`${isSpanish ? "Seleccionar" : "Select"} ${recipe.name}`}
                                 checked={selectedIds.includes(recipe.id)}
                                 onChange={() => toggleItemSelection(recipe.id)}
                                 className="h-4 w-4 rounded border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950"
@@ -654,7 +680,7 @@ function AdminContentInner() {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <Badge className="rounded-full border-0 bg-slate-900/5 text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                              {recipe.editorial?.editorialStatus ?? "review"}
+                              {editorialStatusLabel(recipe.editorial?.editorialStatus)}
                             </Badge>
                             {!recipe.editorial?.checks.hasImage ? (
                               <Badge variant="destructive" className="rounded-full">
@@ -748,7 +774,7 @@ function AdminContentInner() {
                             <p className="truncate font-medium text-slate-900 dark:text-white">{delivery.subject}</p>
                             <p className="truncate text-xs text-slate-500 dark:text-slate-400">{delivery.user.email}</p>
                           </div>
-                          <Badge variant="outline" className="rounded-full px-3 py-1">{delivery.status}</Badge>
+                          <Badge variant="outline" className="rounded-full px-3 py-1">{deliveryStatusLabel(delivery.status)}</Badge>
                         </div>
                       ))}
                     </div>
@@ -762,10 +788,10 @@ function AdminContentInner() {
             <DialogContent
               className={`h-[calc(100dvh-1rem)] max-h-none sm:h-[calc(100dvh-1.5rem)] lg:h-[calc(100dvh-2rem)] ${buildResponsiveModalClass("lg:w-[calc(100vw-3rem)] lg:max-w-[1280px]")}`}
             >
-              <div className="grid h-full grid-rows-[auto_auto_1fr_auto] gap-0 overflow-hidden p-4 sm:p-5 lg:p-6">
+              <div className="grid h-full grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-4 sm:p-5 lg:p-6">
                 <div className="mb-3">
                   <DialogHeader className={ANCLORA_MODAL_HEADER_CLASS}>
-                    <DialogTitle>{selectedExercise?.name ?? t.admin.exerciseQueueTitle}</DialogTitle>
+                    <DialogTitle className="line-clamp-2 break-words leading-snug">{selectedExercise?.name ?? t.admin.exerciseQueueTitle}</DialogTitle>
                     <DialogDescription>{t.admin.exerciseEditorDesc}</DialogDescription>
                   </DialogHeader>
                 </div>
@@ -783,14 +809,14 @@ function AdminContentInner() {
                       {t.admin.currentScore}: {selectedExercise?.editorial?.qualityScore ?? 0}%
                     </Badge>
                     <Badge className="rounded-full border-0 bg-slate-900/5 text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                      {selectedExercise?.editorial?.editorialStatus ?? "review"}
+                      {editorialStatusLabel(selectedExercise?.editorial?.editorialStatus)}
                     </Badge>
                     {!selectedExercise?.editorial?.checks.hasImage ? <Badge variant="destructive" className="rounded-full">{t.admin.missingImage}</Badge> : null}
                     {!selectedExercise?.editorial?.checks.hasEnoughInstructions ? <Badge variant="destructive" className="rounded-full">{t.admin.weakInstructions}</Badge> : null}
                   </div>
                 </div>
 
-                <div className="grid min-h-0 gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+                <div data-slot="editor-scroll-body" className="flex min-h-0 flex-col gap-3 overflow-y-auto [&>*]:shrink-0 lg:grid lg:content-start lg:grid-cols-[0.9fr_1.1fr]">
                   <div className="grid min-h-0 gap-3">
                     <div className="min-h-0 space-y-2">
                       <Label>{t.admin.description}</Label>
@@ -808,9 +834,9 @@ function AdminContentInner() {
                           onChange={(event) => setExerciseForm((current) => ({ ...current, editorialOverrideStatus: event.target.value }))}
                           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950"
                         >
-                          <option value="ready">ready</option>
-                          <option value="review">review</option>
-                          <option value="needs_work">needs_work</option>
+                          <option value="ready">{editorialStatusLabel("ready")}</option>
+                          <option value="review">{editorialStatusLabel("review")}</option>
+                          <option value="needs_work">{editorialStatusLabel("needs_work")}</option>
                         </select>
                       </div>
                       <div className="space-y-2">
@@ -857,10 +883,10 @@ function AdminContentInner() {
             <DialogContent
               className={`h-[calc(100dvh-1rem)] max-h-none sm:h-[calc(100dvh-1.5rem)] lg:h-[calc(100dvh-2rem)] ${buildResponsiveModalClass("lg:w-[calc(100vw-3rem)] lg:max-w-[1480px]")}`}
             >
-              <div className="grid h-full grid-rows-[auto_auto_1fr_auto] gap-0 overflow-hidden p-4 sm:p-5 lg:p-6">
+              <div className="grid h-full grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-4 sm:p-5 lg:p-6">
                 <div className="mb-3">
                   <DialogHeader className={ANCLORA_MODAL_HEADER_CLASS}>
-                    <DialogTitle>{selectedRecipe?.name ?? t.admin.recipeQueueTitle}</DialogTitle>
+                    <DialogTitle className="line-clamp-2 break-words leading-snug">{selectedRecipe?.name ?? t.admin.recipeQueueTitle}</DialogTitle>
                     <DialogDescription>{t.admin.recipeEditorDesc}</DialogDescription>
                   </DialogHeader>
                 </div>
@@ -871,7 +897,7 @@ function AdminContentInner() {
                       {t.admin.currentScore}: {selectedRecipe?.editorial?.qualityScore ?? 0}%
                     </Badge>
                     <Badge className="rounded-full border-0 bg-slate-900/5 text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                      {selectedRecipe?.editorial?.editorialStatus ?? "review"}
+                      {editorialStatusLabel(selectedRecipe?.editorial?.editorialStatus)}
                     </Badge>
                     {!selectedRecipe?.editorial?.checks.hasImage ? <Badge variant="destructive" className="rounded-full">{t.admin.missingImage}</Badge> : null}
                     {!selectedRecipe?.editorial?.checks.hasEnoughInstructions ? <Badge variant="destructive" className="rounded-full">{t.admin.weakInstructions}</Badge> : null}
@@ -880,7 +906,7 @@ function AdminContentInner() {
                   </div>
                 </div>
 
-                <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+                <div data-slot="editor-scroll-body" className="flex min-h-0 flex-col gap-3 overflow-y-auto [&>*]:shrink-0 lg:grid lg:content-start lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
                   <div className="grid min-h-0 gap-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
@@ -919,9 +945,9 @@ function AdminContentInner() {
                           onChange={(event) => setRecipeForm((current) => ({ ...current, editorialOverrideStatus: event.target.value }))}
                           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950"
                         >
-                          <option value="ready">ready</option>
-                          <option value="review">review</option>
-                          <option value="needs_work">needs_work</option>
+                          <option value="ready">{editorialStatusLabel("ready")}</option>
+                          <option value="review">{editorialStatusLabel("review")}</option>
+                          <option value="needs_work">{editorialStatusLabel("needs_work")}</option>
                         </select>
                       </div>
                       <div className="space-y-2">
