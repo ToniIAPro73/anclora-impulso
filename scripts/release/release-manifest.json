@@ -108,6 +108,10 @@
     {
       "name": "20261111211500_add_modular_health_plan_catalog_and_optional_identity",
       "sha256": "d2ce4036d1c713bd25561d620e077afabaab13872d9ac967f0b72107fbb3ddb6"
+    },
+    {
+      "name": "20261113060000_add_meal_plan_import_persistence",
+      "sha256": "b3bf651283b1fbcbd76b4ffa61c1c3e636bd6eb20379c1e8a651e19b2462356e"
     }
   ],
   "historicalChecksumEquivalences": [

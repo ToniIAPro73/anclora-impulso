@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { prisma } from '../../../config/database';
+import { env } from '../../../config/env';
 import {
   CANONICAL_CONVERTIBLE_UNITS,
   NON_COUNTED_BASE_INGREDIENTS,
@@ -57,8 +58,8 @@ export type DuplicateLookupFn = (
 export interface MealPlanPreviewResponse {
   status: MealPlanValidationResult['status'];
   canImportPreview: boolean;
-  canCommitToDatabase: false;
-  persistenceBlockedReason: 'M28_REQUIRED_FOR_FULL_PERSISTENCE';
+  canCommitToDatabase: boolean;
+  persistenceBlockedReason: 'M28_REQUIRED_FOR_FULL_PERSISTENCE' | null;
   previewHash: string | null;
   validation: MealPlanValidationResult;
   summary: {
@@ -111,7 +112,7 @@ export function computeRecipeFingerprint(recipe: MealPlanImportRecipe): string {
     .slice(0, 16);
 }
 
-function computePlanPreviewHash(plan: MealPlanImportV1): string {
+export function computePlanPreviewHash(plan: MealPlanImportV1): string {
   return crypto
     .createHash('sha256')
     .update(JSON.stringify(plan))
@@ -318,8 +319,10 @@ export async function previewImportedMealPlan(
   return {
     status: validation.status,
     canImportPreview: true,
-    canCommitToDatabase: false,
-    persistenceBlockedReason: 'M28_REQUIRED_FOR_FULL_PERSISTENCE',
+    canCommitToDatabase: env.nutritionPlanImportCommitEnabled,
+    persistenceBlockedReason: env.nutritionPlanImportCommitEnabled
+      ? null
+      : 'M28_REQUIRED_FOR_FULL_PERSISTENCE',
     previewHash: computePlanPreviewHash(plan),
     validation,
     summary: {

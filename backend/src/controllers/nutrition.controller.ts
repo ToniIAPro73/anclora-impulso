@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import * as nutritionService from '../services/nutrition.service';
 import { previewImportedMealPlan as previewImportedMealPlanService } from '../services/nutrition/plan-import/meal-plan-preview.service';
+import {
+  commitImportedMealPlan as commitImportedMealPlanService,
+  MealPlanCommitError,
+} from '../services/nutrition/plan-import/meal-plan-commit.service';
 import type {
   BulkUpdateRecipeEditorialInput,
+  CommitImportedMealPlanInput,
   CreateFoodItemInput,
   CreateMealLogInput,
   CreateRecipeInput,
@@ -40,6 +45,42 @@ export async function previewImportedMealPlan(
     });
     res.status(preview.status === 'REJECTED' ? 422 : 200).json(preview);
   } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/nutrition/meal-plans/import/commit
+ */
+export async function commitImportedMealPlan(
+  req: Request<{}, {}, CommitImportedMealPlanInput>,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+
+    const result = await commitImportedMealPlanService({
+      userId: req.user.userId,
+      rawPayload: req.body.rawPayload,
+      previewHash: req.body.previewHash,
+      requestedLifecycleStatus: req.body.requestedLifecycleStatus,
+      weekStart: req.body.weekStart,
+      instructionsVersion: req.body.instructionsVersion,
+    });
+    res.status(result.idempotentReplay ? 200 : 201).json(result);
+  } catch (error) {
+    if (error instanceof MealPlanCommitError) {
+      res.status(error.statusCode).json({
+        error: error.message,
+        code: error.code,
+        details: error.details,
+      });
+      return;
+    }
     next(error);
   }
 }

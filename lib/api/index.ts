@@ -1115,8 +1115,8 @@ export interface MealPlanImportValidationIssue {
 export interface MealPlanImportPreviewResponse {
   status: 'VALID' | 'VALID_WITH_WARNINGS' | 'INCOMPLETE' | 'REJECTED';
   canImportPreview: boolean;
-  canCommitToDatabase: false;
-  persistenceBlockedReason: 'M28_REQUIRED_FOR_FULL_PERSISTENCE';
+  canCommitToDatabase: boolean;
+  persistenceBlockedReason: 'M28_REQUIRED_FOR_FULL_PERSISTENCE' | null;
   previewHash: string | null;
   validation: {
     status: 'VALID' | 'VALID_WITH_WARNINGS' | 'INCOMPLETE' | 'REJECTED';
@@ -1189,6 +1189,19 @@ export interface MealPlanImportPreviewResponse {
   batchCookingWarnings: string[];
 }
 
+export interface MealPlanImportCommitResponse {
+  mealPlanId: string;
+  title: string | null;
+  lifecycleStatus: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  validationStatus: 'VALID' | 'VALID_WITH_WARNINGS' | 'INCOMPLETE' | 'REJECTED';
+  importSchemaVersion: string;
+  importFingerprint: string;
+  idempotentReplay: boolean;
+  createdRecipesCount: number;
+  reusedRecipesCount: number;
+  mealsCount: number;
+}
+
 // ========== NUTRITION API ==========
 
 export const nutritionApi = {
@@ -1225,6 +1238,16 @@ export const nutritionApi = {
     instructionsVersion?: string;
   }): Promise<MealPlanImportPreviewResponse> {
     return apiClient.post<MealPlanImportPreviewResponse>('/nutrition/meal-plans/import/preview', params);
+  },
+
+  async commitImportedMealPlan(params: {
+    rawPayload: unknown;
+    previewHash: string;
+    requestedLifecycleStatus?: 'DRAFT' | 'ACTIVE';
+    weekStart?: string;
+    instructionsVersion?: string;
+  }): Promise<MealPlanImportCommitResponse> {
+    return apiClient.post<MealPlanImportCommitResponse>('/nutrition/meal-plans/import/commit', params);
   },
 
   async getRecipeById(id: string): Promise<Recipe> {

@@ -1,8 +1,8 @@
 # Estudio definitivo de persistencia M28 — Nutrición v2.0 (`meal-plan-import-v1`)
 
 **Fecha:** 2026-11-13  
-**Estado:** Estudio técnico completado (`M28_NOT_EXECUTED`)  
-**Alcance:** Evaluación de persistencia para `TASK-033` / `TASK-034` (`meal-plan-import-v1`) respecto al esquema Prisma vigente (`M27`, 27 migraciones aplicadas).
+**Estado:** Implementación local completada (`M28_LOCAL_IMPLEMENTED`, migración `20261113060000_add_meal_plan_import_persistence`; **no ejecutada en Neon** `M28_PRODUCTION_NOT_EXECUTED`)  
+**Alcance:** Evaluación y diseño definitivo de persistencia para `TASK-033` / `TASK-034` (`meal-plan-import-v1`) respecto al esquema Prisma (`M27` → `M28`).
 
 ---
 

@@ -443,33 +443,50 @@ model BodyMeasurement {
 // MODELOS DE NUTRICIÓN
 // ==========================================
 
+enum MealPlanLifecycleStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 model MealPlan {
-  id        String   @id @default(uuid())
-  userId    String
-  weekStart DateTime
-  goal      String?  // ej. "perdida_peso", "ganancia_muscular", "mantenimiento"
-  dietType  String?  // "ninguna", "mediterranea", "dash", "ayuno_intermitente"
-  carryoverCaloriesApplied Float @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                       String                  @id @default(uuid())
+  userId                   String
+  weekStart                DateTime
+  goal                     String?                 // ej. "perdida_peso", "ganancia_muscular", "mantenimiento"
+  dietType                 String?                 // "ninguna", "mediterranea", "dash", "ayuno_intermitente"
+  carryoverCaloriesApplied Float                   @default(0)
+  title                    String?
+  origin                   String                  @default("generated")
+  lifecycleStatus          MealPlanLifecycleStatus @default(ACTIVE)
+  importValidationStatus   String?
+  importSchemaVersion      String?
+  importFingerprint        String?
+  importMetadata           Json?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
 
   // Relaciones
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   meals Meal[]
 
+  @@unique([userId, importFingerprint])
   @@index([userId])
   @@index([weekStart])
   @@map("meal_plans")
 }
 
 model Meal {
-  id                String @id @default(uuid())
+  id                String  @id @default(uuid())
   mealPlanId        String
-  dayOfWeek         Int    // 0=Lunes, 6=Domingo
-  mealType          String // "desayuno", "almuerzo", "cena", "snack"
-  servingMultiplier Float @default(1)
+  dayOfWeek         Int     // 0=Lunes, 6=Domingo
+  mealType          String  // "desayuno", "almuerzo", "cena", "snack"
+  servingMultiplier Float   @default(1)
   adjustmentReason  String?
   selectedRecipeId  String?
+  scheduledTime     String?
+  prepMode          String?
+  notes             String?
 
   // Relaciones
   mealPlan       MealPlan          @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
@@ -509,6 +526,10 @@ model Recipe {
   editorialOverrideStatus String?
   editorialNotes          String?
   editorialReviewedAt     DateTime?
+  nutritionSource         String?
+  nutritionCertainty      String?
+  contentFingerprint      String?
+  isIncomplete            Boolean  @default(false)
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
@@ -521,6 +542,7 @@ model Recipe {
   newSwaps        MealSwapHistory[] @relation("NewRecipeSwap")
 
   @@index([userId])
+  @@index([userId, contentFingerprint])
   @@index([source])
   @@index([isPublic])
   @@map("recipes")
@@ -539,10 +561,13 @@ model Ingredient {
 }
 
 model RecipeIngredient {
-  id           String @id @default(uuid())
-  recipeId     String
-  ingredientId String
-  quantity     Float
+  id              String  @id @default(uuid())
+  recipeId        String
+  ingredientId    String
+  quantity        Float?
+  unitOverride    String?
+  rawQuantityText String?
+  isEstimated     Boolean @default(false)
 
   // Relaciones
   recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)

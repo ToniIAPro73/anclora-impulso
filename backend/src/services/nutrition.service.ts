@@ -23,10 +23,18 @@ import type {
   UpdateRecipeInput,
 } from '../utils/validators';
 import { env } from '../config/env';
+import {
+  PRE_M28_MEAL_BASE_SELECT,
+  PRE_M28_MEAL_PLAN_BASE_SELECT,
+  PRE_M28_MEAL_PLAN_WITH_MEALS_SELECT,
+  PRE_M28_MEAL_WITH_RECIPE_BASE_SELECT,
+  PRE_M28_MEAL_WITH_RECIPES_SELECT,
+  PRE_M28_RECIPE_SELECT,
+} from './nutrition/pre-m28-selects';
 
 type MealPlanWithMeals = Awaited<ReturnType<typeof getMealPlanById>>;
 type PrismaTx = Prisma.TransactionClient;
-type RecipeWithRelations = Prisma.RecipeGetPayload<{ include: typeof recipeInclude }>;
+type RecipeWithRelations = Prisma.RecipeGetPayload<{ select: typeof PRE_M28_RECIPE_SELECT }>;
 type SupportedMealType = 'desayuno' | 'almuerzo' | 'cena' | 'snack';
 type SupportedDietType = 'ninguna' | 'mediterranea' | 'dash' | 'ayuno_intermitente' | 'alta_proteina';
 type SupportedDifficulty = 'facil' | 'medio' | 'dificil';
@@ -41,13 +49,7 @@ type RecipeVarietyProfile = {
   baseKey: string;
 };
 
-const recipeInclude = {
-  ingredients: {
-    include: {
-      ingredient: true,
-    },
-  },
-} satisfies Prisma.RecipeInclude;
+const recipeSelect = PRE_M28_RECIPE_SELECT;
 
 function normalizeTagList(values: string[] | undefined): string[] {
   return Array.from(new Set((values ?? []).map((value) => value.trim()).filter(Boolean)));
@@ -95,7 +97,7 @@ async function assertRecipeAccess(recipeId: string, userId: string) {
         { userId },
       ],
     },
-    include: recipeInclude,
+    select: recipeSelect,
   });
 
   if (!recipe) {
@@ -589,7 +591,7 @@ async function selectRecipesForWeeklyPlan(
         options.difficulty ? { difficulty: options.difficulty } : {},
       ],
     },
-    include: recipeInclude,
+    select: recipeSelect,
     orderBy: [
       { isPublic: 'desc' },
       { updatedAt: 'desc' },
@@ -712,15 +714,10 @@ async function ensureNutritionBalance(userId: string, tx: PrismaTx = prisma) {
 async function getPlanWithMeals(tx: PrismaTx, planId: string) {
   return tx.mealPlan.findUnique({
     where: { id: planId },
-    include: {
+    select: {
+      ...PRE_M28_MEAL_PLAN_BASE_SELECT,
       meals: {
-        include: {
-          recipes: {
-            include: {
-              recipe: true,
-            },
-          },
-        },
+        select: PRE_M28_MEAL_WITH_RECIPE_BASE_SELECT,
         orderBy: [{ dayOfWeek: 'asc' }, { mealType: 'asc' }],
       },
     },
@@ -783,6 +780,7 @@ async function applyCalorieAdjustmentToPlan(
         servingMultiplier: updatedMultiplier,
         adjustmentReason: reason,
       },
+      select: { id: true },
     });
   }
 
@@ -845,15 +843,10 @@ async function reconcileIntermittentFastingBalance(
       dietType: 'ayuno_intermitente',
     },
     orderBy: { weekStart: 'desc' },
-    include: {
+    select: {
+      ...PRE_M28_MEAL_PLAN_BASE_SELECT,
       meals: {
-        include: {
-          recipes: {
-            include: {
-              recipe: true,
-            },
-          },
-        },
+        select: PRE_M28_MEAL_WITH_RECIPE_BASE_SELECT,
       },
     },
   });
@@ -913,6 +906,7 @@ async function reconcileIntermittentFastingBalance(
       },
     },
     orderBy: { weekStart: 'asc' },
+    select: PRE_M28_MEAL_PLAN_BASE_SELECT,
   });
 
   if (nextPlan && leftoverCalories > 0) {
@@ -955,6 +949,7 @@ async function getIntermittentFastingState(userId: string, referenceDate: Date) 
       },
     },
     orderBy: { weekStart: 'desc' },
+    select: PRE_M28_MEAL_PLAN_BASE_SELECT,
   });
 
   const balance = await ensureNutritionBalance(userId);
@@ -1061,6 +1056,7 @@ export async function generateMealPlan(userId: string, params: GenerateMealPlanI
         dietType: params.dietType || 'ninguna',
         carryoverCaloriesApplied: pendingCarryoverCalories,
       },
+      select: { id: true },
     });
 
     for (const selectedMeal of selectedRecipes) {
@@ -1074,6 +1070,7 @@ export async function generateMealPlan(userId: string, params: GenerateMealPlanI
             ? 'Orientación general 40+: prioridad a saciedad, energía estable y adherencia (no sustituye criterio profesional).'
             : null,
         },
+        select: { id: true },
       });
 
       await tx.mealRecipe.create({
@@ -1138,22 +1135,7 @@ export async function getUserMealPlans(userId: string) {
   const [plans, snapshot] = await Promise.all([
     prisma.mealPlan.findMany({
       where: { userId },
-      include: {
-        meals: {
-          include: {
-            selectedRecipe: {
-              include: recipeInclude,
-            },
-            recipes: {
-              include: {
-                recipe: {
-                  include: recipeInclude,
-                },
-              },
-            },
-          },
-        },
-      },
+      select: PRE_M28_MEAL_PLAN_WITH_MEALS_SELECT,
       orderBy: { createdAt: 'desc' },
       take: 10,
     }),
@@ -1170,20 +1152,10 @@ export async function getMealPlanById(id: string, userId: string) {
   const [plan, snapshot] = await Promise.all([
     prisma.mealPlan.findFirst({
       where: { id, userId },
-      include: {
+      select: {
+        ...PRE_M28_MEAL_PLAN_BASE_SELECT,
         meals: {
-          include: {
-            selectedRecipe: {
-              include: recipeInclude,
-            },
-            recipes: {
-              include: {
-                recipe: {
-                  include: recipeInclude,
-                },
-              },
-            },
-          },
+          select: PRE_M28_MEAL_WITH_RECIPES_SELECT,
           orderBy: [{ dayOfWeek: 'asc' }, { mealType: 'asc' }],
         },
       },
@@ -1210,6 +1182,7 @@ export async function deleteMealPlan(id: string, userId: string) {
 
   await prisma.mealPlan.delete({
     where: { id },
+    select: { id: true },
   });
 }
 
@@ -1222,7 +1195,7 @@ export async function listRecipes(userId: string, filters: ListRecipesQueryInput
     prisma.recipe.count({ where }),
     prisma.recipe.findMany({
       where,
-      include: recipeInclude,
+      select: recipeSelect,
       orderBy: [
         { isPublic: 'desc' },
         { updatedAt: 'desc' },
@@ -1297,12 +1270,13 @@ export async function createRecipe(userId: string, data: CreateRecipeInput) {
           ingredientId: ingredient.id,
           quantity: ingredientInput.quantity,
         },
+        select: { id: true },
       });
     }
 
     return tx.recipe.findUniqueOrThrow({
       where: { id: createdRecipe.id },
-      include: recipeInclude,
+      select: recipeSelect,
     });
   });
 
@@ -1319,9 +1293,18 @@ export async function replaceMealRecipe(userId: string, mealId: string, data: Re
         userId,
       },
     },
-    include: {
-      mealPlan: true,
-      recipes: true,
+    select: {
+      ...PRE_M28_MEAL_BASE_SELECT,
+      mealPlan: {
+        select: PRE_M28_MEAL_PLAN_BASE_SELECT,
+      },
+      recipes: {
+        select: {
+          id: true,
+          mealId: true,
+          recipeId: true,
+        },
+      },
     },
   });
 
@@ -1352,6 +1335,7 @@ export async function replaceMealRecipe(userId: string, mealId: string, data: Re
       data: {
         selectedRecipeId: nextRecipe.id,
       },
+      select: { id: true },
     });
 
     await tx.mealSwapHistory.create({
@@ -1407,13 +1391,7 @@ export async function updateRecipe(id: string, data: UpdateRecipeInput) {
       editorialNotes: data.editorialNotes,
       editorialReviewedAt: data.editorialOverrideStatus || data.editorialNotes ? new Date() : undefined,
     },
-    include: {
-      ingredients: {
-        include: {
-          ingredient: true,
-        },
-      },
-    },
+    select: recipeSelect,
   });
 
   return decorateRecipe(recipe);
@@ -1431,13 +1409,7 @@ export async function bulkUpdateRecipeEditorial(data: BulkUpdateRecipeEditorialI
 
   const recipes = await prisma.recipe.findMany({
     where: { id: { in: data.ids } },
-    include: {
-      ingredients: {
-        include: {
-          ingredient: true,
-        },
-      },
-    },
+    select: recipeSelect,
     orderBy: { updatedAt: 'desc' },
   });
 
@@ -1446,13 +1418,7 @@ export async function bulkUpdateRecipeEditorial(data: BulkUpdateRecipeEditorialI
 
 export async function getRecipeEditorialSummary() {
   const recipes = await prisma.recipe.findMany({
-    include: {
-      ingredients: {
-        include: {
-          ingredient: true,
-        },
-      },
-    },
+    select: recipeSelect,
     orderBy: { updatedAt: 'desc' },
     take: 100,
   });
@@ -1720,6 +1686,7 @@ export async function createSmartMealPlan(userId: string, data: CreateSmartMealP
       goal: target.goal,
       dietType: 'target_aligned',
     },
+    select: PRE_M28_MEAL_PLAN_BASE_SELECT,
   });
 
   return {

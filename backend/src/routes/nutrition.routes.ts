@@ -4,6 +4,7 @@ import { validateBody, validateQuery } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
 import {
   bulkUpdateRecipeEditorialSchema,
+  commitImportedMealPlanSchema,
   createFoodItemSchema,
   createMealLogSchema,
   createNutritionLogSchema,
@@ -31,6 +32,11 @@ router.post(
   '/meal-plans/import/preview',
   validateBody(previewImportedMealPlanSchema),
   nutritionController.previewImportedMealPlan
+);
+router.post(
+  '/meal-plans/import/commit',
+  validateBody(commitImportedMealPlanSchema),
+  nutritionController.commitImportedMealPlan
 );
 router.post(
   '/meal-plans/generate',

@@ -125,6 +125,7 @@ export const env = {
   wearableReadinessEnabled: process.env.WEARABLE_READINESS_ENABLED === 'true',
   formAnalysisEnabled: process.env.FORM_ANALYSIS_ENABLED === 'true',
   voiceCoachEnabled: process.env.VOICE_COACH_ENABLED === 'true',
+  nutritionPlanImportCommitEnabled: process.env.NUTRITION_PLAN_IMPORT_COMMIT_ENABLED === 'true',
 
   // Legacy (deprecated, usar GROQ_API_KEY)
   openaiApiKey: process.env.OPENAI_API_KEY || '',

@@ -393,6 +393,16 @@ export const previewImportedMealPlanSchema = z.object({
   instructionsVersion: z.string().trim().min(1).max(40).optional(),
 });
 
+export const commitImportedMealPlanSchema = z.object({
+  rawPayload: z.unknown().refine((val) => val !== undefined && val !== null, {
+    message: 'rawPayload es obligatorio',
+  }),
+  previewHash: z.string().trim().regex(/^[a-f0-9]{64}$/, 'previewHash inválido'),
+  requestedLifecycleStatus: z.enum(['DRAFT', 'ACTIVE']).optional(),
+  weekStart: z.string().datetime().optional(),
+  instructionsVersion: z.string().trim().min(1).max(40).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
@@ -422,3 +432,4 @@ export type BulkUpdateRecipeEditorialInput = z.infer<typeof bulkUpdateRecipeEdit
 export type ListRecipesQueryInput = z.infer<typeof listRecipesQuerySchema>;
 export type ReplaceMealRecipeInput = z.infer<typeof replaceMealRecipeSchema>;
 export type PreviewImportedMealPlanInput = z.infer<typeof previewImportedMealPlanSchema>;
+export type CommitImportedMealPlanInput = z.infer<typeof commitImportedMealPlanSchema>;

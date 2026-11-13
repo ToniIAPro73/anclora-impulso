@@ -1,10 +1,24 @@
 "use client"
 
 import { useState, type ChangeEvent } from "react"
-import { AlertTriangle, CheckCircle2, FileUp, ShieldAlert, ShoppingCart, Sparkles } from "lucide-react"
+import Link from "next/link"
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  FileUp,
+  Save,
+  ShieldAlert,
+  ShoppingCart,
+  Sparkles,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { nutritionApi, type MealPlanImportPreviewResponse } from "@/lib/api"
+import {
+  nutritionApi,
+  type MealPlanImportCommitResponse,
+  type MealPlanImportPreviewResponse,
+} from "@/lib/api"
 
 interface MealPlanImportPanelProps {
   isSpanish: boolean
@@ -14,8 +28,11 @@ interface MealPlanImportPanelProps {
 export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanelProps) {
   const [rawJson, setRawJson] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isCommitting, setIsCommitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [commitError, setCommitError] = useState<string | null>(null)
   const [preview, setPreview] = useState<MealPlanImportPreviewResponse | null>(null)
+  const [commitResult, setCommitResult] = useState<MealPlanImportCommitResponse | null>(null)
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -24,6 +41,8 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
       const text = await file.text()
       setRawJson(text)
       setErrorMessage(null)
+      setCommitError(null)
+      setCommitResult(null)
     } catch {
       setErrorMessage(
         isSpanish
@@ -45,6 +64,8 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
 
     setIsLoading(true)
     setErrorMessage(null)
+    setCommitError(null)
+    setCommitResult(null)
     try {
       const response = await nutritionApi.previewImportedMealPlan({
         rawPayload: rawJson,
@@ -61,6 +82,42 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
       )
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const canSavePlan = Boolean(
+    preview &&
+      preview.canCommitToDatabase &&
+      preview.canImportPreview &&
+      preview.status !== "REJECTED" &&
+      preview.previewHash
+  )
+
+  const targetLifecycleStatus: "DRAFT" | "ACTIVE" =
+    preview?.status === "INCOMPLETE" ? "DRAFT" : "ACTIVE"
+
+  const handleCommit = async () => {
+    if (!canSavePlan || !preview?.previewHash) return
+
+    setIsCommitting(true)
+    setCommitError(null)
+    try {
+      const result = await nutritionApi.commitImportedMealPlan({
+        rawPayload: rawJson,
+        previewHash: preview.previewHash,
+        requestedLifecycleStatus: targetLifecycleStatus,
+      })
+      setCommitResult(result)
+    } catch (error) {
+      setCommitError(
+        error instanceof Error
+          ? error.message
+          : isSpanish
+            ? "No se pudo guardar el plan importado. Puedes reintentar de forma segura."
+            : "Failed to save imported plan. You can safely retry."
+      )
+    } finally {
+      setIsCommitting(false)
     }
   }
 
@@ -90,13 +147,13 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
         <textarea
           id="meal-plan-import-json"
           value={rawJson}
-          onChange={(e) => setRawJson(e.target.value)}
+          onChange={(e) => {
+            setRawJson(e.target.value)
+            setCommitResult(null)
+            setCommitError(null)
+          }}
           rows={6}
-          placeholder={
-            isSpanish
-              ? '{ "specVersion": "meal-plan-import-v1", "title": "...", "days": [...] }'
-              : '{ "specVersion": "meal-plan-import-v1", "title": "...", "days": [...] }'
-          }
+          placeholder='{ "specVersion": "meal-plan-import-v1", "title": "...", "days": [...] }'
           className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
@@ -125,18 +182,25 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
                 {preview.summary.title ?? (isSpanish ? "Plan sin título" : "Untitled plan")}
               </span>
             </div>
-            <span
-              data-testid="import-preview-status"
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                preview.status === "REJECTED"
-                  ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-                  : preview.status === "VALID"
-                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-              }`}
-            >
-              {preview.status}
-            </span>
+            <div className="flex items-center gap-2">
+              {preview.status !== "REJECTED" ? (
+                <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {targetLifecycleStatus}
+                </span>
+              ) : null}
+              <span
+                data-testid="import-preview-status"
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  preview.status === "REJECTED"
+                    ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                    : preview.status === "VALID"
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                }`}
+              >
+                {preview.status}
+              </span>
+            </div>
           </div>
 
           {preview.status === "REJECTED" ? (
@@ -172,7 +236,9 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
                   <p className="font-semibold">{preview.summary.mealsCount}</p>
                 </div>
                 <div className="rounded-lg border border-border bg-background p-2">
-                  <p className="text-muted-foreground">{isSpanish ? "Recetas únicas" : "Unique recipes"}</p>
+                  <p className="text-muted-foreground">
+                    {isSpanish ? "Recetas únicas" : "Unique recipes"}
+                  </p>
                   <p className="font-semibold">{preview.summary.recipesCount}</p>
                 </div>
                 <div className="rounded-lg border border-border bg-background p-2">
@@ -183,11 +249,14 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
 
               <div className="rounded-lg border border-border bg-background p-3 text-xs">
                 <p className="font-medium">
-                  {isSpanish ? "Preferencias y restricciones detectadas" : "Detected preferences & restrictions"}
+                  {isSpanish
+                    ? "Preferencias y restricciones detectadas"
+                    : "Detected preferences & restrictions"}
                 </p>
                 <p className="mt-1 text-muted-foreground">
                   {isSpanish ? "Presupuesto:" : "Budget:"} {plan.preferences.budgetTier} ·{" "}
-                  {isSpanish ? "Máx. ingredientes:" : "Max ingredients:"} {plan.preferences.maxMainIngredients} ·{" "}
+                  {isSpanish ? "Máx. ingredientes:" : "Max ingredients:"}{" "}
+                  {plan.preferences.maxMainIngredients} ·{" "}
                   {isSpanish ? "Horarios:" : "Times:"} {plan.preferences.mealTimes.join(", ")}
                 </p>
                 {plan.preferences.excludedEquipment.length > 0 ? (
@@ -196,9 +265,18 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
                     {plan.preferences.excludedEquipment.join(", ")}
                   </p>
                 ) : null}
+                {(preview.summary.hasIncompleteNutrition ||
+                  preview.summary.hasIncompleteIngredients) && (
+                  <p className="mt-1 text-amber-700 dark:text-amber-300">
+                    {isSpanish
+                      ? "Contiene información nutricional o cantidades desconocidas; se guardará como DRAFT sin inventar valores."
+                      : "Contains unknown nutrition or quantities; will be saved as DRAFT without inventing values."}
+                  </p>
+                )}
               </div>
 
-              {preview.validation.warnings.length > 0 || preview.validation.missingData.length > 0 ? (
+              {preview.validation.warnings.length > 0 ||
+              preview.validation.missingData.length > 0 ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
                   <p className="font-semibold">
                     {isSpanish ? "Advertencias y datos pendientes" : "Warnings and pending data"}
@@ -256,11 +334,46 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
                 </p>
               ) : null}
 
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
-                {isSpanish
-                  ? "Previsualización lista. El guardado definitivo en base de datos queda pendiente de la migración M28."
-                  : "Preview ready. Final database persistence is pending the M28 migration."}
-              </div>
+              {!preview.canCommitToDatabase ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
+                  {isSpanish
+                    ? "Previsualización lista. El guardado definitivo en base de datos queda pendiente de la migración M28."
+                    : "Preview ready. Final database persistence is pending the M28 migration."}
+                </div>
+              ) : null}
+
+              {commitError ? (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
+                >
+                  {commitError}
+                </div>
+              ) : null}
+
+              {commitResult ? (
+                <div
+                  data-testid="import-commit-success"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
+                >
+                  <span>
+                    {commitResult.idempotentReplay
+                      ? isSpanish
+                        ? `Plan ya importado anteriormente (${commitResult.lifecycleStatus}).`
+                        : `Plan was already imported previously (${commitResult.lifecycleStatus}).`
+                      : isSpanish
+                        ? `Plan guardado correctamente como ${commitResult.lifecycleStatus} (${commitResult.mealsCount} comidas).`
+                        : `Plan saved successfully as ${commitResult.lifecycleStatus} (${commitResult.mealsCount} meals).`}
+                  </span>
+                  <Link
+                    href={`/nutrition/meal-plans/${commitResult.mealPlanId}`}
+                    className="inline-flex items-center gap-1 font-semibold underline"
+                  >
+                    <span>{isSpanish ? "Ver plan" : "View plan"}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              ) : null}
             </>
           ) : null}
         </div>
@@ -270,7 +383,7 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
         <Button type="button" variant="outline" onClick={onCancel}>
           {isSpanish ? "Cancelar" : "Cancel"}
         </Button>
-        <Button type="button" variant="success" onClick={handlePreview} disabled={isLoading}>
+        <Button type="button" variant="outline" onClick={handlePreview} disabled={isLoading}>
           <Sparkles className="mr-2 h-4 w-4" />
           {isLoading
             ? isSpanish
@@ -280,8 +393,28 @@ export function MealPlanImportPanel({ isSpanish, onCancel }: MealPlanImportPanel
               ? "Previsualizar importación"
               : "Preview import"}
         </Button>
+        {canSavePlan ? (
+          <Button
+            type="button"
+            variant="success"
+            onClick={handleCommit}
+            disabled={isCommitting || Boolean(commitResult)}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isCommitting
+              ? isSpanish
+                ? "Guardando..."
+                : "Saving..."
+              : targetLifecycleStatus === "DRAFT"
+                ? isSpanish
+                  ? "Guardar como borrador (DRAFT)"
+                  : "Save as draft (DRAFT)"
+                : isSpanish
+                  ? "Confirmar y guardar plan"
+                  : "Confirm & save plan"}
+          </Button>
+        ) : null}
       </div>
     </div>
   )
 }
-
