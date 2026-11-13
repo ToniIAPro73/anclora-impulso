@@ -2,10 +2,10 @@
 
 **Fecha:** 2026-11-13
 **Repositorio:** `anclora-impulso` · **Rama:** `development`
-**Estado:** `UI_UX_PASS3_PUBLISHED_DEVELOPMENT` · `UI_UX_PASS3_CI_FAIL_FIX_PENDING_PUSH` · `UI_UX_P2_BACKLOG_OPEN` · `NO_PROMOTE`
+**Estado:** `UI_UX_PASS3_PUBLISHED_DEVELOPMENT` · `UI_UX_PASS3_CI_PASS` · `UI_UX_P2_BACKLOG_OPEN` · `NO_PROMOTE`
 
-Los commits A y B están publicados en `origin/development`. La CI de ese SHA falló en un test de la propia entrega; la
-corrección está hecha en local y pendiente de publicar (ver §3 y §4).
+Los commits A, B y C están publicados en `origin/development` (`f028a22`). La CI del primer push falló en un test de la
+propia entrega; tras el commit C pasa completa, incluido el build (ver §3 y §4).
 
 Documentos de detalle: [auditoría consolidada](UI_UX_PREMIUM_AUDIT_AND_REFINEMENT.md) ·
 [aceptación visual](UI_UX_FINAL_VISUAL_ACCEPTANCE.md) · [índice de evidencias](evidence/ui-ux-pass2/INDEX.md)
@@ -86,9 +86,9 @@ Autorización del propietario recibida (`commit y push ok`). Staging por rutas e
 |---|---|---|---|
 | A | `16debdc` | `docs(nutrition): record N1 production acceptance` | Publicado |
 | B | `7985071` | `fix(ui): refine premium UX, modal behavior, responsive layout and accessibility` | Publicado |
-| C | — | `test(ui): make user-menu focus test deterministic` | Local, pendiente de autorización |
+| C | `f028a22` | `test(ui): make user-menu focus test deterministic` | Publicado |
 
-Push normal `fbc2f4d..7985071` a `origin/development`. Sin force push; ninguna otra rama tocada.
+Dos pushes normales a `origin/development`: `fbc2f4d..7985071` y `7985071..f028a22`, cada uno con su autorización. Sin force push; ninguna otra rama tocada.
 
 ---
 
@@ -97,18 +97,19 @@ Push normal `fbc2f4d..7985071` a `origin/development`. Sin force push; ninguna o
 | Run | SHA | `test-backend` | `test-frontend` | Resultado |
 |---|---|---|---|---|
 | [43396141323](https://github.com/ToniIAPro73/anclora-impulso/actions/runs/43396141323) | `7985071` | PASS | **FAIL** — paso `Run frontend tests`, 188/189 | FAIL |
+| [43396824480](https://github.com/ToniIAPro73/anclora-impulso/actions/runs/43396824480) | `f028a22` | PASS | PASS — lint, typecheck, tests y `Build frontend` | **PASS** |
 
-**Causa.** Un único test, `DashboardUserMenu focus management › returns focus to the user menu button after the profile
+**Causa del primer fallo.** Un único test, `DashboardUserMenu focus management › returns focus to the user menu button after the profile
 dialog closes`, agotó sus 30 s. Es un test de esta entrega, no una regresión del producto: encadenaba el menú
 desplegable de Radix y dos `requestAnimationFrame` bajo jsdom, y en el runner el flujo no llegaba a completarse. En
 local pasaba, y ya había mostrado sensibilidad a la carga al ejecutarse con la suite en paralelo.
 
-**Corrección (commit C, local).** El test se ha sustituido por
+**Corrección (commit C).** El test se ha sustituido por
 `__tests__/components/dashboard-user-menu-focus.test.tsx`, que prueba la misma garantía sin overlays de terceros ni
 esperas: sustituye el menú y el diálogo por elementos simples y controla los fotogramas de animación. Pasa en 1,7 s y
 **falla si se retira la devolución de foco** del componente (comprobado). El código de producto no cambia.
 
-Como el paso de tests falló, el paso `build` posterior no llegó a ejecutarse en ese run: sigue sin verificar.
+En el primer run el paso `build` no llegó a ejecutarse; en el segundo `Build frontend` y `Build backend` pasan.
 
 ---
 
@@ -124,7 +125,7 @@ Ejecutado sobre el estado final del árbol de trabajo:
 | Suite de frontend completa (`npm run test:ci`), con el commit C | PASS en local — 33/33 suites, 189/189 tests |
 | Tests focales: Admin Content, modales, Perfil, Onboarding, cookies, señales | PASS — 7 suites, 29 tests |
 | Tests de backend | NOT_RUN — sin cambios en `backend/` |
-| `next build` | NOT_RUN |
+| `next build` | NOT_RUN en local — PASS en CI (`Build frontend`, run 43396824480) |
 
 **Coherencia con los 188 tests reportados.** Ahora son 189: se añadió un test al corregir el último defecto de esta
 campaña (ver más abajo). Las suites pasan de 32 a 33 porque el test del menú de usuario vive ahora en su propio archivo.
@@ -204,7 +205,7 @@ Ninguno de estos está en el repositorio ni entra en los commits:
 | Riesgo | Mitigación |
 |---|---|
 | El primitivo `components/ui/dialog.tsx` cambia para todos los modales (ancho por defecto y devolución de foco) | Los siete consumidores revisados; tests de regresión; verificado en navegador |
-| `next build` no ejecutado en local | Lo cubre CI tras el push |
+| `next build` no ejecutado en local | Cubierto: `Build frontend` pasa en CI sobre `f028a22` |
 | Admin Content solo verificado con fixtures | La autorización del servidor no cambia en esta entrega; queda `NOT_RUN` con identidad y datos reales |
 | Guardados reales contra la API no ejercitados | La interfaz se probó contra fixtures; el cliente de API no cambia |
 | Interfaz en inglés no verificada | `NOT_RUN`; las etiquetas nuevas incluyen su versión en inglés salvo las de Perfil (observación P2) |
@@ -240,12 +241,10 @@ cambio de API y debería llevar su propia especificación.
 
 | Estado | Evidencia |
 |---|---|
-| `UI_UX_PASS3_PUBLISHED_DEVELOPMENT` | `origin/development` en `7985071` |
-| `UI_UX_PASS3_CI_FAIL_FIX_PENDING_PUSH` | Run 43396141323 en FAIL; corrección del test lista en local |
+| `UI_UX_PASS3_PUBLISHED_DEVELOPMENT` | `origin/development` en `f028a22` |
+| `UI_UX_PASS3_CI_PASS` | Run 43396824480 en PASS sobre `f028a22` |
 | `UI_UX_P2_BACKLOG_OPEN` | Siete observaciones abiertas (§9) |
 | `NO_PROMOTE` | No se ha solicitado ni ejecutado ninguna promoción |
-
-No declarado por falta de evidencia: `UI_UX_PASS3_CI_PASS`.
 
 No se han tocado `backend/`, migraciones, Neon, Render, Vercel, contratos `.anclora/` ni otros repositorios.
 
@@ -255,11 +254,9 @@ No se han tocado `backend/`, migraciones, Neon, Render, Vercel, contratos `.ancl
 
 No promocionar todavía. Orden recomendado:
 
-1. Publicar el commit C (requiere una nueva autorización `commit y push ok`).
-2. Verificar que la CI del nuevo SHA pasa completa, con atención al paso `build`, que aún no se ha ejecutado.
-3. Revisar el Preview de `development`, en especial los modales (foco y cierre), el onboarding en un móvil real y la
+1. Revisar el Preview de `development`, en especial los modales (foco y cierre), el onboarding en un móvil real y la
    interfaz en inglés.
-4. Solo entonces valorar `PROMOTE=FULL` con el SHA revisado.
+2. Solo entonces valorar `PROMOTE=FULL` con el SHA revisado (`f028a22` o posterior).
 
 La entrega no contiene migraciones ni cambios de backend, así que una promoción futura afectaría únicamente al
 frontend.
