@@ -172,6 +172,15 @@ Declaración de adopción AOS para `anclora-impulso`.
 - ESTADO=Procedimiento definido, **no ejecutado**. Las sondas HTTP de Stage D aún no existen.
 - LIMITES=No acepta AI-08 ni ningún gate. No sustituye la revisión independiente. No autoriza promoción.
 
+## Política de uso privado precomercial (`PRIVATE_PRECOMMERCIAL`, 2026-11-13)
+
+- DECISION_ID=IMPULSO-PRIVATE-PRECOMMERCIAL-2026-11-13 (`D-2026-0058`)
+- DECIDED_BY=Toni (ToniIAPro73), contexto aprobado de uso privado exclusivo del propietario
+- ALCANCE_EXCLUSIVO=`anclora-impulso` (sin efecto ni bypass para ningún otro repositorio del ecosistema)
+- REVISIONES_DIFERIDAS=Revisión legal externa (`AI-07`) y validación profesional médica/nutricional (`AI-03`) durante la etapa privada precomercial; su ausencia no bloquea por sí sola desarrollo, QA, migraciones ni promociones de uso privado.
+- OBLIGACIONES_MANTENIDAS=Seguridad y privacidad, identidad y autorización, protección de datos, integridad del ledger, backup/recuperación, OD-03 y G39, auditoría/trazabilidad, seguridad funcional de recomendaciones de salud/nutrición, y prohibición de presentar contenidos de salud como asesoramiento clínico certificado.
+- DISPARADORES_REEVALUACION=`COMMERCIALIZATION_START`, `EXTERNAL_USER_ACCESS`, `PERSONALIZED_PLAN_DISTRIBUTION`.
+
 <!-- ANCLORA-AOS:START -->
 ANCLORA_AOS_AUTHORITY=anclora-governance
 Canonical rules: [AOS Adoption Standard](../../anclora-governance/standards/AOS_ADOPTION_STANDARD.md). Repository-specific facts remain in this repository's `.anclora/` contracts.

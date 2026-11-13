@@ -143,6 +143,18 @@ Environment, reviewers and secret existed at that run; this contract does not re
 Coupling: branch `production` is the deployment branch for Render (Auto-Deploy ON, rootDir=backend). Branch `main` is the production branch of Vercel.
 Promotion gate: `promote.yml` enforces the sequential pipeline: CI and preconditions verified -> staging pushed -> production pushed (triggering Render Auto-Deploy) -> bounded runner wait until Render deploy matching source SHA is `live` -> main pushed (triggering Vercel). For frontend-only promotions, Render compatibility is verified against the live deploy without requiring a new backend deployment.
 Order for backend-dependent changes: push to development, run `production-migrations.yml` if there are migrations, then `PROMOTE=FULL`.
+
+## 4b. Precommercial Private Lifecycle Policy (D-2026-0058)
+
+PRODUCT_LIFECYCLE_STAGE=PRIVATE_PRECOMMERCIAL
+PRIVATE_PRECOMMERCIAL_SCOPE=anclora-impulso
+PRIVATE_PRECOMMERCIAL_OWNER_ONLY=true
+COMMERCIALIZATION_ALLOWED=false
+EXTERNAL_USERS_ALLOWED=false
+DEFERRED_NON_TECHNICAL_REVIEWS=EXTERNAL_LEGAL_REVIEW,MEDICAL_NUTRITIONAL_PROFESSIONAL_REVIEW
+PRIVATE_PRECOMMERCIAL_TECHNICAL_GATES_EXEMPT=false
+PRIVATE_PRECOMMERCIAL_CLINICAL_CERTIFICATION_CLAIMS_ALLOWED=false
+PRIVATE_PRECOMMERCIAL_REEVALUATION_TRIGGERS=COMMERCIALIZATION_START,EXTERNAL_USER_ACCESS,PERSONALIZED_PLAN_DISTRIBUTION
 Migrations MUST be applied and verified BEFORE the backend that needs them is deployed (see `sdd/features/impulso-pilot-review-package/21-d10-production-migration-runbook-v2.md`).
 
 ## 5. Storage Contract
