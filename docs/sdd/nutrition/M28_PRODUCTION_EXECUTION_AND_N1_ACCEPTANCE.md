@@ -31,12 +31,8 @@
 - **Bloque D (Seguridad):** `previewHash` manipulado (`409`), payload `REJECTED` (`422`), `INCOMPLETE` con `requestedLifecycleStatus: ACTIVE` (`422 INCOMPLETE_PLAN_CANNOT_BE_ACTIVE`), `INCOMPLETE` con `DRAFT` (`DRAFT`), acceso cruzado a plan ajeno (`404`) — **PASS**.
 - **Bloque E (Transacciones/concurrencia):** atomicidad ante error observada en rollback real de `23514`; inyección artificial de fallos SQL y carrera concurrente `P2002` en producción **NOT_RUN** (verificadas solo en tests unitarios mockeados).
 
-## 5. Estados actuales
-- `M28_PRODUCTION_APPLIED`
-- `M28_LEDGER_VERIFIED`
-- `M28_SCHEMA_VERIFIED`
-- `N1_COMMIT_FUNCTIONAL_QA_PASS`
-- `N1_IDEMPOTENCY_PASS`
-- `N1_OWNERSHIP_PASS`
-- `PROMOTION_PENDING_AUTHORIZATION`
-- `N1_ACTIVATION_PENDING_AUTHORIZATION`
+## 5. Activación y estados finales en producción
+- **Promoción `PROMOTE=FULL` (`43376014391`):** `success` sobre SHA `fbc2f4d8d95e54c473c638195f53fd0bce8830c8` (todas las ramas `development`, `staging`, `production`, `main` alineadas; Render `dep-dbragfs9v7es73a0e7p0` `live`).
+- **Activación Render (`srv-d6ps41v5r7bs73dvrudg`):** `NUTRITION_PLAN_IMPORT_COMMIT_ENABLED=true`, deploy `dep-dbrarplg1s2s73fusm7g` `live` (`2026-11-13T06:29:32Z`), `/health` `200`.
+- **QA productiva directa (`https://anclora-impulso.onrender.com/api`, `qa.impulso@anclora.local`):** `commit 201` (`c6d2b9e2-a6c0-4595-a832-58ba98b347e4`), replay idempotente `200`, `409`/`422`/`404` — **PASS**.
+- `M28_PRODUCTION_APPLIED` · `M28_LEDGER_VERIFIED` · `M28_SCHEMA_VERIFIED` · `N1_FEATURE_FLAG_ENABLED` · `N1_PRODUCTION_QA_PASS` · `N1_IDEMPOTENCY_PASS` · `N1_OWNERSHIP_PASS` · `N1_PRODUCTION_ACCEPTED`

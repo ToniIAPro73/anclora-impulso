@@ -61,22 +61,21 @@
 - **Inyección artificial de fallos / carrera `P2002` en producción:** **NOT_RUN** (cubiertas en unit tests mockeados, no provocadas en producción por política AOS).
 
 ## 14. Estado del feature flag
-- `NUTRITION_PLAN_IMPORT_COMMIT_ENABLED` en producción (Render): **`false`** (`N1_ACTIVATION_PENDING_AUTHORIZATION`).
+- `NUTRITION_PLAN_IMPORT_COMMIT_ENABLED` en producción (Render `srv-d6ps41v5r7bs73dvrudg`): **`true`** (deploy `dep-dbrarplg1s2s73fusm7g`, `live` a las `2026-11-13T06:29:32Z`, health `200`).
+- QA productiva directa contra `https://anclora-impulso.onrender.com/api` con `qa.impulso@anclora.local`: **PASS** (`preview 200 canCommitToDatabase=true`, `commit 201 mealPlanId=c6d2b9e2-a6c0-4595-a832-58ba98b347e4`, `detail 200`, replay idempotente `200 idempotentReplay=true`, `previewHash` manipulado `409`, `REJECTED 422`, `INCOMPLETE ACTIVE 422` / `DRAFT 201`, cross-user `404`).
 
 ## 15. Incidencias
-- **Detectada y resuelta localmente:** `meal-plan-commit.service.ts` insertaba `recipes.source = 'imported'`, incompatible con el constraint `recipes_source_check` (`'system' | 'ai' | 'user'`). Corregido a `source: 'user'` en `meal-plan-commit.service.ts`. Pendiente de `commit y push ok` antes de promover.
+- `recipes_source_check` corregida en `fbc2f4d8d95e54c473c638195f53fd0bce8830c8` (`source: 'user'`), promovida por `43376014391` (`SUCCESS`) y verificada en producción.
 
 ## 16. Estado final de cada tarea
 - `TASK-032`: **Aceptada (N0)**.
-- `TASK-033` (M28): **Aplicada y verificada en Neon** (`M28_PRODUCTION_APPLIED`, `M28_LEDGER_VERIFIED`, `M28_SCHEMA_VERIFIED`).
-- `TASK-034` (N1 Commit): **QA real PASS en Neon M28** (`N1_COMMIT_FUNCTIONAL_QA_PASS`, `N1_IDEMPOTENCY_PASS`, `N1_OWNERSHIP_PASS`); pendiente de publicar fix `source: 'user'`, promover (`PROMOTE=FULL`) y activar flag.
-- `TASK-036` (UI N1): **Implementada y validada en frontend**; N2 pendiente.
-- `TASK-037`: **`SKILL_GENERATION_NOT_VERIFIED`** (sin cambios).
+- `TASK-033` (M28): **Aceptada en producción** (`M28_PRODUCTION_APPLIED`, `M28_LEDGER_VERIFIED`, `M28_SCHEMA_VERIFIED`).
+- `TASK-034` (N1 Commit): **Aceptada en producción** (`N1_FEATURE_FLAG_ENABLED`, `N1_PRODUCTION_QA_PASS`, `N1_PRODUCTION_ACCEPTED`).
+- `TASK-036` (UI N1): **Aceptada en producción** (`N1_PRODUCTION_ACCEPTED`); N2 pendiente.
+- `TASK-037`: **`SKILL_GENERATION_NOT_VERIFIED`** (pendiente).
 
-## 17. Próximos pasos (requieren autorización del propietario)
-1. Autorizar **`commit y push ok para anclora-impulso`** para publicar el fix `source: 'user'` en `meal-plan-commit.service.ts` y la documentación actualizada en `origin/development`.
-2. Autorizar **`PROMOTE=FULL`** sobre el SHA publicado tras CI para desplegar en `staging` → `production` (Render) → `main` (Vercel).
-3. Autorizar el cambio de `NUTRITION_PLAN_IMPORT_COMMIT_ENABLED=true` en Render tras la promoción para completar `N1_PRODUCTION_ACCEPTED`.
+## 17. Próximos pasos
+- Fase B: auditoría y refinamiento UI/UX transversal en desarrollo (entrega separada).
 
 ---
 
@@ -84,9 +83,9 @@
 - `M28_PRODUCTION_APPLIED`
 - `M28_LEDGER_VERIFIED`
 - `M28_SCHEMA_VERIFIED`
-- `N1_COMMIT_FUNCTIONAL_QA_PASS`
+- `N1_FEATURE_FLAG_ENABLED`
+- `N1_PRODUCTION_QA_PASS`
 - `N1_IDEMPOTENCY_PASS`
 - `N1_OWNERSHIP_PASS`
-- `PROMOTION_PENDING_AUTHORIZATION`
-- `N1_ACTIVATION_PENDING_AUTHORIZATION`
+- `N1_PRODUCTION_ACCEPTED`
 
