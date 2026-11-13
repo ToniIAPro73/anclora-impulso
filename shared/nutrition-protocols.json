@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "protocols": [
+    {
+      "id": "ninguna",
+      "labelEs": "Sin restricción / Estándar",
+      "labelEn": "Standard / No restriction",
+      "publishedInGenerator": true,
+      "supportedInImport": true,
+      "reviewStatus": "PUBLISHED_LEGACY",
+      "requiresProfessionalReview": false
+    },
+    {
+      "id": "mediterranea",
+      "labelEs": "Dieta Mediterránea",
+      "labelEn": "Mediterranean Diet",
+      "publishedInGenerator": true,
+      "supportedInImport": true,
+      "reviewStatus": "PUBLISHED_LEGACY",
+      "requiresProfessionalReview": false
+    },
+    {
+      "id": "dash",
+      "labelEs": "Dieta DASH",
+      "labelEn": "DASH Diet",
+      "publishedInGenerator": true,
+      "supportedInImport": true,
+      "reviewStatus": "PUBLISHED_LEGACY",
+      "requiresProfessionalReview": false
+    },
+    {
+      "id": "ayuno_intermitente",
+      "labelEs": "Ayuno Intermitente",
+      "labelEn": "Intermittent Fasting",
+      "publishedInGenerator": true,
+      "supportedInImport": true,
+      "reviewStatus": "PUBLISHED_LEGACY",
+      "requiresProfessionalReview": false
+    },
+    {
+      "id": "alta_proteina",
+      "labelEs": "Alta Proteína",
+      "labelEn": "High Protein",
+      "publishedInGenerator": true,
+      "supportedInImport": true,
+      "reviewStatus": "PUBLISHED_LEGACY",
+      "requiresProfessionalReview": false
+    },
+    {
+      "id": "low_carb_moderada",
+      "labelEs": "Low-Carb Moderada",
+      "labelEn": "Moderate Low-Carb",
+      "publishedInGenerator": false,
+      "supportedInImport": false,
+      "reviewStatus": "PENDING_PROFESSIONAL_REVIEW",
+      "requiresProfessionalReview": true
+    },
+    {
+      "id": "bajo_indice_glucemico",
+      "labelEs": "Bajo Índice Glucémico",
+      "labelEn": "Low Glycemic Index",
+      "publishedInGenerator": false,
+      "supportedInImport": false,
+      "reviewStatus": "PENDING_PROFESSIONAL_REVIEW",
+      "requiresProfessionalReview": true
+    },
+    {
+      "id": "cetogenica_controlada",
+      "labelEs": "Cetogénica Controlada",
+      "labelEn": "Controlled Ketogenic",
+      "publishedInGenerator": false,
+      "supportedInImport": false,
+      "reviewStatus": "DISABLED_UNSUPPORTED",
+      "requiresProfessionalReview": true
+    }
+  ]
+}
+

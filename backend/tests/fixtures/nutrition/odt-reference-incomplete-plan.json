@@ -1,0 +1,104 @@
+{
+  "specVersion": "meal-plan-import-v1",
+  "origin": {
+    "kind": "external_skill",
+    "producer": "planificador-nutricion-mealprep-50",
+    "producerVersion": "1.0",
+    "instructionsVersion": "1.0.0",
+    "reference": "Planificador Nutricional 7 Días - Ayuno Intermitente.odt"
+  },
+  "preferences": {
+    "dietType": "ayuno_intermitente",
+    "locale": "es-ES",
+    "daysCount": 1,
+    "budgetTier": "economico",
+    "maxMainIngredients": 5,
+    "excludedEquipment": ["horno_convencional"],
+    "excludedFoods": ["tofu"],
+    "dietaryRestrictions": ["sin_horno"],
+    "mealTimes": ["14:30", "19:00"],
+    "eatingWindow": null
+  },
+  "title": "Referencia ODT Ayuno Intermitente (datos parciales sin fabricar)",
+  "days": [
+    {
+      "dayIndex": 0,
+      "meals": [
+        {
+          "mealType": "almuerzo",
+          "scheduledTime": "14:30",
+          "recipe": {
+            "externalId": "odt-d1-c1",
+            "name": "Albóndigas caseras de carne picada en salsa ligera de tomate con calabacín salteado",
+            "servings": 1,
+            "prepTime": 10,
+            "cookTime": 15,
+            "cookingMethods": ["airfryer", "sarten"],
+            "ingredients": [
+              { "name": "Carne picada mixta (vacuno y cerdo magra)", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Tomate triturado en conserva", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Calabacín en rodajas", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Huevo", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Cebolla en polvo / ajo seco", "quantity": null, "unit": null, "quantitySource": "not_provided" }
+            ],
+            "instructions": [
+              "Mezclar la carne picada con el huevo y ajo en polvo, formar albóndigas y cocinar en Airfryer 12 minutos a 190 °C.",
+              "Saltear el calabacín en sartén, añadir el tomate triturado y reducir 5 minutos integrando las albóndigas."
+            ],
+            "nutrition": {
+              "kcal": null,
+              "proteinG": 42,
+              "carbsG": null,
+              "fatG": null,
+              "dataSource": "not_provided",
+              "certainty": "unknown"
+            },
+            "mealPrep": {
+              "storageGuidance": "Guardar hermético en frío.",
+              "reheatGuidance": "Añadir 1 cucharadita de agua, tapar y calentar en microondas.",
+              "transportSuitable": true
+            }
+          }
+        },
+        {
+          "mealType": "cena",
+          "scheduledTime": "19:00",
+          "recipe": {
+            "externalId": "odt-d1-c2",
+            "name": "Tortilla francesa rellena de espinacas frescas y daditos de jamón curado magro",
+            "servings": 1,
+            "prepTime": 3,
+            "cookTime": 5,
+            "cookingMethods": ["sarten"],
+            "ingredients": [
+              { "name": "Huevos camperos", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Espinacas frescas", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Jamón curado magro en tiras", "quantity": null, "unit": null, "quantitySource": "not_provided" },
+              { "name": "Aceite de oliva base", "quantity": null, "unit": null, "quantitySource": "not_provided", "isCountedInLimit": false },
+              { "name": "Orégano", "quantity": null, "unit": null, "quantitySource": "not_provided" }
+            ],
+            "instructions": [
+              "Saltear las espinacas en sartén hasta que reduzcan.",
+              "Batir los huevos, incorporar el jamón y las espinacas y cuajar 3-4 minutos por lado."
+            ],
+            "nutrition": {
+              "kcal": null,
+              "proteinG": null,
+              "carbsG": null,
+              "fatG": null,
+              "dataSource": "not_provided",
+              "certainty": "unknown"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "batchCooking": [],
+  "warnings": [],
+  "incompleteFields": [
+    "days[0].meals[*].recipe.ingredients[*].quantity",
+    "days[0].meals[*].recipe.nutrition.kcal"
+  ]
+}
+

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://impulso.anclora.com/schemas/meal-plan-import-v1.schema.json",
+  "title": "Anclora Impulso Meal Plan Import v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specVersion", "origin", "preferences", "title", "days"],
+  "properties": {
+    "specVersion": { "const": "meal-plan-import-v1" },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "producer", "producerVersion"],
+      "properties": {
+        "kind": { "enum": ["external_skill", "library_generator", "user_json"] },
+        "producer": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "producerVersion": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "instructionsVersion": { "type": ["string", "null"] },
+        "reference": { "type": ["string", "null"] }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dietType", "locale", "daysCount", "budgetTier", "maxMainIngredients", "mealTimes"],
+      "properties": {
+        "dietType": {
+          "enum": [
+            "ninguna",
+            "mediterranea",
+            "dash",
+            "ayuno_intermitente",
+            "alta_proteina",
+            "low_carb_moderada",
+            "bajo_indice_glucemico",
+            "cetogenica_controlada"
+          ]
+        },
+        "locale": { "enum": ["es-ES", "en-GB"] },
+        "daysCount": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "budgetTier": { "enum": ["economico", "medio", "elevado"] },
+        "maxMainIngredients": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "excludedEquipment": { "type": "array", "items": { "type": "string" } },
+        "excludedFoods": { "type": "array", "items": { "type": "string" } },
+        "dietaryRestrictions": { "type": "array", "items": { "type": "string" } },
+        "mealTimes": { "type": "array", "minItems": 1, "maxItems": 6, "items": { "type": "string" } },
+        "eatingWindow": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "string" },
+            "end": { "type": "string" }
+          }
+        }
+      }
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "days": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dayIndex", "meals"],
+        "properties": {
+          "dayIndex": { "type": "integer", "minimum": 0, "maximum": 6 },
+          "meals": { "type": "array", "minItems": 1, "maxItems": 6 }
+        }
+      }
+    },
+    "batchCooking": { "type": "array", "maxItems": 14 },
+    "warnings": { "type": "array", "maxItems": 50, "items": { "type": "string" } },
+    "incompleteFields": { "type": "array", "maxItems": 50, "items": { "type": "string" } }
+  }
+}
+

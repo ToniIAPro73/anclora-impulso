@@ -45,6 +45,15 @@
 | TASK-028 | Indicadores de confianza en progreso con pocos datos | 5 | Media | UX | AUD-019 (UX-06) | S |
 | TASK-029 | Explicación con IA opcional (experimento) | 6 | Experimento | IA | OPP-008 | M |
 | TASK-030 | Eventos del embudo de planes | 5 | Media | Observabilidad | AUD-006 (medición) | M |
+| TASK-031 | *(Reservada)* Retirada de `refreshToken` en respuesta JSON | 0/1 | Reservada | Seguridad | Contrato auth cookie | S |
+| TASK-032 | Contrato `meal-plan-import-v1`, catálogo único y validadores (N0) | N0 | P0 | Dominio / Contrato | Spec Nutrición v2.0 | M |
+| TASK-033 | Spike de persistencia y decisión condicional M28 (N1) | N1 | P1 condicional | Datos | Spec Nutrición v2.0 | S |
+| TASK-034 | Pipeline `preview`/`commit` JSON, unidades e idempotencia (N1) | N1 | P0 | Backend | Spec Nutrición v2.0 | L |
+| TASK-035 | Importación de texto libre / ODT / DOCX (N3) | N3 | P3 | Integración | Spec Nutrición v2.0 | M |
+| TASK-036 | UI «Nuevo plan» + preview (N1) y tabs Preparación/Compra (N2) | N1/N2 | P0 → P1 | Frontend | Spec Nutrición v2.0 | M |
+| TASK-037 | Adaptación skill `planificador-nutricion-mealprep-50` a JSON v2 (N0) | N0 | P0 | Skill / Contrato | Spec Nutrición v2.0 | S |
+| TASK-038 | Asistente 5 decisiones e IA opcional bajo flag (N2) | N2 | P2 | Producto / IA | Spec Nutrición v2.0 | M |
+| TASK-039 | Conector seguro Claude → borrador revisable (N3) | N3 | P3 / exp. | Integración | Spec Nutrición v2.0 | M |
 
 ---
 
@@ -426,10 +435,45 @@
 
 ---
 
+## Pista transversal N — Planificación nutricional interoperable (`TASK-031` reservada; `TASK-032` a `TASK-039`)
+
+### TASK-031 · *(Reservada)* Retirada de `refreshToken` en respuesta JSON
+- **Estado:** **Reservada** (fuera de la ampliación nutricional v2.0).
+
+### TASK-032 · Contrato `meal-plan-import-v1`, catálogo único y validadores
+- **Entrega:** N0 · **Prioridad:** P0 · **Estado:** **Implementada (N0)** (`N0_QA_PASS`).
+- **Resultado esperado:** DTO `meal-plan-import-v1` (Zod + JSON Schema sincronizados), catálogo único de protocolos en `shared/nutrition-protocols.json` / `protocol-catalog.ts` sin habilitar dietas sin soporte en el generador actual, validadores de estructura, unidades, duplicados, restricciones, cribado 4-4-9, procedencia e inyección de contenido no confiable, y fixtures reproducibles.
+
+### TASK-033 · Spike de persistencia y decisión condicional M28
+- **Entrega:** N1 · **Prioridad:** P1 condicional · **Estado:** Pendiente (análisis preliminar completado en N0; M28 no autorizada ni ejecutada).
+- **Dependencias:** `TASK-032`.
+
+### TASK-034 · Pipeline `preview`/`commit` JSON, unidades e idempotencia
+- **Entrega:** N1 · **Prioridad:** P0 · **Estado:** Pendiente.
+- **Dependencias:** `TASK-032`, `TASK-033`, tests de caracterización `TASK-014`.
+
+### TASK-035 · Importación de texto libre / documentos ODT-DOCX
+- **Entrega:** N3 · **Prioridad:** P3 · **Estado:** Pendiente.
+
+### TASK-036 · UI «Nuevo plan» + preview (N1) y Preparación/Compra (N2)
+- **Entrega:** N1/N2 · **Prioridad:** P0 → P1 · **Estado:** Pendiente.
+
+### TASK-037 · Adaptación de la skill `planificador-nutricion-mealprep-50` a JSON v2
+- **Entrega:** N0 · **Prioridad:** P0 · **Estado:** Adaptación v2 preparada en repositorio (`docs/sdd/nutrition/planificador-nutricion-mealprep-v2/SKILL.md` + `skill-adapter.ts`); copia externa sin modificar por restricción AOS.
+- **Dependencias:** `TASK-032`.
+
+### TASK-038 · Asistente 5 decisiones y generación guiada
+- **Entrega:** N2 · **Prioridad:** P2 · **Estado:** Pendiente.
+
+### TASK-039 · Conector seguro Claude → borrador revisable
+- **Entrega:** N3 · **Prioridad:** P3 / experimento · **Estado:** Pendiente.
+
+---
+
 ## Resumen de tamaños
 
 | Tamaño | Tareas |
 |---|---|
-| S | 001, 004, 005, 006, 007, 008, 011, 012, 019, 020, 027, 028 |
-| M | 002, 003, 009, 010, 013, 015, 016, 017, 018, 022, 023, 024, 025, 026, 029, 030 |
-| L | 014, 021 |
+| S | 001, 004, 005, 006, 007, 008, 011, 012, 019, 020, 027, 028, 031, 033, 037 |
+| M | 002, 003, 009, 010, 013, 015, 016, 017, 018, 022, 023, 024, 025, 026, 029, 030, 032, 035, 036, 038, 039 |
+| L | 014, 021, 034 |

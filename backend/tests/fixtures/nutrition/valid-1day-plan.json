@@ -1,0 +1,73 @@
+{
+  "specVersion": "meal-plan-import-v1",
+  "origin": {
+    "kind": "external_skill",
+    "producer": "planificador-nutricion-mealprep-50",
+    "producerVersion": "2.0",
+    "instructionsVersion": "2.0.0",
+    "reference": "fixture-valid-1day"
+  },
+  "preferences": {
+    "dietType": "mediterranea",
+    "locale": "es-ES",
+    "daysCount": 1,
+    "budgetTier": "economico",
+    "maxMainIngredients": 5,
+    "excludedEquipment": ["horno_convencional"],
+    "excludedFoods": ["tofu"],
+    "dietaryRestrictions": [],
+    "mealTimes": ["08:30", "14:00", "20:00"],
+    "eatingWindow": null
+  },
+  "title": "Plan Mediterráneo 1 Día",
+  "days": [
+    {
+      "dayIndex": 0,
+      "meals": [
+        {
+          "mealType": "almuerzo",
+          "scheduledTime": "14:00",
+          "recipe": {
+            "externalId": "d1-almuerzo",
+            "name": "Garbanzos salteados con espinacas y huevo",
+            "servings": 1,
+            "prepTime": 5,
+            "cookTime": 10,
+            "difficulty": "facil",
+            "cookingMethods": ["sarten"],
+            "ingredients": [
+              { "name": "garbanzos cocidos", "quantity": 180, "unit": "g", "quantitySource": "specified" },
+              { "name": "espinacas frescas", "quantity": 80, "unit": "g", "quantitySource": "specified" },
+              { "name": "huevo campero", "quantity": 2, "unit": "unidad", "quantitySource": "specified" },
+              { "name": "aceite de oliva base", "quantity": 10, "unit": "ml", "quantitySource": "specified", "isCountedInLimit": false }
+            ],
+            "instructions": [
+              "Saltear las espinacas en sartén con aceite base durante 2 minutos.",
+              "Añadir los garbanzos escurridos y cocinar 5 minutos.",
+              "Cuajar los huevos encima y servir."
+            ],
+            "nutrition": {
+              "kcal": 490,
+              "proteinG": 28,
+              "carbsG": 45,
+              "fatG": 22,
+              "fiberG": 10,
+              "dataSource": "calculated",
+              "certainty": "verified"
+            },
+            "mealPrep": {
+              "batchCookingGroup": "legumbres-dia1",
+              "storageGuidance": "Refrigerar a <=4°C en recipiente hermético.",
+              "reheatGuidance": "Calentar en microondas 2 minutos tapado.",
+              "transportSuitable": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "batchCooking": [],
+  "warnings": [],
+  "incompleteFields": []
+}
+

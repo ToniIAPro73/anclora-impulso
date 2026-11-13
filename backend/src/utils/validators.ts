@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PUBLISHED_DIET_TYPES } from '../services/nutrition/plan-import/protocol-catalog';
 
 // Validadores de autenticación
 export const registerSchema = z.object({
@@ -261,7 +262,7 @@ export const createRecipeSchema = z.object({
   imageUrl: z.string().url().nullable().optional(),
   tags: z.array(z.string().min(1)).max(12).default([]),
   mealTypes: z.array(z.enum(['desayuno', 'almuerzo', 'cena', 'snack'])).default([]),
-  dietTypes: z.array(z.enum(['ninguna', 'mediterranea', 'dash', 'ayuno_intermitente', 'alta_proteina'])).default([]),
+  dietTypes: z.array(z.enum(PUBLISHED_DIET_TYPES)).default([]),
   goalTypes: z.array(z.string().min(1)).max(12).default([]),
   ingredients: z.array(
     z.object({
@@ -294,7 +295,7 @@ export const generateWorkoutSchema = z.object({
 export const generateMealPlanSchema = z.object({
   goal: z.string().optional(),
   difficulty: z.enum(['facil', 'medio', 'dificil']).optional(),
-  dietType: z.enum(['ninguna', 'mediterranea', 'dash', 'ayuno_intermitente', 'alta_proteina']).optional(),
+  dietType: z.enum(PUBLISHED_DIET_TYPES).optional(),
   maxIngredients: z.number().int().min(1).max(20).optional(),
   includeIngredients: z.array(z.string()).optional(),
   dietaryRestrictions: z.array(z.string()).optional(),
@@ -372,7 +373,7 @@ export const createSmartMealPlanSchema = z.object({
 export const listRecipesQuerySchema = z.object({
   query: z.string().min(1).optional(),
   mealType: z.enum(['desayuno', 'almuerzo', 'cena', 'snack']).optional(),
-  dietType: z.enum(['ninguna', 'mediterranea', 'dash', 'ayuno_intermitente', 'alta_proteina']).optional(),
+  dietType: z.enum(PUBLISHED_DIET_TYPES).optional(),
   goalType: z.string().min(1).optional(),
   source: z.enum(['system', 'ai', 'user']).optional(),
   scope: z.enum(['all', 'mine', 'public']).optional(),

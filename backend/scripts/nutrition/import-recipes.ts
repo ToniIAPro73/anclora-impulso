@@ -4,12 +4,13 @@ import process from 'node:process';
 
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import { PUBLISHED_DIET_TYPES } from '../../src/services/nutrition/plan-import/protocol-catalog';
 
 const prisma = new PrismaClient();
 
 const difficultyValues = ['facil', 'medio', 'dificil'] as const;
 const mealTypeValues = ['desayuno', 'almuerzo', 'cena', 'snack'] as const;
-const dietTypeValues = ['ninguna', 'mediterranea', 'dash', 'ayuno_intermitente', 'alta_proteina'] as const;
+const dietTypeValues = PUBLISHED_DIET_TYPES;
 const goalTypeValues = [
   'perdida_peso',
   'ganancia_muscular',

@@ -9,11 +9,12 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p scripts/tsconfig.json",
     "start": "node dist/server.js",
     "test": "jest --watch",
     "test:ci": "jest --ci --runInBand --coverage",
     "nutrition:validate": "tsx scripts/nutrition/import-recipes.ts --validate-only",
+    "nutrition:validate-plan": "tsx scripts/nutrition/validate-meal-plan.ts",
     "nutrition:import": "tsx scripts/nutrition/import-recipes.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

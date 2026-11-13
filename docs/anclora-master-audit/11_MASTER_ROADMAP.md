@@ -212,3 +212,20 @@
 | 5 | Media | 3 | S·M | — |
 | 6 | Baja (experimento) | 1 | M | — |
 | 7 | Baja | 3 | L·M | — |
+| N (transversal) | P0 (N0–N1) → P3 (N3) | 8 (`TASK-032`–`039`) | S·M | Subordinada a Fase 3 (`TASK-021`–`024`); `TASK-031` reservada |
+
+---
+
+## Pista transversal N — Planificación nutricional interoperable (Spec v2.0)
+
+Incorporada como **capacidad transversal del roadmap** (no como producto independiente), reutilizable por las modalidades `P01`–`P10` sin duplicar motores ni alterar `MealPlan` / `HealthPlanDefinition`. Mantiene `TASK-001`–`TASK-030` sin renumeración y conserva `TASK-031` reservada para la retirada del `refreshToken` en JSON.
+
+| Entrega | Alcance | Tareas | Estado |
+|---|---|---|---|
+| **N0 — Contrato y skill** | Contrato `meal-plan-import-v1`, catálogo único de protocolos (sin activar dietas sin soporte), adaptación de skill v2 (`planificador-nutricion-mealprep-50`), fixtures (completas, incompletas ODT y negativas) y evaluación M28 | `TASK-032`, `TASK-037` | En implementación N0 |
+| **N1 — Importación** | Spike de persistencia (M28 solo si se justifica y aprueba aparte), importación JSON `preview`/`commit` transaccional e idempotente, conversión estricta de unidades y UI mínima «Nuevo plan» | `TASK-033`, `TASK-034`, `TASK-036` (MVP) | Pendiente |
+| **N2 — Experiencia y generación** | Tabs Menú/Preparación/Compra, batch cooking, lista de la compra cuantificada, asistente 5 pasos e IA opcional tras flag | `TASK-036` (UX), `TASK-038` | Pendiente |
+| **N3 — Integraciones avanzadas** | Extracción opcional de ODT/DOCX/texto libre y conector seguro desde Claude condicionado a demanda y revisión de seguridad | `TASK-035`, `TASK-039` | Pendiente |
+
+- **Relación con Fase 3–7:** N0 y N1 reducido avanzan en paralelo sin bloquear `TASK-021`–`TASK-024` (P07/P08); `TASK-025`–`TASK-026` (Fase 4) añaden preferencias alimentarias opt-in sin inferir por sexo/edad; `TASK-030` (Fase 5) instrumenta eventos nutricionales sin payload sensible; `TASK-029` (Fase 6) comparte guardrails LLM en N2; `TASK-014` (Fase 7) aporta tests de caracterización previos a N1.
+- **Decisiones `D-N1` a `D-N9` y contrato N0:** ver [`NUTRITION_SPEC_V2_N0.md`](../sdd/NUTRITION_SPEC_V2_N0.md).
