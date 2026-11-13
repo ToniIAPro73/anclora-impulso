@@ -165,7 +165,7 @@ Otros viewports: tablet 768×1024 y móvil 390×844 sin scroll horizontal en Das
 |---|---|
 | `npm run typecheck` (aplicación y tests incluidos en `__tests__/tsconfig.json`, que ahora incluye los tests nuevos) | PASS |
 | `npm run lint` | PASS — sin avisos ni errores |
-| `npm run test:ci` | PASS — 32/32 suites, 189/189 tests |
+| `npm run test:ci` | PASS — 33/33 suites, 189/189 tests |
 | Tests focales (Admin, modales, Perfil, Onboarding, cookies, señales) | PASS — 7 suites, 29 tests |
 | Revalidación visual tras los últimos cambios (diferencia de píxeles contra la evidencia guardada) | 0 % en login, dashboard, nutrición, onboarding móvil, onboarding a 200 % y Admin; 0,09 % en onboarding de escritorio |
 | Tests unitarios de backend | NOT_RUN — sin cambios en `backend/`; el PASS de 27 suites / 240 tests es el declarado en la pasada anterior y no se ha vuelto a comprobar |
@@ -179,7 +179,8 @@ Tests de regresión añadidos o ampliados en esta pasada:
 - `__tests__/components/dialog-focus-return.test.tsx` — foco de vuelta al cerrar con `Escape` y con `X`.
 - `__tests__/components/onboarding-dialog-feedback.test.tsx` — aviso de error, nombres accesibles, scroll en
   viewports bajos.
-- `__tests__/components/profile-dialog-feedback.test.tsx` — aviso de error y foco de vuelta al menú.
+- `__tests__/components/profile-dialog-feedback.test.tsx` — aviso de error al fallar el guardado.
+- `__tests__/components/dashboard-user-menu-focus.test.tsx` — foco de vuelta al botón del menú al cerrar Perfil.
 - `__tests__/components/cookie-consent-focus.test.tsx` — foco dentro, `Tab` atrapado, semántica de `Escape` y de `Volver`.
 
 ---
@@ -243,6 +244,7 @@ quedó **cerrada** al reconciliar ese informe. Siguen abiertas las siete anterio
 - `__tests__/components/dialog-focus-return.test.tsx` (nuevo)
 - `__tests__/components/onboarding-dialog-feedback.test.tsx` (nuevo)
 - `__tests__/components/profile-dialog-feedback.test.tsx` (nuevo)
+- `__tests__/components/dashboard-user-menu-focus.test.tsx` (nuevo)
 - `__tests__/components/cookie-consent-focus.test.tsx` (nuevo)
 
 **Documentación y evidencias**

@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
-import { DashboardUserMenu } from "@/components/dashboard-user-menu"
 import { ProfileDialog } from "@/components/profile-dialog"
 
 const mockUpdateProfile = jest.fn()
@@ -13,7 +12,7 @@ jest.mock("@/lib/contexts/language-context", () => ({
   useLanguage: () => ({
     language: "es",
     setLanguage: jest.fn(),
-    t: { navigation: { profile: "Perfil", logout: "Cerrar Sesión" } },
+    t: {},
   }),
 }))
 
@@ -49,22 +48,4 @@ describe("ProfileDialog save feedback", () => {
     await user.click(screen.getByRole("button", { name: "Guardar" }))
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
   })
-})
-
-describe("DashboardUserMenu focus management", () => {
-  it("returns focus to the user menu button after the profile dialog closes", async () => {
-    const user = userEvent.setup()
-    render(<DashboardUserMenu />)
-
-    // Generous async windows: the menu -> dialog hand-off spans two animation frames and the full suite runs in parallel.
-    const patient = { timeout: 8000 }
-    const trigger = screen.getByTestId("user-menu")
-    await user.click(trigger)
-    await user.click(await screen.findByRole("menuitem", { name: "Perfil" }, patient))
-    await screen.findByRole("dialog", {}, patient)
-
-    await user.keyboard("{Escape}")
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument(), patient)
-    await waitFor(() => expect(trigger).toHaveFocus(), patient)
-  }, 30000)
 })

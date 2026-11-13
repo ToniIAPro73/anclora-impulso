@@ -120,12 +120,12 @@ Ejecutada sobre el estado final del árbol de trabajo:
 |---|---|
 | `npm run typecheck` (aplicación y tests incluidos en `__tests__/tsconfig.json`) | PASS |
 | `npm run lint` | PASS |
-| `npm run test:ci` | PASS — 32/32 suites, 189/189 tests |
+| `npm run test:ci` | PASS — 33/33 suites, 189/189 tests |
 | Revalidación visual tras los últimos cambios (diferencia de píxeles contra la evidencia guardada) | 0 % en login, dashboard, nutrición, onboarding móvil, onboarding a 200 % y Admin; 0,09 % en onboarding de escritorio |
 | Tests de backend | NOT_RUN — sin cambios en `backend/` |
 
 Tests de regresión de la Entrega B: `admin-content`, `dialog-focus-return`, `onboarding-dialog-feedback`,
-`profile-dialog-feedback`, `cookie-consent-focus` (en `__tests__/components/`) y `explanation-signals` (en
+`profile-dialog-feedback`, `dashboard-user-menu-focus`, `cookie-consent-focus` (en `__tests__/components/`) y `explanation-signals` (en
 `__tests__/lib/`). `__tests__/tsconfig.json` los incluye ahora en el typecheck de tests.
 
 Limitaciones `NOT_RUN` y `BLOCKED`: ver documento de aceptación (§8). Las principales son Admin con identidad y datos
@@ -143,7 +143,7 @@ no marcadas en §3.
 | Capturas BEFORE de `https://impulso.anclora.com` | Sustituidas por `HEAD` en local para que la comparación sea válida |
 | Evidencia en un directorio temporal del agente fuera del repositorio | Toda la evidencia vigente está en `docs/sdd/evidence/ui-ux-pass2/` |
 | Admin Content «verificado por inspección de código» | Verificado en navegador con fixtures; no con identidad ni datos reales |
-| Frontend `27/27` suites y `170/170` tests | `32/32` suites y `189/189` tests sobre el estado final |
+| Frontend `27/27` suites y `170/170` tests | `33/33` suites y `189/189` tests sobre el estado final |
 | Backend unitario `27/27` suites y `240/240` tests | Declarado en Pass 2; no se ha vuelto a ejecutar porque `backend/` no cambia |
 
 ---
@@ -179,6 +179,7 @@ clasificación por impacto y esfuerzo y la propuesta de siguiente iteración est
 - `__tests__/components/dialog-focus-return.test.tsx`
 - `__tests__/components/onboarding-dialog-feedback.test.tsx`
 - `__tests__/components/profile-dialog-feedback.test.tsx`
+- `__tests__/components/dashboard-user-menu-focus.test.tsx`
 - `__tests__/components/cookie-consent-focus.test.tsx`
 - `__tests__/lib/explanation-signals.test.ts`
 

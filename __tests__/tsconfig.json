@@ -11,6 +11,7 @@
     "./components/dialog-focus-return.test.tsx",
     "./components/onboarding-dialog-feedback.test.tsx",
     "./components/profile-dialog-feedback.test.tsx",
+    "./components/dashboard-user-menu-focus.test.tsx",
     "./lib/explanation-signals.test.ts"
   ],
   "exclude": []

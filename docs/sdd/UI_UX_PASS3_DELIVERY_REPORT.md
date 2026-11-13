@@ -2,9 +2,10 @@
 
 **Fecha:** 2026-11-13
 **Repositorio:** `anclora-impulso` · **Rama:** `development`
-**Estado:** `UI_UX_PASS3_DELIVERY_READY` · `GIT_AUTHORIZATION_PENDING` · `UI_UX_P2_BACKLOG_OPEN` · `NO_PROMOTE`
+**Estado:** `UI_UX_PASS3_PUBLISHED_DEVELOPMENT` · `UI_UX_PASS3_CI_FAIL_FIX_PENDING_PUSH` · `UI_UX_P2_BACKLOG_OPEN` · `NO_PROMOTE`
 
-Nada de esta entrega está publicado. No se ha ejecutado `git add`, `commit` ni `push`.
+Los commits A y B están publicados en `origin/development`. La CI de ese SHA falló en un test de la propia entrega; la
+corrección está hecha en local y pendiente de publicar (ver §3 y §4).
 
 Documentos de detalle: [auditoría consolidada](UI_UX_PREMIUM_AUDIT_AND_REFINEMENT.md) ·
 [aceptación visual](UI_UX_FINAL_VISUAL_ACCEPTANCE.md) · [índice de evidencias](evidence/ui-ux-pass2/INDEX.md)
@@ -79,28 +80,35 @@ Ver §7.
 
 ## 3. Commits
 
-Pendientes de autorización. Dos commits, en este orden, con staging por rutas explícitas (sin `git add .`):
+Autorización del propietario recibida (`commit y push ok`). Staging por rutas explícitas, sin `git add .`.
 
-| # | Mensaje | Contenido |
-|---|---|---|
-| A | `docs(nutrition): record N1 production acceptance` | Los 3 archivos del Grupo A |
-| B | `fix(ui): refine premium UX, modal behavior, responsive layout and accessibility` | Todo el Grupo B |
+| # | SHA | Mensaje | Estado |
+|---|---|---|---|
+| A | `16debdc` | `docs(nutrition): record N1 production acceptance` | Publicado |
+| B | `7985071` | `fix(ui): refine premium UX, modal behavior, responsive layout and accessibility` | Publicado |
+| C | — | `test(ui): make user-menu focus test deterministic` | Local, pendiente de autorización |
 
-Después, `git push origin development` normal (sin force). No se toca ninguna otra rama.
-
-El staging **no se ha ejecutado**: el guard de AOS bloquea también `git add --dry-run` sin autorización. Las dos listas
-de rutas se han contrastado contra `git status`: entre ambas cubren todo el árbol de trabajo, sin solapes y sin dejar
-ningún archivo fuera.
+Push normal `fbc2f4d..7985071` a `origin/development`. Sin force push; ninguna otra rama tocada.
 
 ---
 
 ## 4. CI
 
-`NOT_RUN`. No hay SHA publicado que verificar. Tras el push se comprobará el pipeline `.github/workflows/ci.yml` del
-último SHA (`test-frontend`: lint, typecheck, tests, build; `test-backend`: sin cambios en esta entrega).
+| Run | SHA | `test-backend` | `test-frontend` | Resultado |
+|---|---|---|---|---|
+| [43396141323](https://github.com/ToniIAPro73/anclora-impulso/actions/runs/43396141323) | `7985071` | PASS | **FAIL** — paso `Run frontend tests`, 188/189 | FAIL |
 
-El paso `build` de CI **no se ha ejecutado en local** en esta campaña; es la única comprobación de CI que no tiene un
-equivalente local previo.
+**Causa.** Un único test, `DashboardUserMenu focus management › returns focus to the user menu button after the profile
+dialog closes`, agotó sus 30 s. Es un test de esta entrega, no una regresión del producto: encadenaba el menú
+desplegable de Radix y dos `requestAnimationFrame` bajo jsdom, y en el runner el flujo no llegaba a completarse. En
+local pasaba, y ya había mostrado sensibilidad a la carga al ejecutarse con la suite en paralelo.
+
+**Corrección (commit C, local).** El test se ha sustituido por
+`__tests__/components/dashboard-user-menu-focus.test.tsx`, que prueba la misma garantía sin overlays de terceros ni
+esperas: sustituye el menú y el diálogo por elementos simples y controla los fotogramas de animación. Pasa en 1,7 s y
+**falla si se retira la devolución de foco** del componente (comprobado). El código de producto no cambia.
+
+Como el paso de tests falló, el paso `build` posterior no llegó a ejecutarse en ese run: sigue sin verificar.
 
 ---
 
@@ -113,13 +121,13 @@ Ejecutado sobre el estado final del árbol de trabajo:
 | Typecheck de la aplicación | PASS |
 | Typecheck de tests (`__tests__/tsconfig.json`, ampliado a los tests nuevos) | PASS |
 | Lint | PASS — sin avisos |
-| Suite de frontend completa (`npm run test:ci`) | PASS — 32/32 suites, 189/189 tests |
+| Suite de frontend completa (`npm run test:ci`), con el commit C | PASS en local — 33/33 suites, 189/189 tests |
 | Tests focales: Admin Content, modales, Perfil, Onboarding, cookies, señales | PASS — 7 suites, 29 tests |
 | Tests de backend | NOT_RUN — sin cambios en `backend/` |
 | `next build` | NOT_RUN |
 
 **Coherencia con los 188 tests reportados.** Ahora son 189: se añadió un test al corregir el último defecto de esta
-campaña (ver más abajo). Las 32 suites no cambian.
+campaña (ver más abajo). Las suites pasan de 32 a 33 porque el test del menú de usuario vive ahora en su propio archivo.
 
 **Revisión final de código.** Los siete consumidores de `DialogContent` fijan su propio ancho y ninguno sobrescribe
 los manejadores de foco, de modo que los cambios del primitivo son compatibles con todos. Durante la revisión se
@@ -232,12 +240,12 @@ cambio de API y debería llevar su propia especificación.
 
 | Estado | Evidencia |
 |---|---|
-| `UI_UX_PASS3_DELIVERY_READY` | Inventario cerrado, QA en verde, documentación reconciliada, listas de staging contrastadas con el árbol |
-| `GIT_AUTHORIZATION_PENDING` | El guard de AOS exige la autorización literal del propietario en un mensaje propio |
+| `UI_UX_PASS3_PUBLISHED_DEVELOPMENT` | `origin/development` en `7985071` |
+| `UI_UX_PASS3_CI_FAIL_FIX_PENDING_PUSH` | Run 43396141323 en FAIL; corrección del test lista en local |
 | `UI_UX_P2_BACKLOG_OPEN` | Siete observaciones abiertas (§9) |
 | `NO_PROMOTE` | No se ha solicitado ni ejecutado ninguna promoción |
 
-No declarados por falta de evidencia: `UI_UX_PASS3_PUBLISHED_DEVELOPMENT`, `UI_UX_PASS3_CI_PASS`.
+No declarado por falta de evidencia: `UI_UX_PASS3_CI_PASS`.
 
 No se han tocado `backend/`, migraciones, Neon, Render, Vercel, contratos `.anclora/` ni otros repositorios.
 
@@ -247,8 +255,8 @@ No se han tocado `backend/`, migraciones, Neon, Render, Vercel, contratos `.ancl
 
 No promocionar todavía. Orden recomendado:
 
-1. Autorizar la publicación en `development` (`commit y push ok para anclora-impulso`).
-2. Verificar CI del SHA publicado, con atención al paso `build`.
+1. Publicar el commit C (requiere una nueva autorización `commit y push ok`).
+2. Verificar que la CI del nuevo SHA pasa completa, con atención al paso `build`, que aún no se ha ejecutado.
 3. Revisar el Preview de `development`, en especial los modales (foco y cierre), el onboarding en un móvil real y la
    interfaz en inglés.
 4. Solo entonces valorar `PROMOTE=FULL` con el SHA revisado.
