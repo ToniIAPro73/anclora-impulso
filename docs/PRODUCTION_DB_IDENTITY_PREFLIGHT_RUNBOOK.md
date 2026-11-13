@@ -2,7 +2,7 @@
 
 ## 1. Propósito y separación de responsabilidades
 
-Este procedimiento prepara la verificación reproducible de la identidad de la base de datos productiva antes de autorizar la migración 27 (`20261111211500_add_modular_health_plan_catalog_and_optional_identity`), sin ejecutar migraciones, sin escribir en Neon y sin exponer credenciales en logs o artefactos públicos.
+Este procedimiento documenta la verificación reproducible de la identidad de la base de datos productiva utilizada antes de autorizar la migración 27 (`20261111211500_add_modular_health_plan_catalog_and_optional_identity`), sin escribir en Neon y sin exponer credenciales en logs o artefactos públicos. **Estado operativo actual de M27:** `M27_APPLIED_ATTESTED_SCHEMA_VERIFIED` (workflow `43289233813`, commit `9a120a63429234136a3a65d5f77455e4dc1c485e`, `2026-11-12T19:25Z`, Neon `lucky-hat-25002521` / `br-gentle-bar-ag3slpph`, backup `br-odd-fire-agtnhm44` OD-03 PASS 364s, ledger 27/8/0, artefacto `13977250508`; no volver a lanzar).
 
 Componentes:
 - Workflow protegido de solo lectura: `.github/workflows/production-db-identity-preflight.yml` (Environment `production-migrations`, aprobación humana requerida).

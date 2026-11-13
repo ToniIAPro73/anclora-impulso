@@ -1,15 +1,18 @@
 # Runbook de Preparación Segura Pre-Migración 27 (OD-03 + Backup Gate)
 
-- **Migración objetivo (todavía NO autorizada NI ejecutada):** `20261111211500_add_modular_health_plan_catalog_and_optional_identity`
+- **Migración objetivo:** `20261111211500_add_modular_health_plan_catalog_and_optional_identity`
+- **Estado operativo actual:** `M27_APPLIED_ATTESTED_SCHEMA_VERIFIED` *(ejecutada en producción el `2026-11-12T19:25Z`, workflow `43289233813`, commit `9a120a63429234136a3a65d5f77455e4dc1c485e`, proyecto Neon `lucky-hat-25002521` / branch `br-gentle-bar-ag3slpph`, backup `br-odd-fire-agtnhm44` OD-03 PASS 364s, ledger 27 aplicadas / 8 rollbacks históricos resueltos / 0 pendientes, artefacto `13977250508`; **no volver a lanzar**)*.
 
-## 0. Separación estricta de estados actuales
+## 0. Separación estricta de estados (cierre post-M27 e historial previo)
 
-- **Política `OD-03` (`D-2026-0056`):** **APROBADA** el `2026-11-12` por `ToniIAPro73` (`MAX_BACKUP_AGE_MINUTES=30`, `MAX_FUTURE_CLOCK_SKEW_MS=60000`).
-- **Implementación local del Backup Gate:** **VALIDADA** en `development` (evaluadores, `verify-production-backup.mjs`, `production-migrations.yml`, `emit-migration-attestation.mjs` y suites locales).
-- **Implementación remota en GitHub (`origin/development`):** **AÚN NO PUBLICADA** (sin commit ni push autorizados en este cierre).
-- **Gate productivo en `.anclora/PRODUCTION_RUNTIME.md`:** **AÚN NO ACTIVADO** (`MIGRATION_BACKUP_GATE_POLICY=OD-03_APPROVED_PENDING_ACTIVATION`; `MIGRATION_MAX_BACKUP_AGE_MINUTES=30` permanece desactivado, por lo que `verify-production-backup.mjs` bloquea en modo fail-closed).
-- **Backup válido pre-M27 en Neon:** **TODAVÍA NO CREADO**.
-- **Migración 27:** **TODAVÍA NO AUTORIZADA** (prohibido ejecutar `production-migrations.yml`, `PROMOTE=FULL` o mutar Neon).
+- **Estado operativo actual (post-M27):** **`M27_APPLIED_ATTESTED_SCHEMA_VERIFIED`**.
+- **Historial previo preservado (pre-ejecución):**
+  - **Política `OD-03` (`D-2026-0056`):** **APROBADA** el `2026-11-12` por `ToniIAPro73` (`MAX_BACKUP_AGE_MINUTES=30`, `MAX_FUTURE_CLOCK_SKEW_MS=60000`).
+  - **Implementación local del Backup Gate:** **VALIDADA** en `development` (evaluadores, `verify-production-backup.mjs`, `production-migrations.yml`, `emit-migration-attestation.mjs` y suites locales).
+  - **Implementación remota en GitHub (`origin/development`):** **AÚN NO PUBLICADA** (en el momento del cierre previo).
+  - **Gate productivo en `.anclora/PRODUCTION_RUNTIME.md`:** **AÚN NO ACTIVADO** en el corte previo (`MIGRATION_BACKUP_GATE_POLICY=OD-03_APPROVED_PENDING_ACTIVATION`).
+  - **Backup válido pre-M27 en Neon:** **TODAVÍA NO CREADO** en el corte previo; posteriormente creado y validado (`br-odd-fire-agtnhm44`, antigüedad 364s, OD-03 PASS).
+  - **Migración 27:** **TODAVÍA NO AUTORIZADA** en el corte previo; posteriormente autorizada, ejecutada y atestada en `43289233813`.
 
 ---
 

@@ -4,7 +4,8 @@
 - **Repositorio / Rama:** `anclora-impulso` / `development` (`32f07fc92a05e7c4d283ce69b268fa8286a52910`)
 - **CI del commit contractual:** Run [`43126778344`](https://github.com/ToniIAPro73/anclora-impulso/actions/runs/43126778344) (`SUCCESS`)
 - **Preflight definitivo de identidad (Q1 #4):** Run [`43133125412`](https://github.com/ToniIAPro73/anclora-impulso/actions/runs/43133125412) (`2026-11-12T01:15:10.788Z`, Environment `production-migrations`) -> **`IDENTITY_VERIFIED`**
-- **Estado operativo final (Q1 / Post-Restore):** **`POST_RESTORE_OPERATIONAL_READY`** *(identidad de destino y ledger verificados en solo lectura; la ejecución de la migración 27 permanece **bloqueada** hasta completar los prerrequisitos de Fase 2 y backup fresco sobre `br-gentle-bar-ag3slpph`)*.
+- **Estado operativo actual (post-M27):** **`M27_APPLIED_ATTESTED_SCHEMA_VERIFIED`** *(M27 `20261111211500_add_modular_health_plan_catalog_and_optional_identity` aplicada en `br-gentle-bar-ag3slpph` / proyecto Neon `lucky-hat-25002521` el `2026-11-12T19:25Z` mediante workflow `43289233813`, commit `9a120a63429234136a3a65d5f77455e4dc1c485e`, backup `br-odd-fire-agtnhm44` OD-03 PASS 364s, ledger 27 aplicadas / 8 rollbacks históricos resueltos / 0 pendientes, artefacto `13977250508`; no volver a lanzar)*.
+- **Estado operativo histórico (Q1 / Post-Restore, preservado):** **`POST_RESTORE_OPERATIONAL_READY`** *(identidad de destino y ledger verificados en solo lectura; la ejecución de la migración 27 permanecía bloqueada hasta completar los prerrequisitos de Fase 2 y backup fresco sobre `br-gentle-bar-ag3slpph`)*.
 
 ---
 

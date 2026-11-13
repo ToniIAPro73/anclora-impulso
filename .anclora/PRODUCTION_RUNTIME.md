@@ -118,14 +118,14 @@ MIGRATION_SYSTEM=Prisma Migrate (PostgreSQL on Neon)
 MIGRATION_STRATEGY=VERSIONED_PRISMA_MIGRATIONS
 MIGRATION_DIRECTORY=backend/prisma/migrations
 MIGRATION_RUNNER=GITHUB_ACTIONS_MANUAL_AUTOMATED_RULE_PROTECTED
-MIGRATION_RUNNER_STATUS=EXECUTED_ONCE_2026-10-12_P1_MODEL (run #1, commit c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d; see section 12)
+MIGRATION_RUNNER_STATUS=M27_APPLIED_ATTESTED_SCHEMA_VERIFIED (M27 20261111211500_add_modular_health_plan_catalog_and_optional_identity applied via workflow 43289233813 on 2026-11-12T19:25Z, commit 9a120a63429234136a3a65d5f77455e4dc1c485e, Neon lucky-hat-25002521 / br-gentle-bar-ag3slpph, backup br-odd-fire-agtnhm44 OD-03 PASS 364s, ledger 27 applied / 8 historical rollbacks resolved / 0 pending, attestation artifact 13977250508; historical run #1 EXECUTED_ONCE_2026-10-12_P1_MODEL commit c0333f3a6e8c7e1a73c9a68c9a24cd5015b3a98d preserved in section 12)
 MIGRATION_RUNNER_WORKFLOW=.github/workflows/production-migrations.yml
 MIGRATIONS_PRECEDE_BACKEND_DEPLOY=true
 MIGRATION_ENVIRONMENT=production-migrations
 MIGRATION_MANIFEST_PATH=scripts/release/release-manifest.json
 MIGRATION_CRYPTO_ATTESTATION=required
 MIGRATION_BACKUP_GATE_POLICY=OD-03_ENFORCED_MAX_30M
-# D-2026-0056 (OD-03) aprobada el 2026-11-12; activada localmente para M27 (sin autorizar ejecución ni publicación):
+# D-2026-0056 (OD-03) aprobada el 2026-11-12; M27 ejecutada y atestada (43289233813, 2026-11-12T19:25Z, backup br-odd-fire-agtnhm44 364s):
 MIGRATION_MAX_BACKUP_AGE_MINUTES=30
 
 All schema migrations apply strictly against the designated production database.
@@ -230,6 +230,7 @@ PROMOTION_POLICY=Default development-only operation; no automatic promotion. Exp
 | 2026-10-13 | **Promoción `production → main` ejecutada** por `promote.yml` (run `38340063885`, avance rápido): `main` pasa de `77f852a` a `7226c5a`; despliegue de **Production** de Vercel en `success`. Frontend en `impulso.anclora.com` y `anclora-impulso.vercel.app` con la copy y la CSP P0/P1 de la sesión. | Toni (ToniIAPro73), orden expresa | Acción sobre producción. Previamente: matriz H4 y gates G1–G4 aceptados por el propietario sin revisiones independientes (`IMPULSO-OWNER-ACCEPTANCE-H4-G1G4-2026-10-13`). Backend sin cambios (Render `5a5b05d`, funcionalmente `0606586`). Verificación: `44-…` §7. |
 | 2026-10-12 | Independent automated verifier authorized and designed (`IMPULSO-AUTOMATED-MIGRATION-VERIFIER-2026-10-12`): GitHub App custom deployment protection rule (`anclora-impulso-migration-verifier`) on Environment `production-migrations`. | Toni (ToniIAPro73) | Implemented locally, remote not configured. Replaces routine human reviewer in environment with automated gate. Toni still triggers manually via `workflow_dispatch`. Does not execute migrations or bypass gates. Status: NOT DEPLOYED / NOT CONFIGURED / NOT VERIFIED. |
 | 2026-11-09 | Read-only verification of Neon production schema and `_prisma_migrations` ledger (`AUD-006` / `TASK-001`). Confirmed 58 tables in `public` (including all 10 `health_plan_*` tables) and migration `20260914130000_add_health_plans` finished without rollback, plus all `20261012*` migrations finished. Clarified `docs/roadmap/impulso-post-ux-health/P1-FINAL-GATE-REPORT.md` wording ("configured development database" -> `PRODUCTION_BACKED` Neon database). | Agente (Claude Code), a petición de Toni (ToniIAPro73) | Read-only documentary reconciliation. No schema or data mutations. |
+| 2026-11-12 / 2026-11-13 | **M27 aplicada, atestada y aceptada funcionalmente en producción (`M27_APPLIED_ATTESTED_SCHEMA_VERIFIED`, `M27_PRODUCTION_FUNCTIONAL_ACCEPTANCE_PASS`, `M27_POST_MIGRATION_CLOSEOUT_COMPLETE`).** Migración `20261111211500_add_modular_health_plan_catalog_and_optional_identity` ejecutada en `br-gentle-bar-ag3slpph` (`lucky-hat-25002521`) vía workflow protegido `43289233813` (commit `9a120a63429234136a3a65d5f77455e4dc1c485e`, `2026-11-12T19:25Z`), backup OD-03 `br-odd-fire-agtnhm44` (364s, PASS), ledger 27 aplicadas / 8 rollbacks históricos resueltos / 0 pendientes, artefacto `13977250508`. QA funcional productiva ejecutada con cuenta dedicada `qa.impulso@anclora.local` (ID `926a24f0-dff7-4518-9398-14545f9c8455`, conservada según `QA_DELETE_AFTER_TEST=false`): auth/UI, catálogo, cohortes, inscripción, onboarding, home, estado, validación y aislamiento PASS (0 incidencias). Ver `docs/M27_POST_MIGRATION_CLOSEOUT_AND_QA_REPORT.md`. | Toni (ToniIAPro73) / Cierre AOS post-M27 | `OD-03`, `G39`, `PRIVATE_PRECOMMERCIAL` e Identity Preflight intactos. Las 31 suites Jest de integración aisladas permanecen `JEST_ISOLATED_INTEGRATION_TESTS_NOT_RUN` (requieren PostgreSQL local; `DOCKER_DOWN`). No volver a lanzar M27. |
 
 <!-- ANCLORA-AOS:START -->
 ANCLORA_AOS_AUTHORITY=anclora-governance
