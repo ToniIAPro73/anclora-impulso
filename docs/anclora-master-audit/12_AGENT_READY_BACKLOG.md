@@ -445,21 +445,21 @@
 - **Resultado esperado:** DTO `meal-plan-import-v1` (Zod + JSON Schema sincronizados), catálogo único de protocolos en `shared/nutrition-protocols.json` / `protocol-catalog.ts` sin habilitar dietas sin soporte en el generador actual, validadores de estructura, unidades, duplicados, restricciones, cribado 4-4-9, procedencia e inyección de contenido no confiable, y fixtures reproducibles.
 
 ### TASK-033 · Spike de persistencia y decisión condicional M28
-- **Entrega:** N1 · **Prioridad:** P1 condicional · **Estado:** Pendiente (análisis preliminar completado en N0; M28 no autorizada ni ejecutada).
+- **Entrega:** N1 · **Prioridad:** P1 condicional · **Estado:** Estudio definitivo completado (`docs/sdd/nutrition/M28_PERSISTENCE_STUDY.md` — recomienda Alternativa B aditiva mínima; `M28_NOT_EXECUTED`).
 - **Dependencias:** `TASK-032`.
 
 ### TASK-034 · Pipeline `preview`/`commit` JSON, unidades e idempotencia
-- **Entrega:** N1 · **Prioridad:** P0 · **Estado:** Pendiente.
+- **Entrega:** N1 · **Prioridad:** P0 · **Estado:** `preview` implementado localmente (`POST /api/nutrition/meal-plans/import/preview`, 0 escrituras BD); `commit` bloqueado por persistencia (`N1_PARTIAL_BLOCKED_BY_PERSISTENCE`) hasta ejecutar M28.
 - **Dependencias:** `TASK-032`, `TASK-033`, tests de caracterización `TASK-014`.
 
 ### TASK-035 · Importación de texto libre / documentos ODT-DOCX
 - **Entrega:** N3 · **Prioridad:** P3 · **Estado:** Pendiente.
 
 ### TASK-036 · UI «Nuevo plan» + preview (N1) y Preparación/Compra (N2)
-- **Entrega:** N1/N2 · **Prioridad:** P0 → P1 · **Estado:** Pendiente.
+- **Entrega:** N1/N2 · **Prioridad:** P0 → P1 · **Estado:** MVP N1 implementado localmente (`components/nutrition/meal-plan-import-panel.tsx` + selector en `app/nutrition/page.tsx`); N2 (Preparación/Compra persistida) pendiente de M28.
 
 ### TASK-037 · Adaptación de la skill `planificador-nutricion-mealprep-50` a JSON v2
-- **Entrega:** N0 · **Prioridad:** P0 · **Estado:** Adaptación v2 preparada en repositorio (`docs/sdd/nutrition/planificador-nutricion-mealprep-v2/SKILL.md` + `skill-adapter.ts`); copia externa sin modificar por restricción AOS.
+- **Entrega:** N0 · **Prioridad:** P0 · **Estado:** Adaptación v2 preparada en repositorio (`docs/sdd/nutrition/planificador-nutricion-mealprep-v2/SKILL.md` + `skill-adapter.ts`); ejecución generativa no verificada en este entorno (`SKILL_GENERATION_NOT_VERIFIED`).
 - **Dependencias:** `TASK-032`.
 
 ### TASK-038 · Asistente 5 decisiones y generación guiada

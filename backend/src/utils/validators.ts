@@ -386,6 +386,13 @@ export const replaceMealRecipeSchema = z.object({
   reason: z.string().max(500).nullable().optional(),
 });
 
+export const previewImportedMealPlanSchema = z.object({
+  rawPayload: z.unknown().refine((val) => val !== undefined && val !== null, {
+    message: 'rawPayload es obligatorio',
+  }),
+  instructionsVersion: z.string().trim().min(1).max(40).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
@@ -414,3 +421,4 @@ export type CreateRecipeInput = z.infer<typeof createRecipeSchema>;
 export type BulkUpdateRecipeEditorialInput = z.infer<typeof bulkUpdateRecipeEditorialSchema>;
 export type ListRecipesQueryInput = z.infer<typeof listRecipesQuerySchema>;
 export type ReplaceMealRecipeInput = z.infer<typeof replaceMealRecipeSchema>;
+export type PreviewImportedMealPlanInput = z.infer<typeof previewImportedMealPlanSchema>;

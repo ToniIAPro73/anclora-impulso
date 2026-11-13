@@ -17,6 +17,7 @@ import { Apple, ChefHat, Flame, Beef, Wheat, Droplets, Plus, Sparkles, Calendar,
 import { useLanguage } from "@/lib/contexts/language-context"
 import { isProfileReadyForPlanGeneration } from "@/lib/user-profile"
 import { HealthPlanCrossLink } from "@/components/health-plan-cross-link"
+import { MealPlanImportPanel } from "@/components/nutrition/meal-plan-import-panel"
 import { trackProductEvent } from "@/lib/product-events"
 import {
   ANCLORA_MODAL_ACTIONS_CLASS,
@@ -76,6 +77,7 @@ function NutritionPageContent() {
   const { logs, logNutrition, isLogging } = useNutritionLogs('day')
 
   const [generateOpen, setGenerateOpen] = useState(false)
+  const [planDialogMode, setPlanDialogMode] = useState<"library" | "import">("library")
   const [logOpen, setLogOpen] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [generateParams, setGenerateParams] = useState({
@@ -312,11 +314,38 @@ function NutritionPageContent() {
                   {copy.common.close}
                 </Button>
                 <DialogHeader className={ANCLORA_MODAL_HEADER_CLASS}>
-                  <DialogTitle>{nutritionCopy.generateMealPlan}</DialogTitle>
+                  <DialogTitle>{t ? "Nuevo plan nutricional" : "New meal plan"}</DialogTitle>
                   <DialogDescription>
                     {nutritionCopy.generateMealPlanDescription}
                   </DialogDescription>
                 </DialogHeader>
+                <div className="mb-4 flex gap-2 border-b border-border pb-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={planDialogMode === "library" ? "success" : "outline"}
+                    onClick={() => setPlanDialogMode("library")}
+                  >
+                    {t ? "Desde biblioteca" : "From library"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={planDialogMode === "import" ? "success" : "outline"}
+                    onClick={() => setPlanDialogMode("import")}
+                  >
+                    {t ? "Importar un plan" : "Import a plan"}
+                  </Button>
+                </div>
+              {planDialogMode === "import" ? (
+                <MealPlanImportPanel
+                  isSpanish={t}
+                  onCancel={() => {
+                    setGenerateOpen(false)
+                    setGenerateError(null)
+                  }}
+                />
+              ) : (
               <div className="space-y-4">
                 {!isProfileReady ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-300">
@@ -398,6 +427,7 @@ function NutritionPageContent() {
                   </Button>
                 </DialogFooter>
               </div>
+              )}
               </div>
             </DialogContent>
           </Dialog>

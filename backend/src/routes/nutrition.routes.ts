@@ -13,6 +13,7 @@ import {
   listFoodItemsQuerySchema,
   listMealLogsQuerySchema,
   listRecipesQuerySchema,
+  previewImportedMealPlanSchema,
   replaceMealRecipeSchema,
   upsertNutritionTargetSchema,
   updateRecipeSchema,
@@ -26,6 +27,11 @@ router.use(authenticate);
 
 // Planes de comida
 router.post('/meal-plans/smart', validateBody(createSmartMealPlanSchema), nutritionController.createSmartMealPlan);
+router.post(
+  '/meal-plans/import/preview',
+  validateBody(previewImportedMealPlanSchema),
+  nutritionController.previewImportedMealPlan
+);
 router.post(
   '/meal-plans/generate',
   validateBody(generateMealPlanSchema),

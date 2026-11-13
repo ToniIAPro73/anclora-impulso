@@ -1106,6 +1106,89 @@ export interface NutritionSummary {
   };
 }
 
+export interface MealPlanImportValidationIssue {
+  code: string;
+  message: string;
+  path?: string;
+}
+
+export interface MealPlanImportPreviewResponse {
+  status: 'VALID' | 'VALID_WITH_WARNINGS' | 'INCOMPLETE' | 'REJECTED';
+  canImportPreview: boolean;
+  canCommitToDatabase: false;
+  persistenceBlockedReason: 'M28_REQUIRED_FOR_FULL_PERSISTENCE';
+  previewHash: string | null;
+  validation: {
+    status: 'VALID' | 'VALID_WITH_WARNINGS' | 'INCOMPLETE' | 'REJECTED';
+    normalizedPlan: {
+      title: string;
+      preferences: {
+        dietType: string;
+        locale: string;
+        daysCount: number;
+        budgetTier: string;
+        maxMainIngredients: number;
+        excludedEquipment: string[];
+        excludedFoods: string[];
+        dietaryRestrictions: string[];
+        mealTimes: string[];
+      };
+      days: Array<{
+        dayIndex: number;
+        meals: Array<{
+          mealType: string;
+          scheduledTime?: string | null;
+          recipe: {
+            externalId: string;
+            name: string;
+            servings: number;
+          };
+        }>;
+      }>;
+    } | null;
+    errors: MealPlanImportValidationIssue[];
+    warnings: MealPlanImportValidationIssue[];
+    missingData: MealPlanImportValidationIssue[];
+    safetyFlags: string[];
+  };
+  summary: {
+    title: string | null;
+    dietType: string | null;
+    locale: string | null;
+    daysCount: number;
+    mealsCount: number;
+    recipesCount: number;
+    hasIncompleteNutrition: boolean;
+    hasIncompleteIngredients: boolean;
+  };
+  shoppingList: {
+    aggregatedItems: Array<{
+      name: string;
+      unit: 'g' | 'ml' | 'unidad';
+      totalQuantity: number;
+      occurrences: number;
+      isBasePantry: boolean;
+    }>;
+    unconvertibleItems: Array<{
+      name: string;
+      unit: string | null;
+      quantity: number | null;
+      reason: 'missing_quantity' | 'non_canonical_unit';
+      recipeName: string;
+      dayIndex: number;
+    }>;
+    isExact: boolean;
+  };
+  duplicateMatches: Array<{
+    importedRecipeName: string;
+    fingerprint: string;
+    matchedRecipeId: string;
+    matchedRecipeName: string;
+    scope: 'user_private' | 'public_catalog';
+  }>;
+  batchCookingWarnings: string[];
+}
+
 // ========== NUTRITION API ==========
 
 export const nutritionApi = {
@@ -1135,6 +1218,13 @@ export const nutritionApi = {
 
   async deleteMealPlan(id: string): Promise<void> {
     return apiClient.delete(`/nutrition/meal-plans/${id}`);
+  },
+
+  async previewImportedMealPlan(params: {
+    rawPayload: unknown;
+    instructionsVersion?: string;
+  }): Promise<MealPlanImportPreviewResponse> {
+    return apiClient.post<MealPlanImportPreviewResponse>('/nutrition/meal-plans/import/preview', params);
   },
 
   async getRecipeById(id: string): Promise<Recipe> {

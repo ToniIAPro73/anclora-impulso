@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as nutritionService from '../services/nutrition.service';
+import { previewImportedMealPlan as previewImportedMealPlanService } from '../services/nutrition/plan-import/meal-plan-preview.service';
 import type {
   BulkUpdateRecipeEditorialInput,
   CreateFoodItemInput,
@@ -11,11 +12,37 @@ import type {
   ListFoodItemsQueryInput,
   ListMealLogsQueryInput,
   ListRecipesQueryInput,
+  PreviewImportedMealPlanInput,
   ReplaceMealRecipeInput,
   UpsertNutritionTargetInput,
   UpdateRecipeInput,
 } from '../utils/validators';
 import { listRecipesQuerySchema } from '../utils/validators';
+
+/**
+ * POST /api/nutrition/meal-plans/import/preview
+ */
+export async function previewImportedMealPlan(
+  req: Request<{}, {}, PreviewImportedMealPlanInput>,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+
+    const preview = await previewImportedMealPlanService({
+      userId: req.user.userId,
+      rawPayload: req.body.rawPayload,
+      instructionsVersion: req.body.instructionsVersion,
+    });
+    res.status(preview.status === 'REJECTED' ? 422 : 200).json(preview);
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * POST /api/nutrition/meal-plans/generate
