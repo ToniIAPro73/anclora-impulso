@@ -5,6 +5,10 @@ import { env } from '../config/env';
 import { normalizeEmail } from '../utils/email';
 import { lookupAccountByCanonicalEmail } from './account-lookup.service';
 import { OAuthRefusal, type ResolvedOAuthUser } from './oauth.service';
+import {
+  isPilotBootstrapEmailAuthorized,
+  isPilotSubjectAuthorized,
+} from './oauth/anclora-identity.provider';
 
 const LINK_INTENT_DOMAIN = 'anclora-identity-link-v1';
 const LINK_INTENT_TTL_MS = 5 * 60 * 1000;
@@ -274,4 +278,29 @@ export async function getIdentityLinkStatus(userId: string, issuer?: string) {
     },
   });
   return link;
+}
+
+export async function hasActiveIdentityLink(issuer: string, subject: string): Promise<boolean> {
+  const link = await prisma.identityLink.findUnique({
+    where: { issuer_subject: { issuer, subject } },
+    select: { revokedAt: true },
+  });
+  return Boolean(link && !link.revokedAt);
+}
+
+export async function isLocalUserEligibleForPilot(userId: string, issuer: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, disabledAt: true },
+  });
+  if (!user || user.disabledAt) return false;
+
+  const activeLink = await prisma.identityLink.findFirst({
+    where: { userId, issuer, revokedAt: null },
+    select: { issuer: true, subject: true },
+  });
+  if (activeLink && isPilotSubjectAuthorized(activeLink.issuer, activeLink.subject)) {
+    return true;
+  }
+  return isPilotBootstrapEmailAuthorized(user.email);
 }

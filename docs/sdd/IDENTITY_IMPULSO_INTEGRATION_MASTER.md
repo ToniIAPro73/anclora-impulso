@@ -187,8 +187,12 @@ Contrastando documentación (`.anclora/PRODUCTION_RUNTIME.md`, `README.md` desac
 ## 15. Variables de entorno pendientes (solo nombres)
 
 - **Vercel (`anclora-identity`):** `IMPULSO_CLIENT_SECRET`, `IMPULSO_REDIRECT_URIS`.
-- **Render (`anclora-impulso` backend):** `ANCLORA_IDENTITY_ENABLED`, `ANCLORA_IDENTITY_ISSUER_URL`, `ANCLORA_IDENTITY_CLIENT_ID`, `ANCLORA_IDENTITY_CLIENT_SECRET`, `ANCLORA_IDENTITY_REDIRECT_URI`, `ANCLORA_IDENTITY_ALLOW_LEGACY_AUTH`, `ANCLORA_IDENTITY_AUTO_PROVISION`.
-- **Vercel (`anclora-impulso` frontend):** `NEXT_PUBLIC_ENABLE_ANCLORA_IDENTITY_AUTH`.
+- **Render (`anclora-impulso` backend):** `ANCLORA_IDENTITY_ENABLED` (`false` por defecto), `ANCLORA_IDENTITY_ISSUER_URL`, `ANCLORA_IDENTITY_CLIENT_ID`, `ANCLORA_IDENTITY_CLIENT_SECRET`, `ANCLORA_IDENTITY_REDIRECT_URI`, `ANCLORA_IDENTITY_ALLOW_LEGACY_AUTH` (`true` por defecto), `ANCLORA_IDENTITY_AUTO_PROVISION` (`false` por defecto), `ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS` (`<issuer>|<sub>` separados por coma), `ANCLORA_IDENTITY_PILOT_BOOTSTRAP_EMAILS` (solo para primera admisión mediante vinculación explícita `/link/init`).
+- **Vercel (`anclora-impulso` frontend):** `NEXT_PUBLIC_ENABLE_ANCLORA_IDENTITY_AUTH` (`false` por defecto).
+
+### Control de acceso del piloto (fail-closed)
+- Si `ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS` y `ANCLORA_IDENTITY_PILOT_BOOTSTRAP_EMAILS` están vacías o contienen entradas inválidas, `readAncloraIdentityConfig()` devuelve `null` (Identity permanece deshabilitado en `/status`, `/login`, `/callback`, `/link/init` y `/oauth/exchange`).
+- **Primera admisión:** configurar `ANCLORA_IDENTITY_PILOT_BOOTSTRAP_EMAILS=<email_piloto>` (sin auto-link por email); el usuario inicia sesión con su método actual, ejecuta `POST /api/auth/anclora-identity/link/init` y completa el callback OIDC (`IdentityLink` + `LINKED`). Posteriormente, registrar `<issuer>|<sub>` en `ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS` y vaciar `ANCLORA_IDENTITY_PILOT_BOOTSTRAP_EMAILS`.
 
 ---
 

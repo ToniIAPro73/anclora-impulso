@@ -63,7 +63,9 @@ export const env = {
   ancloraIdentityClientSecret: (process.env.ANCLORA_IDENTITY_CLIENT_SECRET || '').trim(),
   ancloraIdentityRedirectUri: (process.env.ANCLORA_IDENTITY_REDIRECT_URI || '').trim(),
   ancloraIdentityAllowLegacyAuth: process.env.ANCLORA_IDENTITY_ALLOW_LEGACY_AUTH !== 'false',
-  ancloraIdentityAutoProvision: process.env.ANCLORA_IDENTITY_AUTO_PROVISION !== 'false',
+  ancloraIdentityAutoProvision: process.env.ANCLORA_IDENTITY_AUTO_PROVISION === 'true',
+  ancloraIdentityPilotAllowedSubjectsRaw: (process.env.ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS || '').trim(),
+  ancloraIdentityPilotBootstrapEmailsRaw: (process.env.ANCLORA_IDENTITY_PILOT_BOOTSTRAP_EMAILS || '').trim(),
 
   // Server
   port: parseInt(process.env.PORT || '3001', 10),

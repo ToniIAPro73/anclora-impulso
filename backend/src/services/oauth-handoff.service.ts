@@ -5,6 +5,11 @@ import { AppError } from '../middleware/errorHandler';
 import { isAdminUserId } from '../middleware/admin';
 import { issueSession } from './session.service';
 import type { AuthResponse } from './auth.service';
+import {
+  isPilotBootstrapEmailAuthorized,
+  isPilotSubjectAuthorized,
+  readAncloraIdentityConfig,
+} from './oauth/anclora-identity.provider';
 
 /** S256 challenge of a 32..96-byte verifier is always 43 base64url characters. */
 export const HANDOFF_CHALLENGE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -87,6 +92,20 @@ export async function redeemOAuthHandoff(
       select: { id: true, email: true, fullName: true, disabledAt: true },
     });
     if (!user || user.disabledAt) return null;
+
+    if (record.provider === 'anclora-identity') {
+      const config = readAncloraIdentityConfig();
+      if (!config) return null;
+      const activeLink = await tx.identityLink.findFirst({
+        where: { userId: user.id, issuer: config.issuerUrl, revokedAt: null },
+        select: { issuer: true, subject: true },
+      });
+      if (!activeLink) return null;
+      const allowed =
+        isPilotSubjectAuthorized(activeLink.issuer, activeLink.subject) ||
+        isPilotBootstrapEmailAuthorized(user.email);
+      if (!allowed) return null;
+    }
 
     const { accessToken, refreshToken } = await issueSession({ id: user.id, email: user.email }, now, tx);
     return {

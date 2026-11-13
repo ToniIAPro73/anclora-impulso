@@ -20,10 +20,13 @@ import {
   exchangeAncloraIdentityCode,
   readAncloraIdentityConfig,
   resolveImpulsoIdentityAccess,
+  resolvePilotCallbackAccess,
 } from '../services/oauth/anclora-identity.provider';
 import {
   createLinkIntentToken,
   getIdentityLinkStatus,
+  hasActiveIdentityLink,
+  isLocalUserEligibleForPilot,
   linkAuthenticatedUser,
   resolveIdentityLogin,
   unlinkAuthenticatedUser,
@@ -249,6 +252,14 @@ export async function initAncloraIdentityLink(req: Request, res: Response) {
     res.status(401).json({ error: 'Autenticación requerida' });
     return;
   }
+  const eligible = await isLocalUserEligibleForPilot(userId, config.issuerUrl);
+  if (!eligible) {
+    res.status(403).json({
+      code: 'pilot_access_denied',
+      error: 'Tu cuenta no está autorizada para el piloto de Anclora Identity.',
+    });
+    return;
+  }
   const linkToken = createLinkIntentToken(userId);
   res.setHeader('Cache-Control', 'no-store');
   res.json({ linkToken });
@@ -313,6 +324,11 @@ export async function ancloraIdentityRedirect(req: Request, res: Response) {
       res.redirect(`${frontendUrl()}/auth/error?provider=anclora-identity&reason=retry`);
       return;
     }
+    const eligible = await isLocalUserEligibleForPilot(verifiedUserId, config.issuerUrl);
+    if (!eligible) {
+      res.redirect(`${frontendUrl()}/auth/error?provider=anclora-identity&reason=pilot_access_denied`);
+      return;
+    }
     linkUserId = verifiedUserId;
   }
 
@@ -365,6 +381,19 @@ export async function ancloraIdentityCallback(req: Request, res: Response) {
     const access = resolveImpulsoIdentityAccess(claims);
     if (!access.allowed) {
       throw new OAuthRefusal('membership_required');
+    }
+
+    const hasActiveLink = await hasActiveIdentityLink(claims.issuer, claims.subject);
+    const pilotAccess = resolvePilotCallbackAccess({
+      issuer: claims.issuer,
+      subject: claims.subject,
+      email: claims.email,
+      emailVerified: claims.emailVerified,
+      isExplicitLink: Boolean(transaction.linkUserId),
+      hasActiveLink,
+    });
+    if (!pilotAccess.allowed) {
+      throw new OAuthRefusal('pilot_access_denied');
     }
 
     const user = transaction.linkUserId

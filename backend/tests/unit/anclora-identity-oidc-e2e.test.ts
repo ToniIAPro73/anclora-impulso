@@ -214,6 +214,8 @@ describe('Anclora Identity OIDC Local HTTP E2E', () => {
       ancloraIdentityRedirectUri: env.ancloraIdentityRedirectUri,
       ancloraIdentityAllowLegacyAuth: env.ancloraIdentityAllowLegacyAuth,
       ancloraIdentityAutoProvision: env.ancloraIdentityAutoProvision,
+      ancloraIdentityPilotAllowedSubjectsRaw: env.ancloraIdentityPilotAllowedSubjectsRaw,
+      ancloraIdentityPilotBootstrapEmailsRaw: env.ancloraIdentityPilotBootstrapEmailsRaw,
     };
 
     env.ancloraIdentityEnabled = true;
@@ -223,6 +225,8 @@ describe('Anclora Identity OIDC Local HTTP E2E', () => {
     env.ancloraIdentityRedirectUri = 'http://127.0.0.1:3001/api/auth/anclora-identity/callback';
     env.ancloraIdentityAllowLegacyAuth = true;
     env.ancloraIdentityAutoProvision = true;
+    env.ancloraIdentityPilotAllowedSubjectsRaw = `${issuerUrl}|identity-sub-1`;
+    env.ancloraIdentityPilotBootstrapEmailsRaw = '';
 
     nextClaims = {
       sub: 'identity-sub-1',
@@ -264,6 +268,14 @@ describe('Anclora Identity OIDC Local HTTP E2E', () => {
             if (v.id === where.id) {
               identityLinks.delete(k);
               return v;
+            }
+          }
+          return null;
+        }),
+        findFirst: jest.fn(async ({ where }: any) => {
+          for (const link of identityLinks.values()) {
+            if (link.userId === where.userId && (!where.issuer || link.issuer === where.issuer) && !link.revokedAt) {
+              return link;
             }
           }
           return null;
@@ -473,7 +485,8 @@ describe('Anclora Identity OIDC Local HTTP E2E', () => {
     expect(blocked.cbRes.headers.location).toContain('reason=link_requires_original_method');
     expect(audits.some((a) => a.action === 'LOGIN_DENIED' && a.userId === existingUserId)).toBe(true);
 
-    // 2. Simulate active Impulso session for existing user and initiate explicit link
+    // 2. Simulate active Impulso session for existing user and initiate explicit link (bootstrap email authorized)
+    env.ancloraIdentityPilotBootstrapEmailsRaw = 'pilot@anclora.es';
     const localSession = await issueSession({ id: existingUserId, email: 'pilot@anclora.es' });
 
     const initRes = await request(app)
@@ -505,5 +518,75 @@ describe('Anclora Identity OIDC Local HTTP E2E', () => {
     expect(unlinkRes.status).toBe(200);
     expect(unlinkRes.body.unlinked).toBe(true);
     expect(audits.some((a) => a.action === 'UNLINKED' && a.userId === existingUserId)).toBe(true);
+  });
+
+  it('denies non-allowlisted identity even with valid membership and enforces first-admission bootstrap flow', async () => {
+    // 1. Non-allowlisted subject with valid membership is refused at callback
+    nextClaims.sub = 'unauthorized-sub-999';
+    nextClaims.email = 'intruder@anclora.es';
+    const deniedCb = await runOidcLoginFlow();
+    expect(deniedCb.cbRes.headers.location).toContain('reason=pilot_access_denied');
+
+    // 2. Non-allowlisted local user is refused at /link/init
+    const intruderUserId = randomUUID();
+    users.set(intruderUserId, {
+      id: intruderUserId,
+      email: 'intruder@anclora.es',
+      passwordHash: 'bcrypt-hash-present',
+      fullName: 'Intruder',
+      disabledAt: null,
+    });
+    const intruderSession = await issueSession({ id: intruderUserId, email: 'intruder@anclora.es' });
+    const deniedLinkInit = await request(app)
+      .post('/api/auth/anclora-identity/link/init')
+      .set('Authorization', `Bearer ${intruderSession.accessToken}`);
+    expect(deniedLinkInit.status).toBe(403);
+    expect(deniedLinkInit.body.code).toBe('pilot_access_denied');
+
+    // 3. First admission via bootstrap email: direct login without explicit link is denied
+    const pilotUserId = randomUUID();
+    users.set(pilotUserId, {
+      id: pilotUserId,
+      email: 'toni.pilot@anclora.es',
+      passwordHash: 'bcrypt-hash-present',
+      fullName: 'Toni Pilot',
+      disabledAt: null,
+    });
+    env.ancloraIdentityPilotAllowedSubjectsRaw = '';
+    env.ancloraIdentityPilotBootstrapEmailsRaw = 'toni.pilot@anclora.es';
+    env.ancloraIdentityAutoProvision = false;
+    nextClaims.sub = 'unknown-sub-until-linked';
+    nextClaims.email = 'toni.pilot@anclora.es';
+
+    const directBlocked = await runOidcLoginFlow();
+    expect(directBlocked.cbRes.headers.location).toContain('reason=pilot_access_denied');
+
+    // 4. Explicit authenticated /link/init -> callback -> /oauth/exchange succeeds for bootstrap email
+    const pilotSession = await issueSession({ id: pilotUserId, email: 'toni.pilot@anclora.es' });
+    const linkInitRes = await request(app)
+      .post('/api/auth/anclora-identity/link/init')
+      .set('Authorization', `Bearer ${pilotSession.accessToken}`);
+    expect(linkInitRes.status).toBe(200);
+
+    const linked = await runOidcLoginFlow(linkInitRes.body.linkToken);
+    expect(linked.cbRes.headers.location).toContain('/auth/callback#code=');
+    const handoffCode = new URLSearchParams(linked.cbRes.headers.location.split('#')[1]).get('code')!;
+
+    const exchangeRes = await request(app)
+      .post('/api/auth/oauth/exchange')
+      .send({ code: handoffCode, verifier: linked.verifier, provider: 'anclora-identity' });
+    expect(exchangeRes.status).toBe(200);
+    expect(exchangeRes.body.user.id).toBe(pilotUserId);
+    expect(identityLinks.get(`${issuerUrl}|unknown-sub-until-linked`)?.userId).toBe(pilotUserId);
+
+    // 5. If allowlist is cleared before handoff exchange, session creation is refused with 401
+    const secondLogin = await runOidcLoginFlow();
+    expect(secondLogin.cbRes.headers.location).toContain('/auth/callback#code=');
+    const secondCode = new URLSearchParams(secondLogin.cbRes.headers.location.split('#')[1]).get('code')!;
+    env.ancloraIdentityPilotBootstrapEmailsRaw = '';
+    const revokedExchange = await request(app)
+      .post('/api/auth/oauth/exchange')
+      .send({ code: secondCode, verifier: secondLogin.verifier, provider: 'anclora-identity' });
+    expect(revokedExchange.status).toBe(401);
   });
 });

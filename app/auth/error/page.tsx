@@ -11,6 +11,8 @@ type AuthErrorPageProps = {
 const REASON_MESSAGES: Record<string, string> = {
   membership_required:
     "Tu cuenta de Anclora Identity no tiene acceso habilitado a Anclora Impulso.",
+  pilot_access_denied:
+    "El acceso mediante Anclora Identity está restringido al piloto autorizado.",
   link_requires_explicit_link:
     "Ya existe una cuenta local con este correo. Inicia sesión con tu método original y vincula Anclora Identity desde tu perfil.",
   email_not_verified:

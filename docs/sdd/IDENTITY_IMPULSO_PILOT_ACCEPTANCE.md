@@ -16,7 +16,8 @@
 | `IDENTITY_IMPULSO_PREFLIGHT_PASS` | **PASS** | `pnpm install --frozen-lockfile`, `verify-release-manifest.mjs`, typecheck, lint, builds y suites completas PASS |
 | `IDENTITY_LINKING_VERIFIED` | **PASS** | Probado en `anclora-identity-oidc.test.ts` y `anclora-identity-oidc-e2e.test.ts` (sin auto-link por email; link/unlink autenticado con auditoría) |
 | `AUTHORIZATION_ISOLATION_PASS` | **PASS** | Membership `anclora-impulso` / `GROUP_OWNER` exigido; `isAdmin` aislado en `ADMIN_USER_IDS`; revocación en logout verificada |
-| `OIDC_E2E_PASS` | **PASS (LOCAL)** | 4/4 tests E2E HTTP locales contra IdP RS256 efímero + Prisma en memoria; **BLOCKED** en vivo contra Neon/prod por falta de autorización de despliegue/migración |
+| `OIDC_E2E_PASS` | **PASS (LOCAL)** | Tests E2E HTTP locales contra IdP RS256 efímero + Prisma en memoria; **BLOCKED** en vivo contra Neon/prod por falta de autorización de despliegue/migración |
+| `IDENTITY_PILOT_ACCESS_CONTROL_READY` | **PASS (LOCAL)** | Allowlist backend fail-closed (`issuer\|sub` + bootstrap email solo en `/link/init`), `ANCLORA_IDENTITY_AUTO_PROVISION=false` por defecto, aplicada en inicio, callback, vinculación y `/oauth/exchange` |
 | `DEPLOYMENT_PLAN_READY` | **PASS** | Secuencia de 11 pasos validada contra `promote.yml` y `production-migrations.yml` |
 | `IMPULSO_OIDC_PILOT_QA_PASS` | **PENDING** | Requiere variables de entorno en Vercel/Render y migración `20261113103000_add_identity_links` aplicada |
 | `IDENTITY_CUTOVER_PENDING` | **PENDING** | Bloqueado hasta `IMPULSO_OIDC_PILOT_QA_PASS` y decisión de modelo de admisión |

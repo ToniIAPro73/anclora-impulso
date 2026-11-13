@@ -1,4 +1,5 @@
 import { env } from '../../config/env';
+import { normalizeEmail } from '../../utils/email';
 import { OAuthRefusal } from '../oauth.service';
 
 export interface AncloraIdentityConfig {
@@ -60,6 +61,112 @@ export function clearAncloraIdentityCacheForTests(): void {
   cachedJwks = null;
 }
 
+export interface PilotSubjectEntry {
+  issuer: string;
+  subject: string;
+}
+
+export interface PilotAllowlist {
+  valid: boolean;
+  subjects: PilotSubjectEntry[];
+  bootstrapEmails: string[];
+}
+
+const PILOT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeIssuer(issuer: string): string {
+  return issuer.trim().replace(/\/+$/, '');
+}
+
+export function readPilotAllowlist(): PilotAllowlist {
+  const subjects: PilotSubjectEntry[] = [];
+  const bootstrapEmails: string[] = [];
+
+  const rawSubjects = env.ancloraIdentityPilotAllowedSubjectsRaw;
+  if (rawSubjects) {
+    for (const token of rawSubjects.split(',')) {
+      const trimmed = token.trim();
+      if (!trimmed) continue;
+      const sep = trimmed.indexOf('|');
+      if (sep <= 0 || sep === trimmed.length - 1) {
+        return { valid: false, subjects: [], bootstrapEmails: [] };
+      }
+      const rawIssuer = trimmed.slice(0, sep).trim();
+      const subject = trimmed.slice(sep + 1).trim();
+      if (!subject || /\s/.test(subject) || subject.includes('|')) {
+        return { valid: false, subjects: [], bootstrapEmails: [] };
+      }
+      try {
+        const parsedUrl = new URL(rawIssuer);
+        if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+          return { valid: false, subjects: [], bootstrapEmails: [] };
+        }
+        subjects.push({ issuer: normalizeIssuer(parsedUrl.origin + parsedUrl.pathname), subject });
+      } catch {
+        return { valid: false, subjects: [], bootstrapEmails: [] };
+      }
+    }
+  }
+
+  const rawEmails = env.ancloraIdentityPilotBootstrapEmailsRaw;
+  if (rawEmails) {
+    for (const token of rawEmails.split(',')) {
+      const trimmed = token.trim();
+      if (!trimmed) continue;
+      if (!PILOT_EMAIL_PATTERN.test(trimmed)) {
+        return { valid: false, subjects: [], bootstrapEmails: [] };
+      }
+      bootstrapEmails.push(normalizeEmail(trimmed));
+    }
+  }
+
+  if (subjects.length === 0 && bootstrapEmails.length === 0) {
+    return { valid: false, subjects: [], bootstrapEmails: [] };
+  }
+
+  return { valid: true, subjects, bootstrapEmails };
+}
+
+export function isPilotSubjectAuthorized(issuer: string, subject: string): boolean {
+  const allowlist = readPilotAllowlist();
+  if (!allowlist.valid) return false;
+  const normalized = normalizeIssuer(issuer);
+  return allowlist.subjects.some((entry) => entry.issuer === normalized && entry.subject === subject);
+}
+
+export function isPilotBootstrapEmailAuthorized(email: string): boolean {
+  const allowlist = readPilotAllowlist();
+  if (!allowlist.valid || !email) return false;
+  const normalized = normalizeEmail(email);
+  return allowlist.bootstrapEmails.includes(normalized);
+}
+
+export function resolvePilotCallbackAccess(input: {
+  issuer: string;
+  subject: string;
+  email: string;
+  emailVerified: boolean;
+  isExplicitLink: boolean;
+  hasActiveLink: boolean;
+}): { allowed: boolean; mode: 'subject' | 'bootstrap_link' | 'bootstrap_linked' | 'denied' } {
+  const allowlist = readPilotAllowlist();
+  if (!allowlist.valid) {
+    return { allowed: false, mode: 'denied' };
+  }
+  if (isPilotSubjectAuthorized(input.issuer, input.subject)) {
+    return { allowed: true, mode: 'subject' };
+  }
+  if (input.emailVerified && isPilotBootstrapEmailAuthorized(input.email)) {
+    if (input.isExplicitLink) {
+      return { allowed: true, mode: 'bootstrap_link' };
+    }
+    if (input.hasActiveLink) {
+      return { allowed: true, mode: 'bootstrap_linked' };
+    }
+  }
+  return { allowed: false, mode: 'denied' };
+}
+
 export function readAncloraIdentityConfig(): AncloraIdentityConfig | null {
   if (!env.ancloraIdentityEnabled) {
     return null;
@@ -70,6 +177,9 @@ export function readAncloraIdentityConfig(): AncloraIdentityConfig | null {
     !env.ancloraIdentityClientSecret ||
     !env.ancloraIdentityRedirectUri
   ) {
+    return null;
+  }
+  if (!readPilotAllowlist().valid) {
     return null;
   }
   return {

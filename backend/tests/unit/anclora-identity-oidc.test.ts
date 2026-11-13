@@ -3,7 +3,10 @@ import { env } from '../../src/config/env';
 import { prisma } from '../../src/config/database';
 import {
   buildCanonicalCallbackUrl,
+  readAncloraIdentityConfig,
+  readPilotAllowlist,
   resolveImpulsoIdentityAccess,
+  resolvePilotCallbackAccess,
 } from '../../src/services/oauth/anclora-identity.provider';
 import {
   createLinkIntentToken,
@@ -129,31 +132,37 @@ describe('Anclora Identity OIDC integration', () => {
       );
     });
 
-    it('provisions a new user + IdentityLink + audit log when no local account exists', async () => {
-      jest.spyOn(prisma.identityLink, 'findUnique').mockResolvedValue(null);
-      jest.spyOn(prisma.user, 'findMany').mockResolvedValue([] as never);
-      const createdUser = { id: 'new-user', email: 'new@anclora.es', fullName: 'New User', disabledAt: null };
-      const txMock = {
-        user: { create: jest.fn().mockResolvedValue(createdUser as never) },
-        identityLink: { create: jest.fn().mockResolvedValue({} as never) },
-        identityLinkAudit: { create: jest.fn().mockResolvedValue({} as never) },
-      };
-      jest.spyOn(prisma, '$transaction').mockImplementation(async (cb: any) => cb(txMock));
+    it('provisions a new user + IdentityLink + audit log when no local account exists and auto-provision is explicitly enabled', async () => {
+      const prevAutoProvision = env.ancloraIdentityAutoProvision;
+      env.ancloraIdentityAutoProvision = true;
+      try {
+        jest.spyOn(prisma.identityLink, 'findUnique').mockResolvedValue(null);
+        jest.spyOn(prisma.user, 'findMany').mockResolvedValue([] as never);
+        const createdUser = { id: 'new-user', email: 'new@anclora.es', fullName: 'New User', disabledAt: null };
+        const txMock = {
+          user: { create: jest.fn().mockResolvedValue(createdUser as never) },
+          identityLink: { create: jest.fn().mockResolvedValue({} as never) },
+          identityLinkAudit: { create: jest.fn().mockResolvedValue({} as never) },
+        };
+        jest.spyOn(prisma, '$transaction').mockImplementation(async (cb: any) => cb(txMock));
 
-      const resolved = await resolveIdentityLogin({
-        issuer: 'https://anclora-identity.anclora.com',
-        subject: 'sub-brand-new',
-        email: 'new@anclora.es',
-        fullName: 'New User',
-      });
+        const resolved = await resolveIdentityLogin({
+          issuer: 'https://anclora-identity.anclora.com',
+          subject: 'sub-brand-new',
+          email: 'new@anclora.es',
+          fullName: 'New User',
+        });
 
-      expect(resolved).toEqual(createdUser);
-      expect(txMock.identityLink.create).toHaveBeenCalledTimes(1);
-      expect(txMock.identityLinkAudit.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ action: 'LINKED', reason: 'oidc_provision' }),
-        }),
-      );
+        expect(resolved).toEqual(createdUser);
+        expect(txMock.identityLink.create).toHaveBeenCalledTimes(1);
+        expect(txMock.identityLinkAudit.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({ action: 'LINKED', reason: 'oidc_provision' }),
+          }),
+        );
+      } finally {
+        env.ancloraIdentityAutoProvision = prevAutoProvision;
+      }
     });
   });
 
@@ -210,11 +219,13 @@ describe('Anclora Identity OIDC integration', () => {
       const prevIssuer = env.ancloraIdentityIssuerUrl;
       const prevSecret = env.ancloraIdentityClientSecret;
       const prevRedirect = env.ancloraIdentityRedirectUri;
+      const prevSubjects = env.ancloraIdentityPilotAllowedSubjectsRaw;
 
       env.ancloraIdentityEnabled = true;
       env.ancloraIdentityIssuerUrl = 'https://anclora-identity.anclora.com';
       env.ancloraIdentityClientSecret = 'test-secret-1234567890';
       env.ancloraIdentityRedirectUri = 'http://localhost:3001/api/auth/anclora-identity/callback';
+      env.ancloraIdentityPilotAllowedSubjectsRaw = 'https://anclora-identity.anclora.com|sub-1';
 
       try {
         const res = await request(app).get('/api/auth/anclora-identity/callback?code=c&state=s');
@@ -225,6 +236,7 @@ describe('Anclora Identity OIDC integration', () => {
         env.ancloraIdentityIssuerUrl = prevIssuer;
         env.ancloraIdentityClientSecret = prevSecret;
         env.ancloraIdentityRedirectUri = prevRedirect;
+        env.ancloraIdentityPilotAllowedSubjectsRaw = prevSubjects;
       }
     });
 
@@ -240,6 +252,123 @@ describe('Anclora Identity OIDC integration', () => {
           .send({ email: 'toni@anclora.es', password: 'password123' });
         expect(res.status).toBe(409);
         expect(res.body.code).toBe('ANCLORA_IDENTITY_ENABLED');
+      } finally {
+        env.ancloraIdentityEnabled = prevEnabled;
+        env.ancloraIdentityAllowLegacyAuth = prevLegacy;
+      }
+    });
+
+    it('keeps Anclora Identity disabled and allowlist fail-closed when allowlist is empty or malformed', async () => {
+      const prevEnabled = env.ancloraIdentityEnabled;
+      const prevIssuer = env.ancloraIdentityIssuerUrl;
+      const prevSecret = env.ancloraIdentityClientSecret;
+      const prevRedirect = env.ancloraIdentityRedirectUri;
+      const prevSubjects = env.ancloraIdentityPilotAllowedSubjectsRaw;
+      const prevEmails = env.ancloraIdentityPilotBootstrapEmailsRaw;
+
+      env.ancloraIdentityEnabled = true;
+      env.ancloraIdentityIssuerUrl = 'https://anclora-identity.anclora.com';
+      env.ancloraIdentityClientSecret = 'test-secret-1234567890';
+      env.ancloraIdentityRedirectUri = 'http://localhost:3001/api/auth/anclora-identity/callback';
+      env.ancloraIdentityPilotAllowedSubjectsRaw = '';
+      env.ancloraIdentityPilotBootstrapEmailsRaw = '';
+
+      try {
+        expect(readPilotAllowlist().valid).toBe(false);
+        expect(readAncloraIdentityConfig()).toBeNull();
+        const emptyStatus = await request(app).get('/api/auth/anclora-identity/status');
+        expect(emptyStatus.status).toBe(200);
+        expect(emptyStatus.body.enabled).toBe(false);
+
+        env.ancloraIdentityPilotAllowedSubjectsRaw = 'malformed-entry-without-pipe';
+        expect(readPilotAllowlist().valid).toBe(false);
+        expect(readAncloraIdentityConfig()).toBeNull();
+
+        env.ancloraIdentityPilotAllowedSubjectsRaw = '';
+        env.ancloraIdentityPilotBootstrapEmailsRaw = 'not-an-email';
+        expect(readPilotAllowlist().valid).toBe(false);
+        expect(readAncloraIdentityConfig()).toBeNull();
+      } finally {
+        env.ancloraIdentityEnabled = prevEnabled;
+        env.ancloraIdentityIssuerUrl = prevIssuer;
+        env.ancloraIdentityClientSecret = prevSecret;
+        env.ancloraIdentityRedirectUri = prevRedirect;
+        env.ancloraIdentityPilotAllowedSubjectsRaw = prevSubjects;
+        env.ancloraIdentityPilotBootstrapEmailsRaw = prevEmails;
+      }
+    });
+
+    it('enforces subject allowlist and restricts bootstrap email to explicit link or linked account', () => {
+      const prevSubjects = env.ancloraIdentityPilotAllowedSubjectsRaw;
+      const prevEmails = env.ancloraIdentityPilotBootstrapEmailsRaw;
+      env.ancloraIdentityPilotAllowedSubjectsRaw = 'https://anclora-identity.anclora.com|sub-pilot';
+      env.ancloraIdentityPilotBootstrapEmailsRaw = 'bootstrap@anclora.es';
+
+      try {
+        expect(
+          resolvePilotCallbackAccess({
+            issuer: 'https://anclora-identity.anclora.com/',
+            subject: 'sub-pilot',
+            email: 'other@anclora.es',
+            emailVerified: true,
+            isExplicitLink: false,
+            hasActiveLink: false,
+          }),
+        ).toEqual({ allowed: true, mode: 'subject' });
+
+        // Unlinked bootstrap email cannot bypass explicit linking
+        expect(
+          resolvePilotCallbackAccess({
+            issuer: 'https://anclora-identity.anclora.com',
+            subject: 'sub-new',
+            email: 'bootstrap@anclora.es',
+            emailVerified: true,
+            isExplicitLink: false,
+            hasActiveLink: false,
+          }),
+        ).toEqual({ allowed: false, mode: 'denied' });
+
+        // Unverified bootstrap email is always denied even on explicit link
+        expect(
+          resolvePilotCallbackAccess({
+            issuer: 'https://anclora-identity.anclora.com',
+            subject: 'sub-new',
+            email: 'bootstrap@anclora.es',
+            emailVerified: false,
+            isExplicitLink: true,
+            hasActiveLink: false,
+          }),
+        ).toEqual({ allowed: false, mode: 'denied' });
+
+        // Verified bootstrap email on explicit link is allowed for first admission
+        expect(
+          resolvePilotCallbackAccess({
+            issuer: 'https://anclora-identity.anclora.com',
+            subject: 'sub-new',
+            email: 'bootstrap@anclora.es',
+            emailVerified: true,
+            isExplicitLink: true,
+            hasActiveLink: false,
+          }),
+        ).toEqual({ allowed: true, mode: 'bootstrap_link' });
+      } finally {
+        env.ancloraIdentityPilotAllowedSubjectsRaw = prevSubjects;
+        env.ancloraIdentityPilotBootstrapEmailsRaw = prevEmails;
+      }
+    });
+
+    it('allows traditional POST /api/auth/login when ANCLORA_IDENTITY_ALLOW_LEGACY_AUTH=true', async () => {
+      const prevEnabled = env.ancloraIdentityEnabled;
+      const prevLegacy = env.ancloraIdentityAllowLegacyAuth;
+      env.ancloraIdentityEnabled = true;
+      env.ancloraIdentityAllowLegacyAuth = true;
+
+      try {
+        // Missing password/invalid payload reaches normal validator (not 409 blocked)
+        const res = await request(app)
+          .post('/api/auth/login')
+          .send({ email: 'not-an-email', password: '' });
+        expect(res.status).not.toBe(409);
       } finally {
         env.ancloraIdentityEnabled = prevEnabled;
         env.ancloraIdentityAllowLegacyAuth = prevLegacy;
