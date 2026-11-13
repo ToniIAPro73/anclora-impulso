@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { env } from '../config/env';
 import * as authService from '../services/auth.service';
 import { verifyAccessTokenIgnoringExpiry } from '../utils/jwt';
 import { revokeByRefreshToken, revokeSession, rotateRefreshToken } from '../services/session.service';
@@ -15,6 +16,13 @@ export async function register(
   next: NextFunction
 ): Promise<void> {
   try {
+    if (env.ancloraIdentityEnabled && !env.ancloraIdentityAllowLegacyAuth) {
+      res.status(409).json({
+        code: 'ANCLORA_IDENTITY_ENABLED',
+        error: 'El registro local está deshabilitado porque Anclora Identity es obligatorio en este entorno.',
+      });
+      return;
+    }
     const result = await authService.register(req.body);
     setRefreshTokenCookie(res, result.refreshToken);
     res.status(201).json(result);
@@ -32,6 +40,13 @@ export async function login(
   next: NextFunction
 ): Promise<void> {
   try {
+    if (env.ancloraIdentityEnabled && !env.ancloraIdentityAllowLegacyAuth) {
+      res.status(409).json({
+        code: 'ANCLORA_IDENTITY_ENABLED',
+        error: 'El acceso con contraseña local está deshabilitado. Inicia sesión con Anclora Identity.',
+      });
+      return;
+    }
     const result = await authService.login(req.body);
     setRefreshTokenCookie(res, result.refreshToken);
     res.json(result);

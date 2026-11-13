@@ -17,7 +17,8 @@ export type OAuthRefusalCode =
   | 'ambiguous_email'
   | 'link_requires_original_method'
   | 'account_disabled'
-  | 'account_conflict';
+  | 'account_conflict'
+  | 'membership_required';
 
 /** A refusal carries a code only (never an address, token or profile data). Callers map it to a generic error page. */
 export class OAuthRefusal extends Error {

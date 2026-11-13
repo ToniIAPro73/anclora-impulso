@@ -49,8 +49,10 @@ jest.mock('@/lib/api/auth', () => ({
 }))
 
 jest.mock('@/lib/auth/oauth', () => ({
+  isAncloraIdentityEnabled: jest.fn(() => false),
   isGoogleAuthEnabled: jest.fn(() => false),
   isGithubAuthEnabled: jest.fn(() => false),
+  signInWithAncloraIdentity: jest.fn(),
   signInWithGoogle: jest.fn(),
   signInWithGithub: jest.fn(),
 }))

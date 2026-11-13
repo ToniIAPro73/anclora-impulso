@@ -4,7 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Eye, EyeOff, Mail, Github } from "lucide-react"
+import { Eye, EyeOff, Mail, Github, ShieldCheck } from "lucide-react"
 
 import { BrandLogo } from "@/components/brand-logo"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authApi } from "@/lib/api/auth"
-import { isGoogleAuthEnabled, isGithubAuthEnabled, signInWithGoogle, signInWithGithub } from "@/lib/auth/oauth"
+import {
+  isAncloraIdentityEnabled,
+  isGoogleAuthEnabled,
+  isGithubAuthEnabled,
+  signInWithAncloraIdentity,
+  signInWithGoogle,
+  signInWithGithub,
+} from "@/lib/auth/oauth"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { uiMotion } from "@/lib/ui-motion"
 import { cn } from "@/lib/utils"
@@ -154,6 +161,15 @@ export function LoginPageContent({ defaultEmail = "", defaultPassword = "" }: Lo
                 </span>
                 <div className="h-px flex-1 bg-orange-200/40 dark:bg-orange-400/10" />
               </div>
+              {typeof isAncloraIdentityEnabled === "function" && isAncloraIdentityEnabled() && (
+                <button
+                  type="button"
+                  onClick={signInWithAncloraIdentity}
+                  className="mb-2 flex h-9 w-full items-center justify-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20"
+                >
+                  <ShieldCheck size={14} aria-hidden="true" /> Continuar con Anclora Identity
+                </button>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"

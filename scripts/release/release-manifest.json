@@ -112,6 +112,10 @@
     {
       "name": "20261113060000_add_meal_plan_import_persistence",
       "sha256": "b3bf651283b1fbcbd76b4ffa61c1c3e636bd6eb20379c1e8a651e19b2462356e"
+    },
+    {
+      "name": "20261113103000_add_identity_links",
+      "sha256": "32accbc9868acbc70cef3fb427b2e25eb620b27f3f8d21b7c133b5fb54a4adb7"
     }
   ],
   "historicalChecksumEquivalences": [

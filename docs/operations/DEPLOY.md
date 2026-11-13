@@ -310,12 +310,7 @@ Usa **Render** (también gratis):
 
 ### Si Neon se queda sin espacio
 
-Usa **Supabase** (también gratis):
-
-1. Ve a [supabase.com](https://supabase.com)
-2. Crea un nuevo proyecto
-3. Obtén la connection string
-4. Actualiza `DATABASE_URL` en Railway/Render
+Revisa la retención de tablas operativas y los planes de almacenamiento en [neon.tech](https://neon.tech). No uses Supabase como alternativa de base de datos ni de autenticación (contrato Neon/Prisma vigente).
 
 ## Mantenimiento
 

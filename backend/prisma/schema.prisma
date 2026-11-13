@@ -89,6 +89,7 @@ model User {
   @@map("users")
   authSessions AuthSession[]
   idempotencyRecords IdempotencyRecord[]
+  identityLinks IdentityLink[]
 }
 
 model Exercise {
@@ -750,6 +751,40 @@ model OAuthAccount {
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("oauth_accounts")
+}
+
+model IdentityLink {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  issuer      String
+  subject     String
+  emailAtLink String?   @map("email_at_link")
+  linkedVia   String    @map("linked_via")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([issuer, subject])
+  @@index([userId])
+  @@map("identity_links")
+}
+
+model IdentityLinkAudit {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  issuer      String
+  subject     String
+  action      String
+  actorUserId String?  @map("actor_user_id")
+  reason      String?
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([issuer, subject])
+  @@map("identity_link_audits")
 }
 
 model WearableConnection {

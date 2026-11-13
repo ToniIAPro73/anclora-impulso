@@ -21,8 +21,10 @@ jest.mock('@/lib/contexts/language-context', () => ({
 jest.mock('next/navigation', () => ({ useRouter: jest.fn(() => ({ replace: jest.fn() })) }))
 jest.mock('@/lib/api/auth', () => ({ authApi: { login: jest.fn() } }))
 jest.mock('@/lib/auth/oauth', () => ({
+  isAncloraIdentityEnabled: jest.fn(() => false),
   isGoogleAuthEnabled: jest.fn(() => false),
   isGithubAuthEnabled: jest.fn(() => false),
+  signInWithAncloraIdentity: jest.fn(),
   signInWithGoogle: jest.fn(),
   signInWithGithub: jest.fn(),
 }))

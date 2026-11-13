@@ -1,7 +1,7 @@
 import { goTo } from './navigate';
 import { API_BASE, DIRECT_API_BASE } from '@/lib/api/base-url';
 
-export type OAuthProvider = 'google' | 'github';
+export type OAuthProvider = 'google' | 'github' | 'anclora-identity';
 
 export function isGoogleAuthEnabled(): boolean {
   return process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === 'true';
@@ -9,6 +9,10 @@ export function isGoogleAuthEnabled(): boolean {
 
 export function isGithubAuthEnabled(): boolean {
   return process.env.NEXT_PUBLIC_ENABLE_GITHUB_AUTH === 'true';
+}
+
+export function isAncloraIdentityEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_ENABLE_ANCLORA_IDENTITY_AUTH === 'true';
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -54,7 +58,7 @@ export function storedIdentity(): string | null {
 }
 
 /** Starts a flow: records the attempt in THIS tab and navigates to the backend with the challenge only. */
-export async function beginOAuth(provider: OAuthProvider): Promise<void> {
+export async function beginOAuth(provider: OAuthProvider, extraParams?: Record<string, string>): Promise<void> {
   const random = new Uint8Array(32);
   crypto.getRandomValues(random);
   const verifier = base64Url(random);
@@ -62,7 +66,8 @@ export async function beginOAuth(provider: OAuthProvider): Promise<void> {
   // A newer attempt in this tab supersedes any earlier one: a late return of the old flow can no longer be redeemed.
   sessionStorage.setItem(OAUTH_ATTEMPT_KEY, JSON.stringify(attempt));
   const challenge = await s256(verifier);
-  goTo(`${DIRECT_API_BASE}/auth/${provider}?challenge=${encodeURIComponent(challenge)}`);
+  const query = new URLSearchParams({ challenge, ...extraParams });
+  goTo(`${DIRECT_API_BASE}/auth/${provider}?${query.toString()}`);
 }
 
 /** Reads AND removes the pending attempt (single use). Returns null when there is none or it is malformed/expired. */
@@ -79,7 +84,7 @@ export function takeOAuthAttempt(now: number = Date.now()): OAuthAttempt | null 
     const attempt = JSON.parse(raw) as OAuthAttempt;
     const valid =
       typeof attempt.verifier === 'string' && /^[A-Za-z0-9_-]{43,128}$/.test(attempt.verifier) &&
-      (attempt.provider === 'google' || attempt.provider === 'github') &&
+      (attempt.provider === 'google' || attempt.provider === 'github' || attempt.provider === 'anclora-identity') &&
       typeof attempt.startedAt === 'number' && now - attempt.startedAt >= 0 && now - attempt.startedAt <= OAUTH_ATTEMPT_MAX_AGE_MS &&
       (attempt.identity === null || typeof attempt.identity === 'string');
     return valid ? attempt : null;
@@ -117,4 +122,27 @@ export function signInWithGoogle() {
 
 export function signInWithGithub() {
   return beginOAuth('github');
+}
+
+export function signInWithAncloraIdentity() {
+  return beginOAuth('anclora-identity');
+}
+
+export async function beginAncloraIdentityLink(accessToken: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/auth/anclora-identity/link/init`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error('identity_link_init_failed');
+  }
+  const data = (await response.json()) as { linkToken?: string };
+  if (!data.linkToken) {
+    throw new Error('identity_link_init_malformed');
+  }
+  return beginOAuth('anclora-identity', { linkToken: data.linkToken });
 }

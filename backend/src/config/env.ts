@@ -56,6 +56,15 @@ export const env = {
     return Number.isFinite(parsed) ? Math.min(300, Math.max(10, parsed)) : 60;
   })(),
 
+  // Anclora Identity OIDC (Phase E pilot)
+  ancloraIdentityEnabled: process.env.ANCLORA_IDENTITY_ENABLED === 'true',
+  ancloraIdentityIssuerUrl: (process.env.ANCLORA_IDENTITY_ISSUER_URL || '').trim(),
+  ancloraIdentityClientId: (process.env.ANCLORA_IDENTITY_CLIENT_ID || 'anclora-impulso').trim(),
+  ancloraIdentityClientSecret: (process.env.ANCLORA_IDENTITY_CLIENT_SECRET || '').trim(),
+  ancloraIdentityRedirectUri: (process.env.ANCLORA_IDENTITY_REDIRECT_URI || '').trim(),
+  ancloraIdentityAllowLegacyAuth: process.env.ANCLORA_IDENTITY_ALLOW_LEGACY_AUTH !== 'false',
+  ancloraIdentityAutoProvision: process.env.ANCLORA_IDENTITY_AUTO_PROVISION !== 'false',
+
   // Server
   port: parseInt(process.env.PORT || '3001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
