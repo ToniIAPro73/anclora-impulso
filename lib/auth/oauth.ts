@@ -59,6 +59,16 @@ export function storedIdentity(): string | null {
 
 let warmUpPromise: Promise<void> | null = null;
 
+/** Resolves the backend `/health/live` URL (no DB query) for both proxy (`/api`) and direct modes. */
+export function resolveWarmUpHealthUrl(
+  apiBase: string = API_BASE,
+  directApiBase: string = DIRECT_API_BASE,
+): string {
+  const base = apiBase.startsWith('http') ? apiBase : directApiBase;
+  const originBase = base.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  return `${originBase}/health/live`;
+}
+
 /** Silenty wakes a sleeping backend (e.g. Render Free) via fetch so top-level OAuth navigation never shows a host wake-up splash. */
 export function warmUpBackend(timeoutMs: number = 60_000): Promise<void> {
   if (typeof fetch !== 'function' || typeof window === 'undefined') {
@@ -67,7 +77,7 @@ export function warmUpBackend(timeoutMs: number = 60_000): Promise<void> {
   if (warmUpPromise) return warmUpPromise;
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
-  warmUpPromise = fetch(`${API_BASE}/health`, {
+  warmUpPromise = fetch(resolveWarmUpHealthUrl(), {
     method: 'GET',
     cache: 'no-store',
     signal: controller?.signal,
