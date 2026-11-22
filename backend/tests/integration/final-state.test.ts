@@ -58,6 +58,7 @@ beforeAll(async () => {
     env: {
       ...shieldEnv(),
       PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', NODE_ENV: 'development', PORT: String(PORT),
+      PUBLIC_SIGNUP_ENABLED: 'true',
       DATABASE_URL: process.env.DATABASE_URL ?? '',
       JWT_SECRET: jwtSecret, JWT_REFRESH_SECRET: jwtRefreshSecret,
       JWT_EXPIRES_IN: '15m',
