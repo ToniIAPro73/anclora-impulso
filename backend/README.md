@@ -147,7 +147,28 @@ backend/
 
 ## API Endpoints
 
-### Autenticación
+### Despacho de notificaciones y Neon (scale-to-zero)
+
+El despachador de recordatorios por email (`dispatchDueNotifications`) se controla con variables de entorno:
+
+| Variable | Defecto | Efecto |
+|---|---|---|
+| `NOTIFICATION_DISPATCH_MODE` | `interval` | `interval`: comportamiento histórico, consulta la BD cada `NOTIFICATION_DISPATCH_INTERVAL_MINUTES`. `lazy`: mantiene en memoria las horas de recordatorio y **solo consulta la BD cuando se abre una ventana** (`reminderTime` … `+ NOTIFICATION_DISPATCH_INTERVAL_MINUTES`). |
+| `NOTIFICATION_DISPATCH_INTERVAL_MINUTES` | `15` | Ventana de recordatorio (y periodo en modo `interval`). |
+| `NOTIFICATION_LAZY_REFRESH_MINUTES` | `120` | Solo `lazy`: cada cuánto se recargan de la BD las horas de recordatorio (cubre cambios externos o varias instancias). Mínimo 5. |
+
+Modo `lazy`: un temporizador local de 60 s comprueba `now >= nextDueAt` sin tocar la BD; la lógica de negocio y el formato de las notificaciones no cambian. Crear usuarios o cambiar `remindersEnabled`/`reminderTime` actualiza `nextDueAt` en memoria. Retraso máximo de envío: ~1 min tras `reminderTime` (en `interval`, hasta 15 min). Para activarlo: definir `NOTIFICATION_DISPATCH_MODE=lazy` en el servicio y reiniciar. **Limitación:** con más de una instancia, una instancia solo conoce los cambios hechos en otra tras el refresco de seguridad; las horas eliminadas solo se descartan en el refresco.
+
+## Endpoints de salud y Neon (scale-to-zero)
+
+Neon (plan Free) suspende el cómputo tras 5 min sin actividad; una sonda periódica que consulte la BD lo mantiene despierto.
+
+- `GET /health` y `GET /health/simple` (ligeros, por defecto): **no consultan la BD**; `checks.database` devuelve `{"status":"pass","message":"skipped"}`. Úsalos en Render/Docker/monitores.
+- `GET /health?deep=1` y `GET /health/simple?deep=1` (o `deep=true`): ejecutan `SELECT 1`; 503 si la BD falla.
+- `GET /health/ready`: readiness; **siempre** comprueba la BD. No lo uses como sonda periódica externa.
+- `GET /health/live`: liveness, sin BD.
+
+## Autenticación
 
 ```
 POST   /api/auth/register        # Registrar usuario

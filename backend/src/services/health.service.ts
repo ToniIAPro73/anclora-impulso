@@ -87,6 +87,12 @@ const checkDatabase = async (): Promise<CheckResult> => {
   }
 };
 
+// Resultado cuando la comprobación de BD se omite (modo ligero)
+const skippedDatabaseCheck = (): CheckResult => ({
+  status: 'pass',
+  message: 'skipped',
+});
+
 // Check de memoria
 const checkMemory = (): CheckResult => {
   const totalMemory = os.totalmem();
@@ -147,14 +153,16 @@ const getCpuUsage = (): number => {
   return parseFloat(cpuUsagePercentage.toFixed(2));
 };
 
-// Función principal de health check
-export const getHealthStatus = async (): Promise<HealthStatus> => {
+// Función principal de health check.
+// deep=false (por defecto) NO consulta la base de datos, para que Neon pueda
+// escalar a cero. deep=true conserva el comportamiento completo.
+export const getHealthStatus = async (deep = false): Promise<HealthStatus> => {
   const startTime = Date.now();
   
   try {
     // Ejecutar todos los checks
     const [databaseCheck, memoryCheck, diskCheck] = await Promise.all([
-      checkDatabase(),
+      deep ? checkDatabase() : Promise.resolve(skippedDatabaseCheck()),
       Promise.resolve(checkMemory()),
       Promise.resolve(checkDisk()),
     ]);
@@ -228,7 +236,10 @@ export const getHealthStatus = async (): Promise<HealthStatus> => {
 };
 
 // Health check simplificado (para load balancers)
-export const getSimpleHealthStatus = async (): Promise<{ status: string }> => {
+export const getSimpleHealthStatus = async (deep = false): Promise<{ status: string }> => {
+  if (!deep) {
+    return { status: 'ok' };
+  }
   try {
     await prisma.$queryRaw`SELECT 1`;
     return { status: 'ok' };

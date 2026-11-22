@@ -2,6 +2,7 @@ import app from './app';
 import { env } from './config/env';
 import { prisma, testDatabaseConnection } from './config/database';
 import { dispatchDueNotifications } from './services/notification.service';
+import { startNotificationScheduler } from './services/notification-schedule.service';
 import { applySecurityPolicy } from './utils/security-config';
 
 async function startServer() {
@@ -46,18 +47,13 @@ async function startServer() {
       }, 1000);
     }
 
-    const dispatchIntervalMs = Math.max(5, env.notificationDispatchIntervalMinutes) * 60 * 1000;
-    const dispatchTimer = setInterval(() => {
-      dispatchDueNotifications().catch((error) => {
-        console.error('⚠️ Error al despachar notificaciones:', error);
-      });
-    }, dispatchIntervalMs);
+    const stopNotificationScheduler = startNotificationScheduler(dispatchDueNotifications);
 
     // Manejo de señales de terminación
     const gracefulShutdown = (signal: string) => {
       console.log(`\n${signal} recibido, cerrando servidor...`);
       server.close(() => {
-        clearInterval(dispatchTimer);
+        stopNotificationScheduler();
         prisma
           .$disconnect()
           .catch((error) => {

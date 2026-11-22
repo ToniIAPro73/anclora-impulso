@@ -106,6 +106,9 @@ export const env = {
   smtpPass: process.env.SMTP_PASS || '',
   smtpFrom: process.env.SMTP_FROM || '',
   notificationDispatchIntervalMinutes: parseInt(process.env.NOTIFICATION_DISPATCH_INTERVAL_MINUTES || '15', 10),
+  // 'interval' (default, legacy) | 'lazy' (queries the DB only when a reminder window opens)
+  notificationDispatchMode: process.env.NOTIFICATION_DISPATCH_MODE || 'interval',
+  notificationLazyRefreshMinutes: parseInt(process.env.NOTIFICATION_LAZY_REFRESH_MINUTES || '120', 10),
 
   // LLM (Groq / modelos open source)
   llmProvider: process.env.LLM_PROVIDER || 'groq',

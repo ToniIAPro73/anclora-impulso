@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { noteReminderTime } from './notification-schedule.service';
 
 export interface UserProfile {
   avatarDataUrl: string | null;
@@ -167,5 +168,6 @@ export async function updateUserProfile(
     },
   });
 
+  noteReminderTime(user.remindersEnabled, user.reminderTime);
   return mapUserToProfile(user);
 }

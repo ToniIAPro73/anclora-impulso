@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { noteReminderTime } from './notification-schedule.service';
 import { prisma } from '../config/database';
 import { normalizeEmail } from '../utils/email';
 import { lookupAccountByCanonicalEmail } from './account-lookup.service';
@@ -74,7 +75,7 @@ export async function resolveOAuthAccount(profile: OAuthProfile): Promise<Resolv
   if (lookup.status === 'found') throw new OAuthRefusal('link_requires_original_method');
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: { email, passwordHash: null, fullName: profile.fullName || email.split('@')[0] },
       });
@@ -83,6 +84,8 @@ export async function resolveOAuthAccount(profile: OAuthProfile): Promise<Resolv
       });
       return user;
     });
+    noteReminderTime(created.remindersEnabled, created.reminderTime);
+    return created;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       // The SAME identity completed concurrently: resolve through its link. An e-mail collision is never turned

@@ -6,6 +6,7 @@ import type { RegisterInput, LoginInput } from '../utils/validators';
 import { isAdminUserId } from '../middleware/admin';
 import { normalizeEmail } from '../utils/email';
 import { lookupAccountByCanonicalEmail } from './account-lookup.service';
+import { noteReminderTime } from './notification-schedule.service';
 
 export interface AuthResponse {
   user: {
@@ -46,6 +47,8 @@ export async function register(data: RegisterInput): Promise<AuthResponse> {
       fullName: data.fullName,
     },
   });
+
+  noteReminderTime(user.remindersEnabled, user.reminderTime);
 
   // Crear sesión de servidor y tokens
   const { accessToken, refreshToken } = await issueSession({ id: user.id, email: user.email });

@@ -2,10 +2,16 @@ import { Request, Response } from 'express';
 import { getHealthStatus, getSimpleHealthStatus } from '../services/health.service';
 import logger from '../config/logger';
 
+// ?deep=1 | ?deep=true activa la comprobación de base de datos.
+const isDeep = (req: Request): boolean => {
+  const value = req.query?.deep;
+  return value === '1' || value === 'true';
+};
+
 // Health check detallado
 export const healthCheck = async (req: Request, res: Response) => {
   try {
-    const healthStatus = await getHealthStatus();
+    const healthStatus = await getHealthStatus(isDeep(req));
     
     // Retornar código de status apropiado
     const statusCode = 
@@ -27,7 +33,7 @@ export const healthCheck = async (req: Request, res: Response) => {
 // Health check simple (para load balancers)
 export const simpleHealthCheck = async (req: Request, res: Response) => {
   try {
-    const status = await getSimpleHealthStatus();
+    const status = await getSimpleHealthStatus(isDeep(req));
     
     if (status.status === 'ok') {
       res.status(200).json(status);
@@ -43,7 +49,8 @@ export const simpleHealthCheck = async (req: Request, res: Response) => {
 // Endpoint de readiness (para Kubernetes)
 export const readinessCheck = async (req: Request, res: Response) => {
   try {
-    const healthStatus = await getHealthStatus();
+    // Readiness verifica siempre la BD: no usar como sonda periódica externa.
+    const healthStatus = await getHealthStatus(true);
     
     // Ready si no está unhealthy
     if (healthStatus.status !== 'unhealthy') {

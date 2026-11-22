@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { env } from '../config/env';
 import { getUserNudges } from './engagement.service';
+import { buildScheduledDate, isDueWithinWindow } from './notification-schedule.service';
 
 type NotificationChannel = 'email';
 type DeliveryStatus = 'pending' | 'sent' | 'failed';
@@ -23,18 +24,6 @@ const transporter =
 
 function buildLocalDayKey(date: Date) {
   return date.toISOString().slice(0, 10);
-}
-
-function buildScheduledDate(reminderTime: string | null, now: Date) {
-  const scheduled = new Date(now);
-  const [hour, minute] = (reminderTime || '20:00').split(':').map((value) => Number.parseInt(value, 10));
-  scheduled.setHours(hour || 20, minute || 0, 0, 0);
-  return scheduled;
-}
-
-function isDueWithinWindow(scheduledFor: Date, now: Date) {
-  const diffMs = now.getTime() - scheduledFor.getTime();
-  return diffMs >= 0 && diffMs <= env.notificationDispatchIntervalMinutes * 60 * 1000;
 }
 
 function buildNotificationCopy(kind: string, language: 'es' | 'en', href: string) {

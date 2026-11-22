@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { noteReminderTime } from './notification-schedule.service';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { env } from '../config/env';
@@ -103,7 +104,7 @@ export async function resolveIdentityLogin(input: {
   }
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           email,
@@ -132,6 +133,8 @@ export async function resolveIdentityLogin(input: {
       });
       return user;
     });
+    noteReminderTime(created.remindersEnabled, created.reminderTime);
+    return created;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       const raced = await prisma.identityLink.findUnique({
