@@ -23,6 +23,13 @@ export async function register(
       });
       return;
     }
+    if (!env.publicSignupEnabled) {
+      res.status(403).json({
+        code: 'PUBLIC_SIGNUP_DISABLED',
+        error: 'El registro público está deshabilitado en este entorno precomercial. El acceso es únicamente por invitación.',
+      });
+      return;
+    }
     const result = await authService.register(req.body);
     setRefreshTokenCookie(res, result.refreshToken);
     res.status(201).json(result);

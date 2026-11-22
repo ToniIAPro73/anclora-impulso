@@ -66,6 +66,11 @@ export const env = {
   ancloraIdentityAutoProvision: process.env.ANCLORA_IDENTITY_AUTO_PROVISION === 'true',
   ancloraIdentityPilotAllowedSubjectsRaw: (process.env.ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS || '').trim(),
   ancloraIdentityPilotBootstrapEmailsRaw: (process.env.ANCLORA_IDENTITY_PILOT_BOOTSTRAP_EMAILS || '').trim(),
+  // Pre-commercial fail-closed gate: public self-registration is disabled unless explicitly enabled
+  // (kept active in NODE_ENV=test so existing integration fixtures can seed test accounts).
+  publicSignupEnabled:
+    process.env.PUBLIC_SIGNUP_ENABLED === 'true' ||
+    (process.env.NODE_ENV === 'test' && process.env.PUBLIC_SIGNUP_ENABLED !== 'false'),
 
   // Server
   port: parseInt(process.env.PORT || '3001', 10),

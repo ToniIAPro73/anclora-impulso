@@ -14,6 +14,7 @@ import { useLanguage } from "@/lib/contexts/language-context"
 import { SocialAuthButtons } from "@/components/social-auth-buttons"
 
 export default function SignupPage() {
+  const publicSignupEnabled = process.env.NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED === "true"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -22,6 +23,31 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { t } = useLanguage()
+
+  if (!publicSignupEnabled) {
+    return (
+      <div className="h-screen overflow-y-auto flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 py-4 px-6">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm dark:bg-gray-900/80">
+            <CardHeader className="text-center pb-3 pt-5">
+              <BrandLogo size={72} priority className="mx-auto mb-3" />
+              <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                Acceso privado por invitación
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400 text-xs">
+                El registro público está deshabilitado durante la fase precomercial. Si necesitas acceso, escribe a soporte@anclora.es.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-5 text-center">
+              <Button asChild className="w-full h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-sm font-medium">
+                <Link href="/auth/login">{t.auth.signIn}</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
