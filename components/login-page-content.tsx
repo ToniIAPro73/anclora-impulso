@@ -3,7 +3,7 @@
 import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Eye, EyeOff, Mail, Github, ShieldCheck } from "lucide-react"
 
 import { BrandLogo } from "@/components/brand-logo"
@@ -19,6 +19,7 @@ import {
   signInWithAncloraIdentity,
   signInWithGoogle,
   signInWithGithub,
+  warmUpBackend,
 } from "@/lib/auth/oauth"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { uiMotion } from "@/lib/ui-motion"
@@ -35,8 +36,26 @@ export function LoginPageContent({ defaultEmail = "", defaultPassword = "" }: Lo
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isIdentityLoading, setIsIdentityLoading] = useState(false)
   const router = useRouter()
   const { t } = useLanguage()
+
+  useEffect(() => {
+    if (typeof isAncloraIdentityEnabled === "function" && isAncloraIdentityEnabled() && typeof warmUpBackend === "function") {
+      void warmUpBackend()
+    }
+  }, [])
+
+  const handleAncloraIdentityLogin = async () => {
+    setIsIdentityLoading(true)
+    setError(null)
+    try {
+      await signInWithAncloraIdentity()
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : t.auth.error)
+      setIsIdentityLoading(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,10 +183,13 @@ export function LoginPageContent({ defaultEmail = "", defaultPassword = "" }: Lo
               {typeof isAncloraIdentityEnabled === "function" && isAncloraIdentityEnabled() && (
                 <button
                   type="button"
-                  onClick={signInWithAncloraIdentity}
-                  className="mb-2 flex h-9 w-full items-center justify-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20"
+                  disabled={isLoading || isIdentityLoading}
+                  aria-busy={isIdentityLoading}
+                  onClick={handleAncloraIdentityLogin}
+                  className="mb-2 flex h-9 w-full items-center justify-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-wait disabled:opacity-70 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20"
                 >
-                  <ShieldCheck size={14} aria-hidden="true" /> Continuar con Anclora Identity
+                  <ShieldCheck size={14} aria-hidden="true" />{" "}
+                  {isIdentityLoading ? "Conectando con Anclora Identity..." : "Continuar con Anclora Identity"}
                 </button>
               )}
               <div className="grid grid-cols-2 gap-2">

@@ -57,8 +57,33 @@ export function storedIdentity(): string | null {
   }
 }
 
+let warmUpPromise: Promise<void> | null = null;
+
+/** Silenty wakes a sleeping backend (e.g. Render Free) via fetch so top-level OAuth navigation never shows a host wake-up splash. */
+export function warmUpBackend(timeoutMs: number = 60_000): Promise<void> {
+  if (typeof fetch !== 'function' || typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+  if (warmUpPromise) return warmUpPromise;
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  warmUpPromise = fetch(`${API_BASE}/health`, {
+    method: 'GET',
+    cache: 'no-store',
+    signal: controller?.signal,
+  })
+    .then(() => undefined)
+    .catch(() => undefined)
+    .finally(() => {
+      if (timer) clearTimeout(timer);
+      warmUpPromise = null;
+    });
+  return warmUpPromise;
+}
+
 /** Starts a flow: records the attempt in THIS tab and navigates to the backend with the challenge only. */
 export async function beginOAuth(provider: OAuthProvider, extraParams?: Record<string, string>): Promise<void> {
+  await warmUpBackend();
   const random = new Uint8Array(32);
   crypto.getRandomValues(random);
   const verifier = base64Url(random);
