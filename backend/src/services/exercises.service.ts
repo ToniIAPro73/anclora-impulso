@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import type {
@@ -75,7 +76,8 @@ function decorateExercise<T extends {
  * Obtener todos los ejercicios con filtros opcionales
  */
 export async function getAllExercises(filters: ExerciseFilters = {}) {
-  const where: any = {};
+  // Archived entries (history integrity F1) stay out of the catalogue but remain readable by id.
+  const where: any = { archivedAt: null };
 
   if (filters.category) {
     where.category = filters.category;
@@ -172,9 +174,39 @@ export async function bulkUpdateExerciseEditorial(data: BulkUpdateExerciseEditor
  * Eliminar un ejercicio
  */
 export async function deleteExercise(id: string) {
-  await prisma.exercise.delete({
+  // History integrity F1: an exercise that sessions, records, routines or progression state point to is archived;
+  // only an unreferenced exercise is physically deleted. The database refuses to delete referenced ones (NO ACTION).
+  const exercise = await prisma.exercise.findUnique({
     where: { id },
+    select: {
+      id: true,
+      archivedAt: true,
+      _count: {
+        select: { sessionExercises: true, personalRecords: true, workoutExercises: true, progressionStates: true },
+      },
+    },
   });
+
+  if (!exercise) {
+    throw new AppError(404, 'Ejercicio no encontrado');
+  }
+
+  const referenced = Object.values(exercise._count).some((count) => count > 0);
+  if (!referenced) {
+    try {
+      await prisma.exercise.delete({ where: { id } });
+      return;
+    } catch (error) {
+      // A reference created between the check and the delete trips the foreign key: fall through and archive.
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003')) {
+        throw error;
+      }
+    }
+  }
+
+  if (exercise.archivedAt === null) {
+    await prisma.exercise.update({ where: { id }, data: { archivedAt: new Date() } });
+  }
 }
 
 /**
@@ -182,6 +214,7 @@ export async function deleteExercise(id: string) {
  */
 export async function getCategories() {
   const exercises = await prisma.exercise.findMany({
+    where: { archivedAt: null },
     select: { category: true },
     distinct: ['category'],
   });
@@ -194,6 +227,7 @@ export async function getCategories() {
  */
 export async function getMuscleGroups() {
   const exercises = await prisma.exercise.findMany({
+    where: { archivedAt: null },
     select: { muscleGroup: true },
     distinct: ['muscleGroup'],
   });
@@ -206,6 +240,7 @@ export async function getMuscleGroups() {
  */
 export async function getEquipment() {
   const exercises = await prisma.exercise.findMany({
+    where: { archivedAt: null },
     select: { equipment: true },
     distinct: ['equipment'],
   });
@@ -218,6 +253,7 @@ export async function getEquipment() {
  */
 export async function getTrainingEnvironments() {
   const exercises = await prisma.exercise.findMany({
+    where: { archivedAt: null },
     select: { trainingEnvironments: true },
   });
 
@@ -226,6 +262,7 @@ export async function getTrainingEnvironments() {
 
 export async function getEditorialSummary() {
   const exercises = await prisma.exercise.findMany({
+    where: { archivedAt: null },
     orderBy: { updatedAt: 'desc' },
   });
 

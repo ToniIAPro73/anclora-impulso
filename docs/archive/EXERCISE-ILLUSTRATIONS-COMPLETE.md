@@ -265,7 +265,7 @@ Para completar el 100% de la base de datos, se pueden generar ilustraciones para
 ### Regenerar Seed
 ```bash
 cd backend
-npx ts-node prisma/seed-updated.ts
+pnpm prisma:seed
 ```
 
 ### Ver Ejercicios en la Base de Datos
@@ -320,7 +320,7 @@ curl http://localhost:3001/exercises/push-ups.png -I
 ### Archivos Clave
 - `backend/prisma/schema.prisma` - Esquema de BD
 - `backend/prisma/complete-exercises-database.ts` - Base de datos completa
-- `backend/prisma/seed-updated.ts` - Script de seed
+- `backend/prisma/seed.ts` - Script de seed
 - `backend/public/exercises/` - Directorio de imágenes
 - `components/exercise-library.tsx` - Componente de biblioteca
 

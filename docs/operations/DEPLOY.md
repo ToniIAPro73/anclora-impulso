@@ -101,8 +101,11 @@ OPENAI_API_KEY=
 ```bash
 cd backend
 DATABASE_URL="tu-connection-string-de-neon" pnpm prisma migrate deploy
-DATABASE_URL="tu-connection-string-de-neon" pnpm prisma:seed
 ```
+
+> **No ejecutes `pnpm prisma:seed` contra una base de producción con usuarios.** El seed solo es para bases nuevas o aisladas.
+> Desde la migración `20261126000000_history_integrity_archive_and_fk_guard` el seed archiva los ejercicios retirados en lugar de
+> borrarlos, pero el catálogo de producción se gestiona por revisión editorial y el workflow protegido, no con este comando.
 
 Alternativamente, puedes usar Railway CLI:
 
@@ -118,7 +121,7 @@ railway link
 
 # Ejecutar migraciones
 railway run pnpm prisma migrate deploy
-railway run pnpm prisma:seed
+# (no ejecutar prisma:seed contra producción; ver aviso arriba)
 ```
 
 ### 2.7 Verificar backend
@@ -265,7 +268,7 @@ curl https://tu-backend.railway.app/api/exercises
 ```bash
 # Ejecutar manualmente con Railway CLI
 railway run pnpm prisma migrate deploy
-railway run pnpm prisma:seed
+# (no ejecutar prisma:seed contra producción; ver aviso arriba)
 ```
 
 ### Error 401 Unauthorized

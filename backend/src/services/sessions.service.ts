@@ -77,7 +77,7 @@ export async function createSession(userId: string, data: CreateSessionInput) {
   let session;
   try {
     session = await prisma.$transaction(async (tx) => {
-      const owned = await tx.workout.findFirst({ where: { id: data.workoutId, userId }, select: { id: true } });
+      const owned = await tx.workout.findFirst({ where: { id: data.workoutId, userId, archivedAt: null }, select: { id: true } });
       if (!owned) {
         throw new AppError(404, 'Entrenamiento no encontrado');
       }

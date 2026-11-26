@@ -176,7 +176,9 @@ export function WorkoutGenerator() {
 
   const handleDeleteWorkout = async (workoutId: string) => {
     const confirmed = window.confirm(
-      isSpanish ? "¿Quieres eliminar este plan de entrenamiento?" : "Do you want to delete this workout plan?"
+      isSpanish
+        ? "¿Quieres eliminar este plan de entrenamiento? Las sesiones que ya registraste se conservan en tu historial."
+        : "Do you want to delete this workout plan? Sessions you already logged stay in your history."
     )
     if (!confirmed) return
 

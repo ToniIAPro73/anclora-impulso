@@ -237,6 +237,8 @@ describe('scope of each limit (changing the key never evades per-user protection
     gated.release();
     await inFlight;
     await waitUntil(async () => (await prisma.idempotencyRecord.count({ where: { userId: a.user.id, operation: 'coach.message', status: 'in_progress' } })) === 0);
+    // History integrity F1: the database refuses to delete an exercise a routine still uses, so remove the routine first.
+    await prisma.workout.deleteMany({ where: { userId: a.user.id } });
     await prisma.exercise.deleteMany({ where: { name: `${tag}-g` } });
   });
 });
