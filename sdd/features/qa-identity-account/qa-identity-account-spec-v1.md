@@ -57,17 +57,21 @@ comma-separated (or the Identity email is in `ANCLORA_IDENTITY_PILOT_BOOTSTRAP_E
 - **FR-005** Afterwards: signing in at `impulso.anclora.com` with the QA identity lands on user `926a24f0-…`.
 
 ## Operator procedure (Toni)
-1. Get an application service token accepted by Identity's `POST /api/v1/admin/apps/anclora-impulso/invitations`
-   (`APPLICATION_SERVICE_TOKENS_JSON` in the Identity Vercel project; Impulso has no entry locally).
-2. Invite: `curl -X POST https://anclora-identity.anclora.com/api/v1/admin/apps/anclora-impulso/invitations
-   -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json'
-   -d '{"email":"tonipmi.test+qa-impulso@gmail.com","invitedByIdentityUserId":"a1af8bcc-ac83-4f28-8f03-c8accbba75d3","locale":"es"}'`
-3. Accept the email, set the password (≥ 12 chars). The agent then reads the new Identity user id (read-only).
-4. Link (Impulso production, direct URL): `DATABASE_URL='…' pnpm exec tsx scripts/maintenance/link-identity.ts
+The service token is not available to the operator, so the invitation is created with the Identity operator CLI
+`invite-identity` (`anclora-identity/sdd/features/operator-invitation-handoff/`): a normal invitation whose activation
+link is printed in the operator's terminal instead of emailed. The Identity email can therefore be
+`qa.impulso@anclora.local`.
+1. Invite (Identity production DB, from `anclora-identity`): `DATABASE_URL='…' npm run invite-identity -- --email
+   qa.impulso@anclora.local --application-id anclora-impulso --invited-by a1af8bcc-ac83-4f28-8f03-c8accbba75d3
+   --issuer https://anclora-identity.anclora.com --operator "Toni: QA identity for Impulso" --target-endpoint
+   ep-still-poetry-b8kibicj`
+2. Open the printed link yourself (treat it as a password), accept, set the password (≥ 12 chars). The agent then
+   reads the new Identity user id (read-only).
+3. Link (Impulso production, direct URL): `DATABASE_URL='…' pnpm exec tsx scripts/maintenance/link-identity.ts
    --user-id 926a24f0-dff7-4518-9398-14545f9c8455 --issuer https://anclora-identity.anclora.com --subject <QA id>
    --operator "Toni: QA identity for Impulso" --target-endpoint ep-lingering-paper-agjnrga3`
-5. Render: append `,https://anclora-identity.anclora.com|<QA id>` to `ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS`; redeploy.
-6. Sign in as QA; the agent verifies `/api/auth/me` and runs the pending QA.
+4. Render: append `,https://anclora-identity.anclora.com|<QA id>` to `ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS`; redeploy.
+5. Sign in as QA; the agent verifies `/api/auth/me` and runs the pending QA.
 
 ## Security finding (separate task, not fixed here)
 `anclora-identity/src/http/adminRouter.ts`: `POST /apps/:applicationId/invitations` accepts the service token of
