@@ -1,7 +1,7 @@
 const prismaMock = {
   workout: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
   workoutExercise: { deleteMany: jest.fn() },
-  exercise: { findMany: jest.fn() },
+  exercise: { findMany: jest.fn(), count: jest.fn().mockResolvedValue(0) },
   $transaction: jest.fn(),
 };
 const generateJSON = jest.fn();

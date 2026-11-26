@@ -47,7 +47,7 @@ export async function getUserNudges(userId: string): Promise<{
     }),
     getPersonalizationSnapshot(userId),
     prisma.workout.findFirst({
-      where: { userId },
+      where: { userId, archivedAt: null },
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true },
     }),

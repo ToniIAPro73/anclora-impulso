@@ -5,7 +5,7 @@ import type {
   GenerateWorkoutInput,
 } from "../utils/validators";
 import { env } from "../config/env";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   IdempotencyOwnershipLostError,
   assertValidIdempotencyKey,
@@ -147,7 +147,7 @@ function decorateWorkout<T extends { exercises: Array<{ exercise: { muscleGroup:
 export async function getUserWorkouts(userId: string) {
   const [workouts, snapshot] = await Promise.all([
     prisma.workout.findMany({
-      where: { userId },
+      where: { userId, archivedAt: null },
       include: {
         exercises: {
           include: {
@@ -220,11 +220,27 @@ function createWorkoutRow(
   });
 }
 
+/** History integrity F1: a routine cannot be built from retired (archived) catalogue entries. */
+async function assertExercisesAreActive(exerciseIds: string[]) {
+  const unique = [...new Set(exerciseIds)];
+  if (unique.length === 0) {
+    return;
+  }
+  const archived = await prisma.exercise.count({ where: { id: { in: unique }, archivedAt: { not: null } } });
+  if (archived > 0) {
+    throw new AppError(422, "Algún ejercicio ya no está disponible en el catálogo");
+  }
+}
+
 export async function createWorkout(
   userId: string,
   data: CreateWorkoutInput,
   provenance: GenerationProvenance = { mode: "manual" },
 ) {
+  if (provenance.mode === "manual") {
+    // Generated plans are built from active catalogue candidates only; manual input is checked here.
+    await assertExercisesAreActive(data.exercises.map((exercise) => exercise.exerciseId));
+  }
   const workout = await createWorkoutRow(prisma, userId, data, provenance);
   const snapshot = await getPersonalizationSnapshot(userId);
   return decorateWorkout(workout, snapshot);
@@ -265,11 +281,15 @@ export async function updateWorkout(
 ) {
   // Verificar que el entrenamiento pertenece al usuario
   const existingWorkout = await prisma.workout.findFirst({
-    where: { id, userId },
+    where: { id, userId, archivedAt: null },
   });
 
   if (!existingWorkout) {
     throw new AppError(404, "Entrenamiento no encontrado");
+  }
+
+  if (data.exercises) {
+    await assertExercisesAreActive(data.exercises.map((exercise) => exercise.exerciseId));
   }
 
   // Replace exercises and update the workout in one transaction so a failure
@@ -317,9 +337,24 @@ export async function deleteWorkout(id: string, userId: string) {
     throw new AppError(404, "Entrenamiento no encontrado");
   }
 
-  await prisma.workout.delete({
-    where: { id },
-  });
+  // History integrity F1: a routine with logged sessions is archived (hidden from lists); only a routine without
+  // sessions is physically deleted. The database refuses to delete a routine that has sessions (NO ACTION).
+  const sessionCount = await prisma.workoutSession.count({ where: { workoutId: id } });
+  if (sessionCount === 0) {
+    try {
+      await prisma.workout.delete({ where: { id } });
+      return;
+    } catch (error) {
+      // A session created between the check and the delete trips the foreign key: fall through and archive.
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003")) {
+        throw error;
+      }
+    }
+  }
+
+  if (workout.archivedAt === null) {
+    await prisma.workout.update({ where: { id }, data: { archivedAt: new Date() } });
+  }
 }
 
 /**
@@ -369,6 +404,7 @@ export async function generateWorkout(
 
   // Obtener ejercicios según los parámetros
   const where: any = {
+    archivedAt: null,
     difficulty: effectiveDifficulty,
     trainingEnvironments: { has: effectiveEnvironment },
   };
