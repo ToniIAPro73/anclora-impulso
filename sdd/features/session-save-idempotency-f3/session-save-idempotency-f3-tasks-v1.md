@@ -1,7 +1,7 @@
 # Session save idempotency F3 — Tasks v1
 
 Branch `development` (no feature branch). Decisions D1–D4 approved (all recommendations). No migration: the existing
-`idempotency_records` table is reused. Implemented locally, **uncommitted, pending Toni's validation**.
+`idempotency_records` table is reused. Validated by Toni, pushed (`791efcd`) and promoted to production on 2026-11-26.
 
 | Task | Criteria | Status | Evidence |
 |---|---|---|---|
@@ -10,7 +10,7 @@ Branch `development` (no feature branch). Decisions D1–D4 approved (all recomm
 | T2 Client helpers: `createPendingSubmission`, `newSessionIdempotencyKey`, `classifySaveFailure` | AC06, D2 | done | `__tests__/lib/session-recording.test.ts` |
 | T3 Page: frozen submission in the draft, retry with the same key, locked sets, discard, 422 handling | AC06–AC09, D1, D2 | done | `session-save-idempotency-f3.test.tsx` 6/6 |
 | T4 Full suites, typecheck, lint, local visual QA | AC10 | done | see "T4 evidence" below |
-| T5 Production rollout (no migration; `PROMOTE=FULL`) and QA check | — | not started, needs Toni | — |
+| T5 Production rollout (no migration; `PROMOTE=FULL`) and QA check | AC01, AC07 (production) | done (2026-11-26) | see "T5 production" below |
 
 ## Implementation notes
 - Operation `sessions.create`; request hash over the validated fields only (`hashSessionRequest`); lock 30 s;
@@ -55,3 +55,14 @@ Branch `development` (no feature branch). Decisions D1–D4 approved (all recomm
 
 Test-only change: the two page test files set `jest.setTimeout(20000)`; under a fully parallel run the 5 s default
 timed out (they pass alone and in the full run with the higher limit).
+
+## T5 production (2026-11-26, QA account `qa.impulso@anclora.local`)
+- `PROMOTE=FULL` (CI of `791efcd` green before dispatch): `promote.yml` run `45755560918` `success`; `main` and
+  `production` at `791efcd`; Vercel production deployment `success`.
+- Deployed API (routine `35db6a10-…`): same key + same body → 201 then 200 with `Idempotent-Replayed: true` and the
+  same session id; same key + different body → 422. Database (read-only): 1 session (`recordingVersion = 2`),
+  1 `complete_workout` XP event, `sessions.create` record `completed` / 201 / 1 attempt. PASS.
+- App end to end (`agent-browser`, routine `0de56c9c-…`): first save blocked in the browser → pending banner, sets
+  locked; block removed, "Finalizar y registrar" again → `/progress`. Database: 1 session, `recordingVersion = 2`,
+  set 10 × 12.5. PASS. (The blocked request never reached the server; the lost-response case is covered by the API
+  replay check above.)

@@ -499,8 +499,8 @@ Decisiones comunes de Toni (2026-11-25): umbral de inactividad de **4 h**; las s
 - **Dependencias:** TASK-040.
 
 ### TASK-042 · F3 · Guardado idempotente de sesiones
-- **Estado:** **Spec en borrador, decisiones pendientes** (`sdd/features/session-save-idempotency-f3/`). Tests de
-  reproducción en rojo: backend 4/5, frontend 4/4.
+- **Estado:** **En producción (2026-11-26)**, `791efcd`, `promote.yml` `45755560918`. Sin migración. QA en producción
+  PASS (replay 200, conflicto 422, una sola sesión y un solo XP). Spec y evidencia: `sdd/features/session-save-idempotency-f3/`.
 - **Resultado esperado:** el cliente envía una clave de idempotencia por borrador; reintentos y dobles clics no
   duplican sesiones, XP, rachas ni récords (BUG-08). Producción 2026-11-26: 0 pares sospechosos.
 - **Dependencias:** TASK-041.
