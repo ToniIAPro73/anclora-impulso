@@ -1,7 +1,7 @@
 # Session recording F2 — Tasks v1
 
-Branch: `development` (D5 = A). Decisions D1–D5 approved by Toni on 2026-11-26. Implemented locally, **uncommitted,
-pending Toni's validation**. Nothing applied to production.
+Branch: `development` (D5 = A). Decisions D1–D5 approved by Toni on 2026-11-26. Implemented, validated by Toni and pushed
+(`aaa8f44`); migrated and promoted to production on 2026-11-26.
 
 | Task | Criteria | Status | Evidence |
 |---|---|---|---|
@@ -12,8 +12,8 @@ pending Toni's validation**. Nothing applied to production.
 | T4 Backend tests first, then validator/service (`recordingVersion`, v2 rules, legacy path) | AC06, AC08 | done | unit `session-recording-f2-validator.test.ts` 7/7; integration `session-recording-f2.test.ts` 4/4 |
 | T5 Migration `20261126180000_session_recording_version` (isolated PostgreSQL 16) | AC06, NFR-001 | done | applied to the isolated test DB; release manifest regenerated (31 migrations, verified) |
 | T6 Full suites, typecheck, lint, build | AC11 | done except build and visual QA | see below |
-| T7 Neon branch rehearsal of the migration | AC10 | not started, needs Toni | — |
-| T8 Production rollout (protected workflow, `PROMOTE=FULL`, QA check) | AC10 | not started, needs Toni | — |
+| T7 Neon branch rehearsal of the migration | AC10 | done (2026-11-26) | see "T7 rehearsal" below |
+| T8 Production rollout (protected workflow, `PROMOTE=FULL`, QA check) | AC10 | done except visual/API QA (2026-11-26) | see "T8 production rollout" below |
 
 ## Implementation notes
 - D2: `resistance_bands` added to the bodyweight allow-list (no kilogram value for bands). Pending Toni's validation.
@@ -47,3 +47,32 @@ pending Toni's validation**. Nothing applied to production.
 | AC05 save error | no alert; the rejection escapes |
 | AC06 `recordingVersion` | field absent |
 After the fix the same file passes (9/9 with the D3, AC07 and AC09 tests added).
+
+## T7 rehearsal (2026-11-26)
+Neon branch `rehearsal-f2-recording-version-20261126` (`br-dry-band-agfuv6er`, endpoint `ep-spring-scene-ag3vi6al`) from
+`br-gentle-bar-ag3slpph`, code `development` `aaa8f44`. Host guard refused the production endpoint; checks in `READ ONLY`.
+Each write confirmed by Toni.
+- Before: 93 sessions, 99 session exercises, 209 sets, 98 records, 99 routines, 521 exercises; ledger 30 applied,
+  8 historical rollbacks, 0 unfinished; only `20261126180000_session_recording_version` pending; session fingerprint
+  `ca44031e…`.
+- `prisma migrate deploy`: applied only `20261126180000_session_recording_version`. After: ledger 31 applied; column
+  `recordingVersion integer NOT NULL DEFAULT 1`; all 93 sessions = 1; every count and the fingerprint unchanged.
+- Functional check (QA user, real validator and service): a v2 session stored `recordingVersion = 2` with sets as sent
+  (8 reps × 12.5 kg, order 1); a request without the field stored 1 (legacy, D4); v2 with 14 401 s and v2 without
+  exercises rejected by the validator. PASS. Test data remains on the branch.
+
+## T8 production rollout (2026-11-26)
+Neon `lucky-hat-25002521` / `br-gentle-bar-ag3slpph` (`ep-lingering-paper-agjnrga3`); candidate `aaa8f44` (CI success).
+- Preflight (read-only): 93 sessions, 209 sets, 98 records, 99 routines, 521 exercises; ledger 30 applied, only F2
+  pending. OD-03 backup `br-lively-glade-ags4t6hv` (`2026-11-26T02:51:00Z`, created by Toni).
+  `operator-preflight.ts` (`--baseline-count 30`, `--max-backup-age-minutes 30`): `READY_FOR_HUMAN_AUTHORIZATION`,
+  report SHA-256 `b4c68232475120ec988bf86b877398bc7abcba5885c2fe9addc75933aa12e067`.
+- `production-migrations.yml` run `45745311280`, environment approved by Toni: both jobs `success`; live backup check
+  380 s old; applied `20261126180000_session_recording_version`; attestation artifact `15083286898`.
+- After migration (read-only): ledger 31 applied, 8 historical rollbacks, 0 unfinished; `recordingVersion integer
+  NOT NULL DEFAULT 1`; all 93 sessions = 1; counts and session fingerprint `ca44031e…` unchanged.
+- `PROMOTE=FULL` by Toni: `promote.yml` run `45745921978` (`target=full`, `source_sha=aaa8f44`) `success`;
+  `development`, `staging`, `production`, `main` at `aaa8f4482bd7dba30445bf85c9c42b7e52823e2f`. Render backend
+  `/health/live` 200; frontend `impulso.anclora.com` 200. Render live deploy of the SHA inferred from the workflow gate.
+- Pending: visual QA and an end-to-end session through the deployed app (needs the QA account in Anclora Identity, or
+  Toni records one session and the agent verifies `recordingVersion = 2` and the sets read-only).
