@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
+import logger from '../config/logger';
 import { AppError } from '../middleware/errorHandler';
 import type { CreateSessionInput } from '../utils/validators';
 import { awardXP, updateStreak } from './gamification.service';
@@ -88,6 +89,8 @@ export async function createSession(userId: string, data: CreateSessionInput) {
           workoutId: data.workoutId,
           duration: data.duration,
           notes: data.notes,
+          // Session recording F2: clients without the field are legacy (decision D4).
+          recordingVersion: data.recordingVersion ?? 1,
           exercises: {
             create: data.exercises.map((exercise) => ({
               exerciseId: exercise.exerciseId,
@@ -117,6 +120,11 @@ export async function createSession(userId: string, data: CreateSessionInput) {
       throw new AppError(404, 'Entrenamiento no encontrado');
     }
     throw error;
+  }
+
+  if (data.recordingVersion === undefined) {
+    // Decision D4: a pre-F2 client is still served; the counter shows when the legacy path can be retired.
+    logger.info('legacy_session_payload', { sessionId: session.id });
   }
 
   await updateStreak(userId);

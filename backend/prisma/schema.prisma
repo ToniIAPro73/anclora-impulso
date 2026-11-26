@@ -175,6 +175,9 @@ model WorkoutSession {
   completedAt DateTime @default(now())
   duration    Int // segundos
   notes       String?
+  // Session recording F2: 2 = faithful recording (only completed sets, values as entered); 1 = legacy (pre-F2 or old
+  // client). Legacy sessions are excluded from personal records and progression (F4/F5).
+  recordingVersion Int @default(1)
 
   // Relaciones
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)

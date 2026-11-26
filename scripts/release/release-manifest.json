@@ -120,6 +120,10 @@
     {
       "name": "20261126000000_history_integrity_archive_and_fk_guard",
       "sha256": "1ac81de52b7697ac9ac6dae6ca58e69f0e81c257e14dbad71811fe74c16c3376"
+    },
+    {
+      "name": "20261126180000_session_recording_version",
+      "sha256": "69641e969acfea05dfee5ca46ae6642af034658b37daa6b37f6535c4161f96ee"
     }
   ],
   "historicalChecksumEquivalences": [

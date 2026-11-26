@@ -712,6 +712,8 @@ export const sessionsApi = {
     workoutId: string;
     duration: number;
     notes?: string;
+    /** Session recording F2: 2 = only completed sets, values as entered. Omitted by pre-F2 clients (legacy, 1). */
+    recordingVersion?: 1 | 2;
     exercises: SessionExercise[];
   }): Promise<WorkoutSession> {
     return apiClient.post<WorkoutSession>('/sessions', data);

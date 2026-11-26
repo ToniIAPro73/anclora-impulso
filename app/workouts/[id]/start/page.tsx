@@ -20,21 +20,27 @@ import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
 import type { AppLanguage } from "@/lib/workout-domain-labels"
 import { getWorkoutDisplayName } from "@/lib/workout-display-name"
 import { trackProductEvent } from "@/lib/product-events"
+import {
+  buildSessionPayload,
+  computeActiveDurationSeconds,
+  isDraftStale,
+  type DraftSet,
+  type RecordingIssue,
+} from "@/lib/session-recording"
 
-type ExerciseSetState = {
-  reps: string
-  weight: string
-  rir: string
-  rpe: string
-  restSeconds: string
-  completed: boolean
-}
+type ExerciseSetState = DraftSet
 
 type WorkoutDraft = {
+  version?: 2
   startedAt: string
+  /** Session recording F2: last time a set was edited or marked. Missing on drafts created before F2. */
+  lastActivityAt?: string
   notes: string
   sets: Record<string, ExerciseSetState[]>
 }
+
+type FieldKey = `${string}:${number}:${string}`
+const fieldKey = (exerciseId: string, setIndex: number, field: string): FieldKey => `${exerciseId}:${setIndex}:${field}`
 
 function ActiveWorkoutPageContent() {
   const params = useParams<{ id: string }>()
@@ -47,6 +53,10 @@ function ActiveWorkoutPageContent() {
   const [notes, setNotes] = useState("")
   const [setState, setSetState] = useState<Record<string, ExerciseSetState[]>>({})
   const [startedAt, setStartedAt] = useState<string>(new Date().toISOString())
+  const [lastActivityAt, setLastActivityAt] = useState<string>(new Date().toISOString())
+  const [staleDraftPending, setStaleDraftPending] = useState(false)
+  const [recordingIssues, setRecordingIssues] = useState<RecordingIssue[]>([])
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [restSeconds, setRestSeconds] = useState(0)
   const [currentRestLabel, setCurrentRestLabel] = useState("")
@@ -71,6 +81,9 @@ function ActiveWorkoutPageContent() {
         setNotes(draft.notes)
         setSetState(draft.sets)
         setStartedAt(draft.startedAt)
+        // Drafts created before F2 have no lastActivityAt: their start is the last known activity (decision D3).
+        setLastActivityAt(draft.lastActivityAt ?? draft.startedAt)
+        setStaleDraftPending(isDraftStale(draft, new Date()))
         return
       } catch {
         window.localStorage.removeItem(draftKey)
@@ -92,7 +105,9 @@ function ActiveWorkoutPageContent() {
     )
     setSetState(initialSets)
     setNotes("")
-    setStartedAt(new Date().toISOString())
+    const now = new Date().toISOString()
+    setStartedAt(now)
+    setLastActivityAt(now)
   }, [draftKey, workout])
 
   useEffect(() => {
@@ -112,12 +127,14 @@ function ActiveWorkoutPageContent() {
   useEffect(() => {
     if (!draftKey || !workout || Object.keys(setState).length === 0) return
     const draft: WorkoutDraft = {
+      version: 2,
       startedAt,
+      lastActivityAt,
       notes,
       sets: setState,
     }
     window.localStorage.setItem(draftKey, JSON.stringify(draft))
-  }, [draftKey, notes, setState, startedAt, workout])
+  }, [draftKey, lastActivityAt, notes, setState, startedAt, workout])
 
   useEffect(() => {
     if (restSeconds <= 0) return
@@ -133,7 +150,11 @@ function ActiveWorkoutPageContent() {
   )
   const totalSets = useMemo(() => Object.values(setState).flat().length, [setState])
   const completionRate = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0
-  const elapsedSeconds = Math.max(60, Math.round((Date.now() - new Date(startedAt).getTime()) / 1000))
+  const elapsedSeconds = computeActiveDurationSeconds({ startedAt, lastActivityAt, now: new Date() })
+  const invalidFields = useMemo(
+    () => new Set(recordingIssues.map((issue) => fieldKey(issue.exerciseId, issue.setIndex, issue.field))),
+    [recordingIssues],
+  )
 
   const updateSet = (exerciseId: string, setIndex: number, nextState: Partial<ExerciseSetState>) => {
     setSetState((current) => ({
@@ -142,6 +163,62 @@ function ActiveWorkoutPageContent() {
         index === setIndex ? { ...set, ...nextState } : set,
       ),
     }))
+    setLastActivityAt(new Date().toISOString())
+    setSaveError(null)
+  }
+
+  /** D3: an old draft resumes with the clock restarted now; earlier inactivity is never counted as training time. */
+  const resumeStaleDraft = () => {
+    const now = new Date().toISOString()
+    setStartedAt(now)
+    setLastActivityAt(now)
+    setStaleDraftPending(false)
+  }
+
+  const discardStaleDraft = () => {
+    if (!workout) return
+    if (draftKey) window.localStorage.removeItem(draftKey)
+    setSetState(
+      Object.fromEntries(
+        workout.exercises.map((exercise) => [
+          exercise.exerciseId,
+          Array.from({ length: exercise.sets }, () => ({
+            reps: String(exercise.reps),
+            weight: "",
+            rir: "",
+            rpe: "",
+            restSeconds: String(exercise.rest),
+            completed: false,
+          })),
+        ]),
+      ),
+    )
+    setNotes("")
+    resumeStaleDraft()
+  }
+
+  const describeIssue = (issue: RecordingIssue): string => {
+    if (issue.code === "no_completed_sets") {
+      return isSpanish
+        ? "Marca como hecha al menos una serie antes de registrar la sesión."
+        : "Mark at least one set as done before logging the session."
+    }
+    const exercise = workout?.exercises.find((entry) => entry.exerciseId === issue.exerciseId)
+    const name = exercise ? getLocalizedExerciseCopy(exercise.exercise, labelLanguage).name : issue.exerciseId
+    const setLabel = isSpanish ? `serie ${issue.setIndex + 1}` : `set ${issue.setIndex + 1}`
+    const fieldLabels: Record<RecordingIssue["field"], [string, string]> = {
+      reps: ["repeticiones", "repetitions"],
+      weight: ["peso", "weight"],
+      rir: ["RIR", "RIR"],
+      rpe: ["RPE", "RPE"],
+      restSeconds: ["descanso", "rest"],
+      sets: ["series", "sets"],
+    }
+    const field = fieldLabels[issue.field][isSpanish ? 0 : 1]
+    if (issue.code === "required") {
+      return isSpanish ? `${name}, ${setLabel}: indica ${field}.` : `${name}, ${setLabel}: enter the ${field}.`
+    }
+    return isSpanish ? `${name}, ${setLabel}: ${field} no válido.` : `${name}, ${setLabel}: invalid ${field}.`
   }
 
   const startRest = (seconds: number, label: string) => {
@@ -150,25 +227,29 @@ function ActiveWorkoutPageContent() {
   }
 
   const handleFinish = async () => {
-    if (!workout) return
+    if (!workout || staleDraftPending) return
+    setSaveError(null)
+    const duration = computeActiveDurationSeconds({ startedAt, lastActivityAt, now: new Date() })
+    const result = buildSessionPayload({
+      workoutId: workout.id,
+      exercises: workout.exercises.map((exercise) => ({
+        exerciseId: exercise.exerciseId,
+        equipment: exercise.exercise?.equipment ?? "",
+        reps: exercise.reps,
+        rest: exercise.rest,
+      })),
+      sets: setState,
+      notes,
+      durationSeconds: duration,
+    })
+    if (!result.ok) {
+      setRecordingIssues(result.issues)
+      return
+    }
+    setRecordingIssues([])
     setIsSaving(true)
     try {
-      await sessionsApi.create({
-        workoutId: workout.id,
-        duration: elapsedSeconds,
-        notes: notes || undefined,
-        exercises: workout.exercises.map((exercise) => ({
-          exerciseId: exercise.exerciseId,
-          sets: (setState[exercise.exerciseId] ?? []).map((set, index) => ({
-            reps: Number(set.reps) || exercise.reps,
-            weight: Number(set.weight) || 0,
-            rir: set.rir ? Number(set.rir) : undefined,
-            rpe: set.rpe ? Number(set.rpe) : undefined,
-            restSeconds: set.restSeconds ? Number(set.restSeconds) : exercise.rest,
-            order: index,
-          })),
-        })),
-      })
+      await sessionsApi.create(result.payload)
 
       if (draftKey) {
         window.localStorage.removeItem(draftKey)
@@ -180,12 +261,19 @@ function ActiveWorkoutPageContent() {
         source: "active_workout",
         metadata: {
           workoutId: workout.id,
-          duration: elapsedSeconds,
+          duration,
           completionRate,
         },
       })
 
       router.push("/progress")
+    } catch {
+      // The draft stays in localStorage, so nothing typed is lost; the user can retry (idempotency is F3).
+      setSaveError(
+        isSpanish
+          ? "No se pudo registrar la sesión. Tu borrador sigue guardado: revisa la conexión y vuelve a intentarlo."
+          : "The session could not be logged. Your draft is still saved: check your connection and try again.",
+      )
     } finally {
       setIsSaving(false)
     }
@@ -219,6 +307,25 @@ function ActiveWorkoutPageContent() {
 
   return (
     <div className="space-y-4 px-3 py-4 sm:px-5 sm:py-5 lg:px-6">
+      {staleDraftPending ? (
+        <section
+          aria-labelledby="stale-draft-title"
+          className="rounded-2xl border border-amber-300/80 bg-amber-50 p-4 text-amber-950 dark:border-amber-400/30 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+          <h2 id="stale-draft-title" className="text-base font-semibold">
+            {isSpanish ? "Tienes un borrador sin actividad desde hace más de 4 horas" : "You have a draft with no activity for more than 4 hours"}
+          </h2>
+          <p className="mt-1 text-sm">
+            {isSpanish
+              ? "Si lo reanudas, se conservan las series anotadas y el tiempo de entrenamiento empieza ahora. Si lo descartas, empiezas la sesión de cero."
+              : "If you resume it, the sets you logged are kept and the training time starts now. If you discard it, the session starts from scratch."}
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <Button onClick={resumeStaleDraft}>{isSpanish ? "Reanudar borrador" : "Resume draft"}</Button>
+            <Button variant="outline" onClick={discardStaleDraft}>{isSpanish ? "Descartar borrador" : "Discard draft"}</Button>
+          </div>
+        </section>
+      ) : null}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <Button variant="ghost" size="sm" className="mb-2 -ml-3 rounded-2xl" onClick={() => router.push(`/workouts/${workout.id}`)}>
@@ -341,23 +448,23 @@ function ActiveWorkoutPageContent() {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Reps" : "Reps"}</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "repeticiones" : "repetitions"}`} value={set.reps} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { reps: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "repeticiones" : "repetitions"}`} value={set.reps} inputMode="numeric" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "reps")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { reps: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Peso (kg)" : "Weight (kg)"}</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "peso en kilogramos" : "weight in kilograms"}`} value={set.weight} inputMode="decimal" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { weight: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "peso en kilogramos" : "weight in kilograms"}`} value={set.weight} inputMode="decimal" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "weight")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { weight: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">RIR</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RIR`} value={set.rir ?? ""} inputMode="numeric" placeholder="0-5" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rir: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RIR`} value={set.rir ?? ""} inputMode="numeric" placeholder="0-5" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "rir")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rir: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">RPE</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RPE`} value={set.rpe ?? ""} inputMode="decimal" placeholder="0-10" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rpe: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RPE`} value={set.rpe ?? ""} inputMode="decimal" placeholder="0-10" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "rpe")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rpe: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Desc. (s)" : "Rest (s)"}</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "descanso en segundos" : "rest in seconds"}`} value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "descanso en segundos" : "rest in seconds"}`} value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "restSeconds")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
                   </div>
                   <Button
                     variant={set.completed ? "default" : "outline"}
@@ -392,12 +499,29 @@ function ActiveWorkoutPageContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={isSpanish ? "Sensaciones, cargas, molestias, observaciones..." : "Feelings, loads, pain points, observations..."} />
+          {recordingIssues.length > 0 ? (
+            <div role="alert" className="rounded-2xl border border-red-300/80 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-950/40 dark:text-red-100">
+              <p className="font-semibold">
+                {isSpanish ? "Revisa las series antes de registrar la sesión:" : "Check your sets before logging the session:"}
+              </p>
+              <ul className="mt-1 list-disc pl-5">
+                {recordingIssues.map((issue) => (
+                  <li key={`${issue.exerciseId}-${issue.setIndex}-${issue.field}`}>{describeIssue(issue)}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {saveError ? (
+            <p role="alert" className="rounded-2xl border border-red-300/80 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-950/40 dark:text-red-100">
+              {saveError}
+            </p>
+          ) : null}
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => router.push(`/workouts/${workout.id}`)}>
               <Save className="mr-2 h-4 w-4" />
               {isSpanish ? "Salir y mantener borrador" : "Exit and keep draft"}
             </Button>
-            <Button disabled={isSaving} className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600" onClick={handleFinish}>
+            <Button disabled={isSaving || staleDraftPending} className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600" onClick={handleFinish}>
               {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
               {isSpanish ? "Finalizar y registrar" : "Finish and log"}
             </Button>

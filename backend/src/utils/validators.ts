@@ -52,10 +52,20 @@ export const createWorkoutSchema = z.object({
 export const updateWorkoutSchema = createWorkoutSchema.partial();
 
 // Validadores de sesiones
-export const createSessionSchema = z.object({
+/** Session recording F2, decision D1: maximum duration of a faithful session (4 h). Kept in sync with the frontend. */
+export const MAX_SESSION_DURATION_SECONDS = 4 * 60 * 60;
+
+const hasAtMostTwoDecimals = (value: number) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+
+const baseCreateSessionSchema = z.object({
   workoutId: z.string().uuid('ID de entrenamiento inválido'),
   duration: z.number().int().min(1, 'La duración debe ser al menos 1 segundo'),
   notes: z.string().optional(),
+  /**
+   * Session recording F2: 2 = faithful recording (only completed sets, values as entered). Absent = legacy client
+   * (stored as 1, decision D4); legacy sessions are excluded from personal records and progression.
+   */
+  recordingVersion: z.union([z.literal(1), z.literal(2)]).optional(),
   exercises: z.array(
     z.object({
       exerciseId: z.string().uuid('ID de ejercicio inválido'),
@@ -71,6 +81,26 @@ export const createSessionSchema = z.object({
       ),
     })
   ),
+});
+
+export const createSessionSchema = baseCreateSessionSchema.superRefine((data, ctx) => {
+  if (data.recordingVersion !== 2) return; // legacy clients keep the pre-F2 rules (decision D4)
+  if (data.duration > MAX_SESSION_DURATION_SECONDS) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['duration'], message: 'La duración supera el máximo de 4 horas' });
+  }
+  if (data.exercises.length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['exercises'], message: 'La sesión debe tener al menos una serie completada' });
+  }
+  data.exercises.forEach((exercise, exerciseIndex) => {
+    if (exercise.sets.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['exercises', exerciseIndex, 'sets'], message: 'Cada ejercicio debe tener al menos una serie completada' });
+    }
+    exercise.sets.forEach((set, setIndex) => {
+      if (!hasAtMostTwoDecimals(set.weight)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['exercises', exerciseIndex, 'sets', setIndex, 'weight'], message: 'El peso admite como máximo 2 decimales' });
+      }
+    });
+  });
 });
 
 // Validadores de medidas corporales
