@@ -116,6 +116,10 @@
     {
       "name": "20261113103000_add_identity_links",
       "sha256": "32accbc9868acbc70cef3fb427b2e25eb620b27f3f8d21b7c133b5fb54a4adb7"
+    },
+    {
+      "name": "20261126000000_history_integrity_archive_and_fk_guard",
+      "sha256": "1ac81de52b7697ac9ac6dae6ca58e69f0e81c257e14dbad71811fe74c16c3376"
     }
   ],
   "historicalChecksumEquivalences": [
