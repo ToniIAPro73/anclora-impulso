@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowLeft, CheckCircle2, Clock3, Dumbbell, Loader2, PauseCircle, PlayCircle, Save, TimerReset } from "lucide-react"
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { sessionsApi, workoutsApi } from "@/lib/api"
+import { ApiError } from "@/lib/api/client"
 import { useLanguage } from "@/lib/contexts/language-context"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { getLocalizedExerciseCopy } from "@/lib/localized-exercise-copy"
@@ -22,9 +23,12 @@ import { getWorkoutDisplayName } from "@/lib/workout-display-name"
 import { trackProductEvent } from "@/lib/product-events"
 import {
   buildSessionPayload,
+  classifySaveFailure,
   computeActiveDurationSeconds,
+  createPendingSubmission,
   isDraftStale,
   type DraftSet,
+  type PendingSubmission,
   type RecordingIssue,
 } from "@/lib/session-recording"
 
@@ -37,6 +41,8 @@ type WorkoutDraft = {
   lastActivityAt?: string
   notes: string
   sets: Record<string, ExerciseSetState[]>
+  /** Session save idempotency F3: the frozen submission of the first "Finalizar" (key + payload), until it is saved. */
+  pendingSubmission?: PendingSubmission
 }
 
 type FieldKey = `${string}:${number}:${string}`
@@ -57,6 +63,10 @@ function ActiveWorkoutPageContent() {
   const [staleDraftPending, setStaleDraftPending] = useState(false)
   const [recordingIssues, setRecordingIssues] = useState<RecordingIssue[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [pendingSubmission, setPendingSubmission] = useState<PendingSubmission | null>(null)
+  const [alreadySaved, setAlreadySaved] = useState(false)
+  /** Set once the session is saved: the draft must never be written again after it was removed. */
+  const sessionSavedRef = useRef(false)
   const [isSaving, setIsSaving] = useState(false)
   const [restSeconds, setRestSeconds] = useState(0)
   const [currentRestLabel, setCurrentRestLabel] = useState("")
@@ -83,7 +93,9 @@ function ActiveWorkoutPageContent() {
         setStartedAt(draft.startedAt)
         // Drafts created before F2 have no lastActivityAt: their start is the last known activity (decision D3).
         setLastActivityAt(draft.lastActivityAt ?? draft.startedAt)
-        setStaleDraftPending(isDraftStale(draft, new Date()))
+        setPendingSubmission(draft.pendingSubmission ?? null)
+        // A frozen submission is retried as is (F3); the stale-draft prompt only applies to drafts still being edited.
+        setStaleDraftPending(!draft.pendingSubmission && isDraftStale(draft, new Date()))
         return
       } catch {
         window.localStorage.removeItem(draftKey)
@@ -125,16 +137,17 @@ function ActiveWorkoutPageContent() {
   }, [workout])
 
   useEffect(() => {
-    if (!draftKey || !workout || Object.keys(setState).length === 0) return
+    if (!draftKey || !workout || Object.keys(setState).length === 0 || sessionSavedRef.current) return
     const draft: WorkoutDraft = {
       version: 2,
       startedAt,
       lastActivityAt,
       notes,
       sets: setState,
+      ...(pendingSubmission ? { pendingSubmission } : {}),
     }
     window.localStorage.setItem(draftKey, JSON.stringify(draft))
-  }, [draftKey, lastActivityAt, notes, setState, startedAt, workout])
+  }, [draftKey, lastActivityAt, notes, pendingSubmission, setState, startedAt, workout])
 
   useEffect(() => {
     if (restSeconds <= 0) return
@@ -157,6 +170,7 @@ function ActiveWorkoutPageContent() {
   )
 
   const updateSet = (exerciseId: string, setIndex: number, nextState: Partial<ExerciseSetState>) => {
+    if (pendingSubmission) return // F3 D1: sets are locked while a save is pending
     setSetState((current) => ({
       ...current,
       [exerciseId]: current[exerciseId].map((set, index) =>
@@ -194,6 +208,9 @@ function ActiveWorkoutPageContent() {
       ),
     )
     setNotes("")
+    setPendingSubmission(null)
+    setAlreadySaved(false)
+    setSaveError(null)
     resumeStaleDraft()
   }
 
@@ -227,33 +244,48 @@ function ActiveWorkoutPageContent() {
   }
 
   const handleFinish = async () => {
-    if (!workout || staleDraftPending) return
+    if (!workout || staleDraftPending || alreadySaved) return
     setSaveError(null)
-    const duration = computeActiveDurationSeconds({ startedAt, lastActivityAt, now: new Date() })
-    const result = buildSessionPayload({
-      workoutId: workout.id,
-      exercises: workout.exercises.map((exercise) => ({
-        exerciseId: exercise.exerciseId,
-        equipment: exercise.exercise?.equipment ?? "",
-        reps: exercise.reps,
-        rest: exercise.rest,
-      })),
-      sets: setState,
-      notes,
-      durationSeconds: duration,
-    })
-    if (!result.ok) {
-      setRecordingIssues(result.issues)
-      return
+
+    // F3 D1: the first "Finalizar" freezes the payload (duration included) with its Idempotency-Key; every retry resends
+    // exactly that submission so the server returns the first session instead of creating a second one.
+    let submission = pendingSubmission
+    if (!submission) {
+      const result = buildSessionPayload({
+        workoutId: workout.id,
+        exercises: workout.exercises.map((exercise) => ({
+          exerciseId: exercise.exerciseId,
+          equipment: exercise.exercise?.equipment ?? "",
+          reps: exercise.reps,
+          rest: exercise.rest,
+        })),
+        sets: setState,
+        notes,
+        durationSeconds: computeActiveDurationSeconds({ startedAt, lastActivityAt, now: new Date() }),
+      })
+      if (!result.ok) {
+        setRecordingIssues(result.issues)
+        return
+      }
+      setRecordingIssues([])
+      submission = createPendingSubmission(result.payload)
+      setPendingSubmission(submission)
+      if (draftKey) {
+        // Written before the request so a reload during the save still retries with the same key.
+        const draft: WorkoutDraft = { version: 2, startedAt, lastActivityAt, notes, sets: setState, pendingSubmission: submission }
+        window.localStorage.setItem(draftKey, JSON.stringify(draft))
+      }
     }
-    setRecordingIssues([])
+
     setIsSaving(true)
     try {
-      await sessionsApi.create(result.payload)
+      await sessionsApi.create(submission.payload, { idempotencyKey: submission.key })
 
+      sessionSavedRef.current = true
       if (draftKey) {
         window.localStorage.removeItem(draftKey)
       }
+      setPendingSubmission(null)
 
       await trackProductEvent({
         action: "workout_completed",
@@ -261,19 +293,33 @@ function ActiveWorkoutPageContent() {
         source: "active_workout",
         metadata: {
           workoutId: workout.id,
-          duration,
+          duration: submission.payload.duration,
           completionRate,
         },
       })
 
       router.push("/progress")
-    } catch {
-      // The draft stays in localStorage, so nothing typed is lost; the user can retry (idempotency is F3).
-      setSaveError(
-        isSpanish
-          ? "No se pudo registrar la sesión. Tu borrador sigue guardado: revisa la conexión y vuelve a intentarlo."
-          : "The session could not be logged. Your draft is still saved: check your connection and try again.",
-      )
+    } catch (error) {
+      const kind = classifySaveFailure(error instanceof ApiError ? error.status : undefined)
+      if (kind === "already_saved") {
+        // F3 D2: this key already saved a session with different data.
+        setAlreadySaved(true)
+      } else if (kind === "rejected") {
+        // This submission can never succeed: release it so the sets can be corrected or the draft discarded.
+        setPendingSubmission(null)
+        setSaveError(
+          isSpanish
+            ? "La sesión no se pudo registrar con estos datos. Revisa las series o descarta el borrador."
+            : "The session could not be logged with this data. Review the sets or discard the draft.",
+        )
+      } else {
+        // Transient: the frozen submission stays in the draft and the retry uses the same key.
+        setSaveError(
+          isSpanish
+            ? "No se pudo registrar la sesión. Tu borrador sigue guardado: revisa la conexión y vuelve a intentarlo."
+            : "The session could not be logged. Your draft is still saved: check your connection and try again.",
+        )
+      }
     } finally {
       setIsSaving(false)
     }
@@ -448,28 +494,29 @@ function ActiveWorkoutPageContent() {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Reps" : "Reps"}</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "repeticiones" : "repetitions"}`} value={set.reps} inputMode="numeric" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "reps")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { reps: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "repeticiones" : "repetitions"}`} value={set.reps} inputMode="numeric" disabled={Boolean(pendingSubmission)} aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "reps")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { reps: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Peso (kg)" : "Weight (kg)"}</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "peso en kilogramos" : "weight in kilograms"}`} value={set.weight} inputMode="decimal" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "weight")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { weight: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "peso en kilogramos" : "weight in kilograms"}`} value={set.weight} inputMode="decimal" disabled={Boolean(pendingSubmission)} aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "weight")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { weight: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">RIR</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RIR`} value={set.rir ?? ""} inputMode="numeric" placeholder="0-5" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "rir")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rir: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RIR`} value={set.rir ?? ""} inputMode="numeric" placeholder="0-5" disabled={Boolean(pendingSubmission)} aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "rir")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rir: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">RPE</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RPE`} value={set.rpe ?? ""} inputMode="decimal" placeholder="0-10" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "rpe")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rpe: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} RPE`} value={set.rpe ?? ""} inputMode="decimal" placeholder="0-10" disabled={Boolean(pendingSubmission)} aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "rpe")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { rpe: event.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isSpanish ? "Desc. (s)" : "Rest (s)"}</Label>
-                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "descanso en segundos" : "rest in seconds"}`} value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "restSeconds")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
+                    <Input aria-label={`${localizedExercise.name} ${isSpanish ? "serie" : "set"} ${setIndex + 1} ${isSpanish ? "descanso en segundos" : "rest in seconds"}`} value={set.restSeconds ?? String(workoutExercise.rest)} inputMode="numeric" disabled={Boolean(pendingSubmission)} aria-invalid={invalidFields.has(fieldKey(workoutExercise.exerciseId, setIndex, "restSeconds")) || undefined} onChange={(event) => updateSet(workoutExercise.exerciseId, setIndex, { restSeconds: event.target.value })} />
                   </div>
                   <Button
                     variant={set.completed ? "default" : "outline"}
                     className="rounded-2xl"
                     aria-label={`${localizedExercise.name} · ${isSpanish ? `serie ${setIndex + 1}` : `set ${setIndex + 1}`} · ${set.completed ? (isSpanish ? "hecha" : "done") : (isSpanish ? "marcar serie" : "mark set")}`}
+                    disabled={Boolean(pendingSubmission)}
                     onClick={() => updateSet(workoutExercise.exerciseId, setIndex, { completed: !set.completed })}
                   >
                     {set.completed ? (isSpanish ? "Hecha" : "Done") : (isSpanish ? "Marcar" : "Mark")}
@@ -498,7 +545,7 @@ function ActiveWorkoutPageContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={isSpanish ? "Sensaciones, cargas, molestias, observaciones..." : "Feelings, loads, pain points, observations..."} />
+          <Textarea value={notes} disabled={Boolean(pendingSubmission)} onChange={(event) => setNotes(event.target.value)} placeholder={isSpanish ? "Sensaciones, cargas, molestias, observaciones..." : "Feelings, loads, pain points, observations..."} />
           {recordingIssues.length > 0 ? (
             <div role="alert" className="rounded-2xl border border-red-300/80 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-950/40 dark:text-red-100">
               <p className="font-semibold">
@@ -511,6 +558,38 @@ function ActiveWorkoutPageContent() {
               </ul>
             </div>
           ) : null}
+          {pendingSubmission && !alreadySaved ? (
+            <div role="status" className="rounded-2xl border border-amber-300/80 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-400/30 dark:bg-amber-950/40 dark:text-amber-100">
+              <p>
+                {isSpanish
+                  ? "Hay un registro pendiente de esta sesión. Las series quedan bloqueadas para no registrarla dos veces: vuelve a pulsar «Finalizar y registrar» o descarta el borrador."
+                  : "This session has a pending save. Sets are locked so it is not logged twice: press “Finish and log” again or discard the draft."}
+              </p>
+              <Button variant="outline" size="sm" className="mt-2" disabled={isSaving} onClick={discardStaleDraft}>
+                {isSpanish ? "Descartar y empezar de nuevo" : "Discard and start over"}
+              </Button>
+            </div>
+          ) : null}
+          {alreadySaved ? (
+            <div role="alert" className="rounded-2xl border border-red-300/80 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-950/40 dark:text-red-100">
+              <p>
+                {isSpanish
+                  ? "Esta sesión ya se registró con otros datos. Puedes ver el registro en Progreso y descartar este borrador."
+                  : "This session was already logged with different data. You can see it in Progress and discard this draft."}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  if (draftKey) window.localStorage.removeItem(draftKey)
+                  router.push("/progress")
+                }}
+              >
+                {isSpanish ? "Descartar borrador e ir a Progreso" : "Discard draft and go to Progress"}
+              </Button>
+            </div>
+          ) : null}
           {saveError ? (
             <p role="alert" className="rounded-2xl border border-red-300/80 bg-red-50 p-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-950/40 dark:text-red-100">
               {saveError}
@@ -521,7 +600,7 @@ function ActiveWorkoutPageContent() {
               <Save className="mr-2 h-4 w-4" />
               {isSpanish ? "Salir y mantener borrador" : "Exit and keep draft"}
             </Button>
-            <Button disabled={isSaving || staleDraftPending} className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600" onClick={handleFinish}>
+            <Button disabled={isSaving || staleDraftPending || alreadySaved} className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600" onClick={handleFinish}>
               {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
               {isSpanish ? "Finalizar y registrar" : "Finish and log"}
             </Button>

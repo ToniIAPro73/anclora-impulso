@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as sessionsService from '../services/sessions.service';
+import { resolveIdempotencyKey } from '../middleware/idempotency';
 import type { CreateSessionInput } from '../utils/validators';
 
 /**
@@ -61,9 +62,23 @@ export async function createSession(
       return;
     }
 
-    const session = await sessionsService.createSession(req.user.userId, req.body);
-    
-    res.status(201).json(session);
+    // Session save idempotency F3: one session per (user, Idempotency-Key); clients without a key get a short-window
+    // derived key (double taps) until enforcement (decision D3).
+    const { key } = resolveIdempotencyKey(
+      req,
+      res,
+      req.user.userId,
+      sessionsService.SESSION_CREATE_OPERATION,
+      sessionsService.hashSessionRequest(req.body),
+    );
+    const result = await sessionsService.createSessionIdempotent(req.user.userId, req.body, key);
+
+    if (result.replayed) {
+      res.setHeader('Idempotent-Replayed', 'true');
+      res.status(200).json(result.session);
+      return;
+    }
+    res.status(201).json(result.session);
   } catch (error) {
     next(error);
   }

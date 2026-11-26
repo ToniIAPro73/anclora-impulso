@@ -192,3 +192,45 @@ export function buildSessionPayload(input: {
     },
   };
 }
+
+/**
+ * Session save idempotency F3 (decision D1 = A): the first "Finalizar" freezes the payload and its Idempotency-Key in
+ * the draft. Retries resend exactly this submission, so the server can recognise them; edits stay locked until the save
+ * succeeds or the user discards the draft.
+ */
+export type PendingSubmission = {
+  key: string;
+  payload: SessionPayload;
+  createdAt: string;
+};
+
+function randomHex(bytes: number): string {
+  const cryptoApi = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
+  if (cryptoApi?.getRandomValues) {
+    return Array.from(cryptoApi.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  return Array.from({ length: bytes }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');
+}
+
+/** A new key for one session save; matches the server pattern `[A-Za-z0-9._:-]{8,128}`. */
+export function newSessionIdempotencyKey(): string {
+  const uuid = typeof globalThis.crypto?.randomUUID === 'function' ? globalThis.crypto.randomUUID() : randomHex(16);
+  return `session-${uuid}`;
+}
+
+export function createPendingSubmission(payload: SessionPayload, now: Date = new Date()): PendingSubmission {
+  return { key: newSessionIdempotencyKey(), payload, createdAt: now.toISOString() };
+}
+
+export type SaveFailureKind = 'already_saved' | 'rejected' | 'transient';
+
+/**
+ * How the client reacts to a failed save. 422 = the key already saved a different session (D2: offer to discard);
+ * 400/403/404 = this submission will never succeed (release it so the user can fix or discard); anything else
+ * (network, 409 in progress, 429, 5xx) is transient: keep the frozen submission and retry with the same key.
+ */
+export function classifySaveFailure(status: number | undefined): SaveFailureKind {
+  if (status === 422) return 'already_saved';
+  if (status === 400 || status === 403 || status === 404) return 'rejected';
+  return 'transient';
+}

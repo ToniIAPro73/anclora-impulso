@@ -715,8 +715,13 @@ export const sessionsApi = {
     /** Session recording F2: 2 = only completed sets, values as entered. Omitted by pre-F2 clients (legacy, 1). */
     recordingVersion?: 1 | 2;
     exercises: SessionExercise[];
-  }): Promise<WorkoutSession> {
-    return apiClient.post<WorkoutSession>('/sessions', data);
+  }, options: { idempotencyKey?: string } = {}): Promise<WorkoutSession> {
+    // Session save idempotency F3: the same key on every retry of one save lets the server return the first session.
+    return apiClient.post<WorkoutSession>(
+      '/sessions',
+      data,
+      options.idempotencyKey ? { headers: { 'Idempotency-Key': options.idempotencyKey } } : {},
+    );
   },
 
   async update(

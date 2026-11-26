@@ -188,3 +188,28 @@ describe('buildSessionPayload', () => {
     expect(result.ok && result.payload.notes).toBe('felt strong');
   });
 });
+
+describe('session save idempotency F3 helpers', () => {
+  it('creates keys accepted by the server pattern and different for each save', () => {
+    const { newSessionIdempotencyKey } = jest.requireActual('@/lib/session-recording');
+    const a = newSessionIdempotencyKey();
+    const b = newSessionIdempotencyKey();
+    expect(a).toMatch(/^[A-Za-z0-9._:-]{8,128}$/);
+    expect(a).not.toBe(b);
+  });
+
+  it('freezes the payload together with its key', () => {
+    const { createPendingSubmission } = jest.requireActual('@/lib/session-recording');
+    const payload = { workoutId: 'w', duration: 60, recordingVersion: 2, exercises: [] };
+    const pending = createPendingSubmission(payload, new Date('2026-11-26T10:00:00Z'));
+    expect(pending).toMatchObject({ payload, createdAt: '2026-11-26T10:00:00.000Z' });
+    expect(pending.key).toMatch(/^session-/);
+  });
+
+  it('classifies save failures (D2)', () => {
+    const { classifySaveFailure } = jest.requireActual('@/lib/session-recording');
+    expect(classifySaveFailure(422)).toBe('already_saved');
+    for (const status of [400, 403, 404]) expect(classifySaveFailure(status)).toBe('rejected');
+    for (const status of [undefined, 409, 429, 500, 503]) expect(classifySaveFailure(status)).toBe('transient');
+  });
+});

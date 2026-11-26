@@ -1,6 +1,15 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import logger from '../config/logger';
+import { env } from '../config/env';
+import {
+  assertValidIdempotencyKey,
+  beginIdempotent,
+  completeIdempotent,
+  failIdempotent,
+  hashRequest,
+  IdempotencyOwnershipLostError,
+} from './idempotency.service';
 import { AppError } from '../middleware/errorHandler';
 import type { CreateSessionInput } from '../utils/validators';
 import { awardXP, updateStreak } from './gamification.service';
@@ -71,7 +80,12 @@ export async function getSessionById(id: string, userId: string) {
 /**
  * Crear una nueva sesión de entrenamiento
  */
-export async function createSession(userId: string, data: CreateSessionInput) {
+export async function createSession(
+  userId: string,
+  data: CreateSessionInput,
+  /** F3: runs inside the creating transaction (e.g. completes the idempotency record atomically with the insert). */
+  onCreated?: (tx: Prisma.TransactionClient, session: unknown) => Promise<void>,
+) {
   // F-2: the workout must belong to the caller BEFORE it is connected or returned. Missing and foreign workouts get the
   // same 404 (no existence oracle). Check and insert share one transaction; a workout deleted in between trips the
   // foreign key and is mapped to the same 404. Post-commit side effects below keep their pre-existing, non-atomic form.
@@ -83,7 +97,7 @@ export async function createSession(userId: string, data: CreateSessionInput) {
         throw new AppError(404, 'Entrenamiento no encontrado');
       }
 
-      return tx.workoutSession.create({
+      const created = await tx.workoutSession.create({
         data: {
           userId,
           workoutId: data.workoutId,
@@ -110,6 +124,8 @@ export async function createSession(userId: string, data: CreateSessionInput) {
           },
         },
       });
+      if (onCreated) await onCreated(tx, created);
+      return created;
     });
   } catch (error) {
     if (
@@ -138,6 +154,93 @@ export async function createSession(userId: string, data: CreateSessionInput) {
   });
 
   return session;
+}
+
+/** Session save idempotency F3: idempotency operation name of POST /api/sessions. */
+export const SESSION_CREATE_OPERATION = 'sessions.create';
+
+/** Request hash of a session body: the validated fields only, so key order and unknown fields never change it. */
+export function hashSessionRequest(data: CreateSessionInput): string {
+  return hashRequest({
+    workoutId: data.workoutId,
+    duration: data.duration,
+    notes: data.notes ?? null,
+    recordingVersion: data.recordingVersion ?? null,
+    exercises: data.exercises.map((exercise) => ({
+      exerciseId: exercise.exerciseId,
+      sets: exercise.sets.map((set) => ({
+        reps: set.reps,
+        weight: set.weight,
+        rir: set.rir ?? null,
+        rpe: set.rpe ?? null,
+        restSeconds: set.restSeconds ?? null,
+        order: set.order,
+      })),
+    })),
+  });
+}
+
+/**
+ * F3: idempotent POST /api/sessions. Exactly one session per (user, key). Same key + same body replays the stored
+ * response without creating anything or re-running side effects; same key + different body is a conflict. The insert
+ * and the completion of the idempotency record commit in one transaction.
+ */
+export async function createSessionIdempotent(userId: string, data: CreateSessionInput, idempotencyKey: string) {
+  assertValidIdempotencyKey(idempotencyKey);
+  const retentionSeconds = env.idempotencyRetentionHours * 3600;
+  const gate = await beginIdempotent({
+    userId,
+    operation: SESSION_CREATE_OPERATION,
+    key: idempotencyKey,
+    requestHash: hashSessionRequest(data),
+    lockSeconds: 30,
+    retentionSeconds,
+    maxAttempts: env.idempotencyMaxAttempts,
+  });
+
+  if (gate.kind === 'replay') {
+    return { session: gate.response, replayed: true };
+  }
+  if (gate.kind === 'conflict') {
+    throw new AppError(422, 'Idempotency-Key was already used with a different session', true, {
+      reason: 'idempotency_conflict',
+    });
+  }
+  if (gate.kind === 'in_progress') {
+    throw new AppError(409, `This session is still being saved; retry in ${gate.retryAfterSeconds}s`, true, {
+      retryAfterSeconds: gate.retryAfterSeconds,
+    });
+  }
+  if (gate.kind === 'exhausted') {
+    throw new AppError(429, 'Too many attempts for this Idempotency-Key; start a new request later', true, {
+      reason: 'idempotency_attempts_exhausted',
+      attempts: gate.attempts,
+    });
+  }
+  if (gate.kind !== 'owner') {
+    // concurrency/quota gates are not configured for sessions; treat any other outcome as a transient refusal
+    throw new AppError(429, 'Session save temporarily refused; retry shortly', true, { reason: gate.kind });
+  }
+
+  try {
+    const session = await createSession(userId, data, async (tx, created) => {
+      const completed = await completeIdempotent(tx, gate.recordId, gate.ownerToken, 201, created, retentionSeconds);
+      if (!completed) throw new IdempotencyOwnershipLostError();
+    });
+    return { session, replayed: false };
+  } catch (error) {
+    await failIdempotent(
+      gate.recordId,
+      gate.ownerToken,
+      error instanceof IdempotencyOwnershipLostError ? 'ownership_lost' : error instanceof AppError ? `http_${error.statusCode}` : 'error',
+    );
+    if (error instanceof IdempotencyOwnershipLostError) {
+      throw new AppError(409, 'This session save was taken over by another attempt; retry with the same Idempotency-Key', true, {
+        retryAfterSeconds: 1,
+      });
+    }
+    throw error;
+  }
 }
 
 /**

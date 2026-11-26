@@ -10,6 +10,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ActiveWorkoutPage from '@/app/workouts/[id]/start/page';
 import { sessionsApi, workoutsApi, type Workout } from '@/lib/api';
 
+// Full-page renders with several interactions: the 5 s default is too tight when the whole suite runs in parallel.
+jest.setTimeout(20000);
+
 const mockPush = jest.fn();
 
 jest.mock('next/navigation', () => ({
