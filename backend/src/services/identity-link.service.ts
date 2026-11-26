@@ -307,3 +307,77 @@ export async function isLocalUserEligibleForPilot(userId: string, issuer: string
   }
   return isPilotBootstrapEmailAuthorized(user.email);
 }
+
+export type OperatorLinkOutcome =
+  | { outcome: 'LINKED'; userId: string }
+  | { outcome: 'ALREADY_LINKED'; userId: string }
+  | { outcome: 'INVALID_INPUT' }
+  | { outcome: 'USER_NOT_FOUND' }
+  | { outcome: 'USER_DISABLED' }
+  | { outcome: 'SUBJECT_LINKED_TO_OTHER_USER' }
+  | { outcome: 'USER_ALREADY_LINKED' };
+
+/**
+ * QA identity account (L1): explicit operator link between an existing user and an Anclora Identity subject.
+ * Used only from the audited CLI `scripts/maintenance/link-identity.ts`, run by Toni. It never links by email:
+ * the operator names both the user id and the subject. Refuses every conflict; idempotent for the same pair.
+ */
+export async function linkIdentityByOperator(input: {
+  userId: string;
+  issuer: string;
+  subject: string;
+  operator: string;
+}): Promise<OperatorLinkOutcome> {
+  const subject = input.subject.trim();
+  const operator = input.operator.trim();
+  let issuer: string;
+  try {
+    const url = new URL(input.issuer.trim());
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return { outcome: 'INVALID_INPUT' };
+    issuer = input.issuer.trim();
+  } catch {
+    return { outcome: 'INVALID_INPUT' };
+  }
+  if (!subject || /\s|\|/.test(subject) || !operator) return { outcome: 'INVALID_INPUT' };
+
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({ where: { id: input.userId }, select: { id: true, email: true, disabledAt: true } });
+    if (!user) return { outcome: 'USER_NOT_FOUND' } as const;
+    if (user.disabledAt) return { outcome: 'USER_DISABLED' } as const;
+
+    const bySubject = await tx.identityLink.findUnique({ where: { issuer_subject: { issuer, subject } } });
+    if (bySubject && !bySubject.revokedAt) {
+      return bySubject.userId === user.id
+        ? ({ outcome: 'ALREADY_LINKED', userId: user.id } as const)
+        : ({ outcome: 'SUBJECT_LINKED_TO_OTHER_USER' } as const);
+    }
+    if (bySubject && bySubject.userId !== user.id) return { outcome: 'SUBJECT_LINKED_TO_OTHER_USER' } as const;
+
+    const activeForUser = await tx.identityLink.findFirst({ where: { userId: user.id, issuer, revokedAt: null } });
+    if (activeForUser) return { outcome: 'USER_ALREADY_LINKED' } as const;
+
+    const emailAtLink = normalizeEmail(user.email);
+    if (bySubject) {
+      await tx.identityLink.update({
+        where: { id: bySubject.id },
+        data: { revokedAt: null, linkedVia: 'operator_link', emailAtLink },
+      });
+    } else {
+      await tx.identityLink.create({
+        data: { userId: user.id, issuer, subject, emailAtLink, linkedVia: 'operator_link' },
+      });
+    }
+    await tx.identityLinkAudit.create({
+      data: {
+        userId: user.id,
+        issuer,
+        subject,
+        action: 'LINKED',
+        actorUserId: null,
+        reason: 'operator_link',
+        metadata: { operator },
+      },
+    });
+    return { outcome: 'LINKED', userId: user.id } as const;
+  });
+}
