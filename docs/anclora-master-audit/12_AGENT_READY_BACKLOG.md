@@ -54,6 +54,12 @@
 | TASK-037 | Adaptación skill `planificador-nutricion-mealprep-50` a JSON v2 (N0) | N0 | P0 | Skill / Contrato | Spec Nutrición v2.0 | S |
 | TASK-038 | Asistente 5 decisiones e IA opcional bajo flag (N2) | N2 | P2 | Producto / IA | Spec Nutrición v2.0 | M |
 | TASK-039 | Conector seguro Claude → borrador revisable (N3) | N3 | P3 / exp. | Integración | Spec Nutrición v2.0 | M |
+| TASK-040 | F1 · Integridad del historial (archivar en vez de borrar) | R | Crítica | Datos | Pista R | M |
+| TASK-041 | F2 · Registro fiel de la sesión | R | Crítica | Datos / Frontend | Pista R | M |
+| TASK-042 | F3 · Guardado idempotente de sesiones | R | Alta | Backend | Pista R (BUG-08) | M |
+| TASK-043 | F4 · Recalcular récords con historial fiel | R | Alta | Dominio | Pista R | M |
+| TASK-044 | F5 · Progresión sobre historial fiel | R | Media | Dominio | Pista R | M |
+| TASK-045 | Reparar los 5 tests OIDC que fallaban antes de F1 | R | Media | Testing | `anclora-identity-oidc-e2e` | S |
 
 ---
 
@@ -470,10 +476,57 @@
 
 ---
 
+## Pista R — Fiabilidad del registro de entrenamiento (`TASK-040` a `TASK-045`)
+
+Decisiones comunes de Toni (2026-11-25): umbral de inactividad de **4 h**; las sesiones registradas antes de F2
+(legado, `recordingVersion = 1`) quedan **excluidas de récords y progresión**. Orden obligatorio F1 → F2 → F3 → F4 → F5.
+
+### TASK-040 · F1 · Integridad del historial
+- **Estado:** **En producción (2026-11-26).** Migración `20261126000000_history_integrity_archive_and_fk_guard` vía
+  `production-migrations.yml` `45738373135`, `PROMOTE=FULL` `45738595312` en `74080e0`.
+- **Resultado:** ejercicios y rutinas con historial se archivan en vez de borrarse; FK de historial en `NO ACTION`;
+  el seed ya no borra. Spec y evidencia: `sdd/features/history-integrity-f1/` (T8 ensayo Neon, T9 producción).
+- **Pendiente:** prueba de borrado por la API desplegada con la cuenta QA; decisión sobre los 132 ejercicios fuera
+  de la lista del seed (siguen activos; no ejecutar el seed en producción).
+
+### TASK-041 · F2 · Registro fiel de la sesión
+- **Estado:** **Spec en borrador, pendiente de aprobación** (`sdd/features/session-recording-f2/`). Tests de
+  reproducción escritos en rojo (`__tests__/components/session-recording-f2.test.tsx`, 6/6 fallan).
+- **Resultado esperado:** solo series completadas; repeticiones vacías no toman el objetivo; coma decimal; duración
+  real por actividad (umbral 4 h); errores de guardado visibles; `recordingVersion = 2` (migración aditiva).
+- **Decisiones abiertas:** D1 duración máxima, D2 ejercicios con peso corporal, D3 borradores sin `lastActivityAt`,
+  D4 frontend antiguo, D5 flujo Git.
+- **Dependencias:** TASK-040.
+
+### TASK-042 · F3 · Guardado idempotente de sesiones
+- **Estado:** Pendiente.
+- **Resultado esperado:** el cliente envía una clave de idempotencia por borrador; reintentos y dobles clics no
+  duplican sesiones, XP, rachas ni récords (BUG-08). Producción 2026-11-26: 0 pares sospechosos.
+- **Dependencias:** TASK-041.
+
+### TASK-043 · F4 · Recalcular récords con historial fiel
+- **Estado:** Pendiente.
+- **Resultado esperado:** los récords personales se recalculan solo con sesiones `recordingVersion = 2`; los récords
+  de legado dejan de mostrarse como vigentes; recálculo idempotente y verificable.
+- **Dependencias:** TASK-041, TASK-042.
+
+### TASK-044 · F5 · Progresión sobre historial fiel
+- **Estado:** Pendiente.
+- **Resultado esperado:** el motor de progresión y la siguiente sesión usan solo historial fiel; sin historial fiel,
+  arranque conservador explicado al usuario.
+- **Dependencias:** TASK-043.
+
+### TASK-045 · Reparar los 5 tests OIDC que fallaban antes de F1
+- **Estado:** Pendiente (tarea separada; no bloquea F2).
+- **Resultado esperado:** `backend/tests/unit/anclora-identity-oidc-e2e.test.ts` en verde (`code_challenge_method`
+  llega `null`); diagnosticar si es el test o el flujo PKCE.
+
+---
+
 ## Resumen de tamaños
 
 | Tamaño | Tareas |
 |---|---|
-| S | 001, 004, 005, 006, 007, 008, 011, 012, 019, 020, 027, 028, 031, 033, 037 |
-| M | 002, 003, 009, 010, 013, 015, 016, 017, 018, 022, 023, 024, 025, 026, 029, 030, 032, 035, 036, 038, 039 |
+| S | 001, 004, 005, 006, 007, 008, 011, 012, 019, 020, 027, 028, 031, 033, 037, 045 |
+| M | 002, 003, 009, 010, 013, 015, 016, 017, 018, 022, 023, 024, 025, 026, 029, 030, 032, 035, 036, 038, 039, 040, 041, 042, 043, 044 |
 | L | 014, 021, 034 |
