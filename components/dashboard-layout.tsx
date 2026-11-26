@@ -31,7 +31,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <DashboardHeader />
         <main
           className={cn(
-            "flex min-h-0 flex-1 flex-col overflow-visible overflow-x-clip lg:overflow-y-auto",
+            // pb-16 reserves room for the fixed cookie-preferences button (bottom-4 right-4, 40 px) so the last actions
+            // of a page are never covered by it at the end of the scroll.
+            "flex min-h-0 flex-1 flex-col overflow-visible overflow-x-clip pb-16 lg:overflow-y-auto",
           )}
         >
           {children}

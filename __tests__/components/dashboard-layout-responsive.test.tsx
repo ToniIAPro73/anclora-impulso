@@ -59,6 +59,18 @@ describe("DashboardLayout responsive", () => {
     window.localStorage.clear()
   })
 
+  it("reserva espacio inferior para que el botón flotante de cookies no tape las acciones finales", () => {
+    const { container } = render(
+      <DashboardLayout>
+        <section>Contenido</section>
+      </DashboardLayout>,
+    )
+
+    // The cookie-preferences button is fixed at bottom-4 right-4 (40 px). pb-16 keeps the last actions of every page
+    // (e.g. "Finalizar y registrar" on the active workout) clear of it at the end of the scroll.
+    expect(container.querySelector("main")?.className).toContain("pb-16")
+  })
+
   it("permite scroll vertical en /dashboard y alinea el footer en sidebar expandido, contraído y móvil", async () => {
     const user = userEvent.setup()
     const { container } = render(
