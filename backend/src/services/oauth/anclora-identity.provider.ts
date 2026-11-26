@@ -36,7 +36,8 @@ let cachedJwks: ReturnType<JoseModule['createRemoteJWKSet']> | null = null;
 
 async function loadOpenIdClient(): Promise<OpenIdClientModule> {
   try {
-    // Works in Node 22.12+/24 and Jest CJS without --experimental-vm-modules.
+    // Works in Node 22.12+ (require of ESM). Under Jest's own CJS loader this require fails and the dynamic import below
+    // needs NODE_OPTIONS=--experimental-vm-modules (set by `pnpm test:ci` / `pnpm test:unit`).
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('openid-client') as OpenIdClientModule;
   } catch {

@@ -76,7 +76,9 @@ link is printed in the operator's terminal instead of emailed. The Identity emai
 ## Security finding (separate task, not fixed here)
 `anclora-identity/src/http/adminRouter.ts`: `POST /apps/:applicationId/invitations` accepts the service token of
 **any** configured application for **any** `applicationId` (`Object.values(deps.serviceTokens).some(...)`), so one
-application's token can mint invitations for another. To be reviewed in `anclora-identity`.
+application's token can mint invitations for another. **Fixed on 2026-11-26** in `anclora-identity`
+(`sdd/features/admin-token-scope/`): write routes accept only the application's own token or the Nexus token for
+Data Lab and GuestHub.
 
 ## Acceptance criteria
 | ID | Criterion |

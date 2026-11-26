@@ -13,6 +13,7 @@
     "start": "node dist/server.js",
     "test": "jest --watch",
     "test:ci": "NODE_OPTIONS=--experimental-vm-modules jest --ci --runInBand --coverage",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --ci --runInBand tests/unit",
     "nutrition:validate": "tsx scripts/nutrition/import-recipes.ts --validate-only",
     "nutrition:validate-plan": "tsx scripts/nutrition/validate-meal-plan.ts",
     "nutrition:import": "tsx scripts/nutrition/import-recipes.ts",

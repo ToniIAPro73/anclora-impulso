@@ -594,7 +594,7 @@ const announcement = useAriaLive('Saved successfully', 'polite')
 ### Backend Testing
 - **Framework:** Jest + Supertest
 - **Test Files:** `backend/tests/unit/` and `backend/tests/integration/`
-- **Unit Tests:** Pure domain logic, validators, security config, guidance provenance, fallback logic (`cd backend && npx jest --ci --runInBand tests/unit`)
+- **Unit Tests:** Pure domain logic, validators, security config, guidance provenance, fallback logic (`cd backend && pnpm run test:unit`; it sets `NODE_OPTIONS=--experimental-vm-modules`, which `openid-client` (ESM) needs under Jest — a bare `npx jest` makes the 5 OIDC e2e tests fail)
 - **Integration Tests:** API endpoints requiring isolated test PostgreSQL (`scripts/test-db.sh`, 31 files)
 - **Scripts:**
   - `pnpm test` - Run in watch mode (from backend/)
@@ -756,7 +756,7 @@ Anclora-Impulso/
 Run commands directly from the repository root (`anclora-impulso/`) or `backend/`:
 
 - **Frontend unit tests (`npx jest --ci --coverage=false`):** 24 suites / 162 tests
-- **Backend unit tests (`cd backend && npx jest --ci --runInBand tests/unit`):** 20 suites / 180 tests
+- **Backend unit tests (`cd backend && pnpm run test:unit`):** 33 suites / 286 tests (2026-11-26)
 - **Backend integration test files (`ls -1 backend/tests/integration/*.test.ts | wc -l`):** 31 files (require isolated test PostgreSQL)
 - **Prisma models (`grep -c "^model " backend/prisma/schema.prisma`):** 57 models
 - **Prisma migrations (`ls -1 backend/prisma/migrations | grep -v migration_lock.toml | wc -l`):** 26 migrations

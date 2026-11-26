@@ -518,9 +518,14 @@ Decisiones comunes de Toni (2026-11-25): umbral de inactividad de **4 h**; las s
 - **Dependencias:** TASK-043.
 
 ### TASK-045 · Reparar los 5 tests OIDC que fallaban antes de F1
-- **Estado:** Pendiente (tarea separada; no bloquea F2).
-- **Resultado esperado:** `backend/tests/unit/anclora-identity-oidc-e2e.test.ts` en verde (`code_challenge_method`
-  llega `null`); diagnosticar si es el test o el flujo PKCE.
+- **Estado:** **Resuelta (2026-11-26): no era un fallo del código.** El test pasa 5/5 con
+  `NODE_OPTIONS=--experimental-vm-modules`, que la CI ya usa (`pnpm test:ci`). Sin esa opción el cargador CJS de Jest
+  no puede importar `openid-client` (ESM), el descubrimiento OIDC falla y el login redirige a `/auth/error`, por eso
+  `code_challenge_method` llegaba `null`. La causa era el comando documentado en `CLAUDE.md`
+  (`npx jest --ci --runInBand tests/unit`), usado también en las evidencias de F1, F2 y F3, donde esos 5 fallos
+  figuran como «preexistentes».
+- **Cambios:** script `pnpm run test:unit` con la opción; `CLAUDE.md` corregido; comentario de `loadOpenIdClient`
+  aclarado. Suite unitaria completa con la opción: 33/33 suites, 286/286 tests.
 
 ---
 
