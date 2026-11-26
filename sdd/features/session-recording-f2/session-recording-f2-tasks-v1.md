@@ -13,7 +13,7 @@ Branch: `development` (D5 = A). Decisions D1–D5 approved by Toni on 2026-11-26
 | T5 Migration `20261126180000_session_recording_version` (isolated PostgreSQL 16) | AC06, NFR-001 | done | applied to the isolated test DB; release manifest regenerated (31 migrations, verified) |
 | T6 Full suites, typecheck, lint, build | AC11 | done except build and visual QA | see below |
 | T7 Neon branch rehearsal of the migration | AC10 | done (2026-11-26) | see "T7 rehearsal" below |
-| T8 Production rollout (protected workflow, `PROMOTE=FULL`, QA check) | AC10 | done except visual/API QA (2026-11-26) | see "T8 production rollout" below |
+| T8 Production rollout (protected workflow, `PROMOTE=FULL`, QA check) | AC10 | done (2026-11-26) | see "T8 production rollout" below |
 
 ## Implementation notes
 - D2: `resistance_bands` added to the bodyweight allow-list (no kilogram value for bands). Pending Toni's validation.
@@ -76,3 +76,15 @@ Neon `lucky-hat-25002521` / `br-gentle-bar-ag3slpph` (`ep-lingering-paper-agjnrg
   `/health/live` 200; frontend `impulso.anclora.com` 200. Render live deploy of the SHA inferred from the workflow gate.
 - Pending: visual QA and an end-to-end session through the deployed app (needs the QA account in Anclora Identity, or
   Toni records one session and the agent verifies `recordingVersion = 2` and the sets read-only).
+
+## End-to-end and visual QA in production (2026-11-26, QA account `qa.impulso@anclora.local`)
+Signed in through Anclora Identity (QA identity `2bc723fa-…`, linked by operator; see
+`sdd/features/qa-identity-account/`), `agent-browser` on `impulso.anclora.com`, routine "F2 visual QA"
+(`b06fb8fe-…`, Barbell Curls 3 × 10) created through the API.
+- Set 1 marked with empty reps and empty weight → alert "indica repeticiones" + "indica peso", both fields
+  `aria-invalid`, nothing sent.
+- Set 1 = 8 reps, `12,5` kg; sets 2 and 3 left unmarked → session `dad4a6e5-…` stored with `recordingVersion = 2`,
+  one exercise, one set `{ reps: 8, weight: 12.5, order: 0 }`, duration 39 s; redirected to `/progress`. PASS.
+- Mobile (iPhone 14 emulation): alert readable, no horizontal overflow.
+- Minor, pre-existing, not F2: the floating cookie-preferences button overlaps the corner of "Finalizar y registrar".
+Screenshots kept outside the repository (`anclora-verificacion/resultados/qa-f2-*.png`).

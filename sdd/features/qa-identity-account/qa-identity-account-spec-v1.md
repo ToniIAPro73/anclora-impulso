@@ -89,3 +89,12 @@ application's token can mint invitations for another. To be reviewed in `anclora
 
 ## Out of scope
 Self-service password reset in Identity; invitation UX; changes to auto-provisioning.
+
+## Execution (2026-11-26)
+- Identity: invitation handed off with `invite-identity` and accepted by Toni → `qa.impulso@anclora.local`,
+  id `2bc723fa-bd14-4140-9e75-471a56e529e8`, ACTIVE, verified, PASSWORD (QA-ID-AC01).
+- Impulso production: `link-identity` → `LINKED`; link `operator_link` active for user `926a24f0-…`; audit `LINKED`
+  / `operator_link` / operator "Toni: QA identity for Impulso" (QA-ID-AC03).
+- Render: subject appended to `ANCLORA_IDENTITY_PILOT_ALLOWED_SUBJECTS` by Toni.
+- Deployed `GET /api/auth/me` with the QA token → 200, `qa.impulso@anclora.local` (QA-ID-AC04).
+- Pending QA unblocked and executed: F1 delete through the API and F2 end-to-end/visual QA, both PASS (QA-ID-AC05).

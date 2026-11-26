@@ -124,7 +124,9 @@ history unchanged (1 / 1 / 3), hidden from `getUserWorkouts`, readable by id. Re
 (98 active, 1 archived), 126 routine exercises; 521 exercises, all active (the seed is not run in production).
 
 ### Pending
-- End-to-end delete test through the deployed API with the QA account (needs QA credentials in Anclora Identity).
+- ~~End-to-end delete test through the deployed API~~ done 2026-11-26 with the QA account signed in through Identity:
+  routine `899a2d75-…` with 1 session / 3 sets; `DELETE /api/workouts/:id` → 204; routine archived
+  (`archivedAt` set), hidden from `GET /api/workouts`, readable by id; session kept with its routine and 3 sets. PASS.
 - `.anclora/PRODUCTION_RUNTIME.md` `MIGRATION_RUNNER_STATUS` still describes M27; it should record M28, identity
   links and this F1 run.
 - The 132 exercises outside the seed list stay active in production; archiving them requires an explicit decision
